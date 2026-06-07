@@ -1,0 +1,44 @@
+# ========================
+# 1. Monorepo & Dependencies
+# ========================
+node_modules/
+.pnpm-store/
+
+# ========================
+# 2. Build Outputs
+# ========================
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# ========================
+# 3. Environment Variables
+# ========================
+**/*.env
+**/*.env.local
+**/*.env.development
+**/*.env.test
+**/*.env.production
+
+# ========================
+# 4. Turborepo & Tooling
+# ========================
+.turbo/
+.specify/
+.opencode/memory/**/*.tmp
+
+# ========================
+# 5. OS & Editor Logs
+# ========================
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.idea/
+.vscode/
+.tanstack/

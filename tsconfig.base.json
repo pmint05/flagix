@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"target": "ES2022",
+		"module": "esnext",
+		"moduleResolution": "Bundler",
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"paths": {
+			"@flagix/*": ["./packages/*/src"]
+		}
+	}
+}
