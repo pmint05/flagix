@@ -8,7 +8,10 @@
 		"dev": "turbo run dev",
 		"lint": "turbo run lint",
 		"typecheck": "turbo run typecheck",
-		"clean": "turbo run clean && rm -rf node_modules"
+		"clean": "turbo run clean && rm -rf node_modules",
+		"db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+		"db:down": "docker compose -f infra/docker/docker-compose.yml down",
+		"db:logs": "docker logs flagix_postgres -f"
 	},
 	"keywords": [],
 	"author": "",
