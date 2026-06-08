@@ -6,6 +6,8 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
+		"dev:frontend": "turbo run dev --filter=frontend",
+		"dev:backend": "turbo run dev --filter=backend",
 		"lint": "turbo run lint",
 		"typecheck": "turbo run typecheck",
 		"clean": "turbo run clean && rm -rf node_modules",
@@ -16,7 +18,7 @@
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
-	"packageManager": "pnpm@10.33.4",
+	"packageManager": "pnpm@11.5.2",
 	"devDependencies": {
 		"@types/node": "^25.9.2",
 		"turbo": "^2.9.16",

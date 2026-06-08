@@ -1,26 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { DATABASE } from '../database/database.module';
+import type { Database } from '../../db';
+import { user } from '../../db/auth-schema';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async create(createUserDto: CreateUserDto) {
+    const [newUser] = await this.db
+      .insert(user)
+      .values({
+        id: crypto.randomUUID(),
+        name: createUserDto.name,
+        email: createUserDto.email,
+      })
+      .returning();
+    return newUser;
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    return await this.db.select().from(user);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const [foundUser] = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.id, id));
+    if (!foundUser) throw new NotFoundException(`User with ID ${id} not found`);
+    return foundUser;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const [updatedUser] = await this.db
+      .update(user)
+      .set({
+        ...updateUserDto,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, id))
+      .returning();
+
+    if (!updatedUser)
+      throw new NotFoundException(`User with ID ${id} not found`);
+
+    return updatedUser;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    const [deletedUser] = await this.db
+      .delete(user)
+      .where(eq(user.id, id))
+      .returning();
+
+    if (!deletedUser)
+      throw new NotFoundException(`User with ID ${id} not found`);
+
+    return deletedUser;
   }
 }

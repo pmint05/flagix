@@ -1,0 +1,162 @@
+$ nest start --watch
+node:internal/modules/cjs/loader:1228
+  throw err;
+  ^
+
+Error: Cannot find module 'D:\CODE\flagix\apps\backend\dist\main'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.14.0
+node:internal/modules/cjs/loader:1228
+  throw err;
+  ^
+
+Error: Cannot find module 'D:\CODE\flagix\apps\backend\dist\main'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.14.0
+node:net:1937
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::8080
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at ExpressAdapter.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+platform-express@11_af096643cab4c5c29b936c21cbbed732\node_modules\@nestjs\platform-express\adapters\express-adapter.js:115:32)
+    at D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:190:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:180:16)
+    at async bootstrap (D:\CODE\flagix\apps\backend\src\main.ts:92:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 8080
+}
+
+Node.js v22.14.0
+node:net:1937
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::8080
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at ExpressAdapter.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+platform-express@11_af096643cab4c5c29b936c21cbbed732\node_modules\@nestjs\platform-express\adapters\express-adapter.js:115:32)
+    at D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:190:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:180:16)
+    at async bootstrap (D:\CODE\flagix\apps\backend\src\main.ts:92:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 8080
+}
+
+Node.js v22.14.0
+node:net:1937
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::8080
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at ExpressAdapter.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+platform-express@11_af096643cab4c5c29b936c21cbbed732\node_modules\@nestjs\platform-express\adapters\express-adapter.js:115:32)
+    at D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:190:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:180:16)
+    at async bootstrap (D:\CODE\flagix\apps\backend\src\main.ts:92:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 8080
+}
+
+Node.js v22.14.0
+node:net:1937
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::8080
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at ExpressAdapter.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+platform-express@11_af096643cab4c5c29b936c21cbbed732\node_modules\@nestjs\platform-express\adapters\express-adapter.js:115:32)
+    at D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:190:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\CODE\flagix\node_modules\.pnpm\@nestjs+core@11.1.24_@nestj_829ddc9bef59f9ba6b84527181c98837\node_modules\@nestjs\core\nest-application.js:180:16)
+    at async bootstrap (D:\CODE\flagix\apps\backend\src\main.ts:92:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 8080
+}
+
+Node.js v22.14.0
+ERROR: The process "47944" not found.
+ERROR: The process "47944" not found.
+node:child_process:957
+    throw err;
+    ^
+
+Error: Command failed: taskkill /pid 47944 /T /F
+ERROR: The process "47944" not found.
+
+
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:882:11)
+    at execSync (node:child_process:954:15)
+    at treeKillSync (D:\CODE\flagix\node_modules\.pnpm\@nestjs+cli@11.0.21_@types+_553a8a43312da8ab980353c5da870491\node_modules\@nestjs\cli\lib\utils\tree-kill.js:7:38)
+    at D:\CODE\flagix\node_modules\.pnpm\@nestjs+cli@11.0.21_@types+_553a8a43312da8ab980353c5da870491\node_modules\@nestjs\cli\actions\start.action.js:69:46
+    at Object.onWatchStatusChange (D:\CODE\flagix\node_modules\.pnpm\@nestjs+cli@11.0.21_@types+_553a8a43312da8ab980353c5da870491\node_modules\@nestjs\cli\lib\compiler\watch-compiler.js:82:17)
+    at D:\CODE\flagix\node_modules\.pnpm\typescript@5.9.3\node_modules\typescript\lib\typescript.js:133916:30
+    at emitFilesAndReportErrors (D:\CODE\flagix\node_modules\.pnpm\typescript@5.9.3\node_modules\typescript\lib\typescript.js:133737:5)
+    at result.afterProgramCreate (D:\CODE\flagix\node_modules\.pnpm\typescript@5.9.3\node_modules\typescript\lib\typescript.js:133912:5) {
+  status: 128,
+  signal: null,
+  output: [
+    null,
+    Buffer(0) [Uint8Array] [],
+    Buffer(39) [Uint8Array] [
+       69,  82,  82,  79,  82,  58,  32,  84, 104,
+      101,  32, 112, 114, 111,  99, 101, 115, 115,
+       32,  34,  52,  55,  57,  52,  52,  34,  32,
+      110, 111, 116,  32, 102, 111, 117, 110, 100,
+       46,  13,  10
+    ]
+  ],
+  pid: 42180,
+  stdout: Buffer(0) [Uint8Array] [],
+  stderr: Buffer(39) [Uint8Array] [
+     69,  82,  82,  79,  82,  58,  32,  84, 104,
+    101,  32, 112, 114, 111,  99, 101, 115, 115,
+     32,  34,  52,  55,  57,  52,  52,  34,  32,
+    110, 111, 116,  32, 102, 111, 117, 110, 100,
+     46,  13,  10
+  ]
+}
+
+Node.js v22.14.0

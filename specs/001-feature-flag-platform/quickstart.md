@@ -8,7 +8,7 @@ This guide provides runnable validation scenarios to verify the Feature Flag Pla
 ## Prerequisites
 
 - Node.js 20+ LTS installed
-- pnpm 10.x installed globally
+- pnpm 11.x installed globally
 - Docker installed and running
 - Repository cloned and dependencies installed (`pnpm install`)
 
