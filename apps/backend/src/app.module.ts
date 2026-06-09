@@ -5,9 +5,8 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
-import { UsersModule } from './modules/users/users.module';
-import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 
 @Module({
   imports: [
@@ -28,7 +27,8 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
     }),
     DatabaseModule,
     AuthModule,
-    UsersModule,
+    OrganizationsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

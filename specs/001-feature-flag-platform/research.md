@@ -164,8 +164,8 @@
 - Disable NestJS body parser (`bodyParser: false` in `NestFactory.create`) as required by the adapter.
 - Import `AuthModule.forRoot({ auth })` in root AppModule.
 - Global AuthGuard protects all routes by default; use `@AllowAnonymous()` for public routes (evaluation API uses SDK keys, not sessions).
-- Better Auth schema generated via `npx auth@latest generate` into `apps/backend/src/db/auth-schema.ts`.
-- Platform-specific tables (organizations, projects, etc.) defined separately in `apps/backend/src/db/schema.ts` with `user_id` FK referencing Better Auth's `user` table.
+- Better Auth schema generated via `npx auth@latest generate` into `apps/backend/src/db/schema/auth-schema.ts`.
+- Platform-specific tables (organizations, projects, etc.) defined separately in `apps/backend/src/db/schema/` directory (per-entity files with barrel `index.ts`) with `user_id` FK referencing Better Auth's `user` table.
 
 **Auto-generated database tables** (via Better Auth CLI):
 - `user` — id, name, email, emailVerified, image, createdAt, updatedAt

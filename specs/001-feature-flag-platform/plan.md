@@ -159,8 +159,18 @@ apps/
 │   │   │   ├── evaluation/
 │   │   │   └── audit-logs/
 │   │   ├── db/
-│   │   │   ├── schema.ts          # Drizzle schema definitions (platform tables)
-│   │   │   ├── auth-schema.ts     # Better Auth auto-generated schema (user, session, account, verification)
+│   │   │   ├── schema/              # Drizzle schema definitions (all tables)
+│   │   │   │   ├── index.ts         # Barrel re-export of all schema files
+│   │   │   │   ├── auth-schema.ts   # Better Auth auto-generated schema (user, session, account, verification)
+│   │   │   │   ├── organizations.ts
+│   │   │   │   ├── organization-members.ts
+│   │   │   │   ├── projects.ts
+│   │   │   │   ├── environments.ts
+│   │   │   │   ├── feature-flags.ts
+│   │   │   │   ├── variations.ts
+│   │   │   │   ├── targeting-rules.ts
+│   │   │   │   ├── audit-logs.ts
+│   │   │   │   └── user-relations.ts
 │   │   │   ├── migrations/        # Drizzle migrations
 │   │   │   └── index.ts           # Database connection
 │   │   ├── common/
@@ -191,7 +201,7 @@ infra/
     └── docker-compose.yml         # PostgreSQL container
 ```
 
-**Structure Decision**: Monorepo with NestJS backend in `apps/backend/`, shared types/schemas in `packages/shared/`. Backend follows NestJS module pattern with feature-based organization. Authentication handled by Better Auth via `@thallesp/nestjs-better-auth` adapter with global AuthGuard. Better Auth auto-generates `auth-schema.ts` (user, session, account, verification tables) via CLI; platform-specific tables defined in `schema.ts`. Database migrations managed by Drizzle ORM in `apps/backend/src/db/`.
+**Structure Decision**: Monorepo with NestJS backend in `apps/backend/`, shared types/schemas in `packages/shared/`. Backend follows NestJS module pattern with feature-based organization. Authentication handled by Better Auth via `@thallesp/nestjs-better-auth` adapter with global AuthGuard. Better Auth auto-generates `auth-schema.ts` (user, session, account, verification tables) via CLI; platform-specific tables defined in `src/db/schema/` directory with per-entity files and a barrel `index.ts`. Database migrations managed by Drizzle ORM in `apps/backend/src/db/`.
 
 ## Complexity Tracking
 

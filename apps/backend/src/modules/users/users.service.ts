@@ -2,8 +2,8 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DATABASE } from '../database/database.module';
-import type { Database } from '../../db';
-import { user } from '../../db/auth-schema';
+import type { Database } from '@/db';
+import { user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 @Injectable()

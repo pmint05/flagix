@@ -32,7 +32,7 @@ Should show PostgreSQL startup logs ending with "database system is ready to acc
 
 ```bash
 cd apps/backend
-npx @better-auth/cli generate --output src/db/auth-schema.ts
+npx @better-auth/cli generate --output src/db/schema/auth-schema.ts
 ```
 
 **Expected**: `auth-schema.ts` is generated with Drizzle schema definitions for `user`, `session`, `account`, and `verification` tables.

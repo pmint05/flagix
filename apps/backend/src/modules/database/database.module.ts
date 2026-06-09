@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { createDrizzleClient, type Database } from '../../db';
+import { createDrizzleClient, type Database } from '@/db';
 
 export const DATABASE = Symbol('DATABASE');
 

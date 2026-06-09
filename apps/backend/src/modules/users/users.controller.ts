@@ -12,7 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import { ActiveUser } from '../../common/decorators/active-user.decorator';
+import { ActiveUser } from '@/common/decorators/active-user.decorator';
 
 @ApiTags('Users')
 @Controller('users')

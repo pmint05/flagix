@@ -1,9 +1,18 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { openAPI } from 'better-auth/plugins';
-import { createDrizzleClient } from '../../db';
+import { createDrizzleClient } from '@/db';
+import { organizations, organizationMembers } from '@/db/schema';
 
 const db = createDrizzleClient();
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100);
+}
 
 export const auth = betterAuth({
   basePath: '/api/auth',
@@ -30,6 +39,29 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {},
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const orgName = `${user.name}'s Organization`;
+          const baseSlug = slugify(user.name);
+          const [org] = await db
+            .insert(organizations)
+            .values({
+              name: orgName,
+              slug: `${baseSlug}-${user.id.slice(0, 8)}`,
+            })
+            .returning();
+
+          await db.insert(organizationMembers).values({
+            userId: user.id,
+            organizationId: org.id,
+            role: 'admin',
+          });
+        },
+      },
+    },
   },
   advanced: {
     cookiePrefix: 'flagix',

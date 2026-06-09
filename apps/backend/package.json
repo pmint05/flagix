@@ -23,7 +23,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "pnpm dlx auth@latest generate --config src/modules/auth/auth.config.ts --output src/db/auth-schema.ts"
+    "auth:generate": "pnpm dlx auth@latest generate --config src/modules/auth/auth.config.ts --output src/db/schema/auth-schema.ts"
   },
   "dependencies": {
     "@flagix/shared": "workspace:*",
@@ -91,6 +91,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    }
   }
 }

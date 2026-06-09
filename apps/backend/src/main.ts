@@ -54,9 +54,7 @@ async function bootstrap() {
   // API Documentation (Swagger + Scalar)
   const config = new DocumentBuilder()
     .setTitle('Flagix API')
-    .setDescription(
-      'The Flagix Feature Flag Management & SDK API.',
-    )
+    .setDescription('The Flagix Feature Flag Management & SDK API.')
     .setExternalDoc('Better Auth Open API', '/api/auth/reference')
     .setVersion('1.0')
     .setBasePath('/api')
