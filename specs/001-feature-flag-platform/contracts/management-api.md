@@ -380,7 +380,6 @@ POST /api/v1/projects/:projectId/environments
   "slug": "string",
   "description": "string | null",
   "projectId": "uuid",
-  "sdkKey": "string (only returned on creation)",
   "createdAt": "ISO 8601 timestamp",
   "updatedAt": "ISO 8601 timestamp"
 }
@@ -418,6 +417,80 @@ GET /api/v1/projects/:projectId/environments
 
 ---
 
+## SDK Keys
+
+### Create SDK Key
+
+```text
+POST /api/v1/projects/:projectId/environments/:envId/sdk-keys
+```
+
+**Request Body**:
+```json
+{
+  "name": "string (1-255 chars, required)",
+  "type": "'client' | 'server' (required)"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "type": "'client' | 'server'",
+  "keyHint": "string (6-8 chars)",
+  "rawKey": "string (ONLY RETURNED ONCE)",
+  "isActive": true,
+  "createdAt": "ISO 8601 timestamp"
+}
+```
+
+**Notes**:
+- The `rawKey` is only returned in this response and will NEVER be shown again.
+- Clients MUST store this key securely.
+
+---
+
+### List SDK Keys
+
+```text
+GET /api/v1/projects/:projectId/environments/:envId/sdk-keys
+```
+
+**Response** (200 OK):
+```json
+{
+  "sdkKeys": [
+    {
+      "id": "uuid",
+      "name": "string",
+      "type": "'client' | 'server'",
+      "keyHint": "string",
+      "isActive": "boolean",
+      "createdAt": "ISO 8601 timestamp"
+    }
+  ]
+}
+```
+
+---
+
+### Revoke SDK Key (Soft Delete)
+
+```text
+DELETE /api/v1/projects/:projectId/environments/:envId/sdk-keys/:keyId
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+---
+
 ## Feature Flags
 
 ### Create Feature Flag
@@ -441,16 +514,16 @@ POST /api/v1/projects/:projectId/environments/:envId/flags
     {
       "key": "string (1-100 chars, required)",
       "value": "boolean | string | object (required, must match flagType)",
-      "description": "string (optional)"
+      "description": "string (optional)",
+      "isDefault": "boolean (optional, default: false)"
     }
-  ],
-  "defaultVariationKey": "string (required, must match one of the variation keys)"
+  ]
 }
 ```
 
 **Notes**:
-- If `flagType` is `boolean` and `variations` is omitted, system auto-creates `true` and `false` variations.
-- `defaultVariationKey` must reference one of the provided variation keys.
+- If `flagType` is `boolean` and `variations` is omitted, system auto-creates `true` and `false` variations (with `false` as default).
+- Exactly one variation MUST have `isDefault: true`.
 
 **Response** (201 Created):
 ```json
@@ -462,12 +535,12 @@ POST /api/v1/projects/:projectId/environments/:envId/flags
   "flagType": "'boolean' | 'multivariate'",
   "status": "'draft'",
   "isEnabled": false,
-  "defaultVariationId": "uuid",
   "variations": [
     {
       "id": "uuid",
       "key": "string",
-      "value": "boolean | string | object"
+      "value": "boolean | string | object",
+      "isDefault": "boolean"
     }
   ],
   "createdAt": "ISO 8601 timestamp",
@@ -503,7 +576,6 @@ GET /api/v1/projects/:projectId/environments/:envId/flags
       "flagType": "'boolean' | 'multivariate'",
       "status": "'draft' | 'active' | 'archived'",
       "isEnabled": "boolean",
-      "defaultVariationId": "uuid",
       "createdAt": "ISO 8601 timestamp",
       "updatedAt": "ISO 8601 timestamp"
     }
@@ -530,20 +602,20 @@ GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId
   "flagType": "'boolean' | 'multivariate'",
   "status": "'draft' | 'active' | 'archived'",
   "isEnabled": "boolean",
-  "defaultVariationId": "uuid",
   "variations": [
     {
       "id": "uuid",
       "key": "string",
       "value": "boolean | string | object",
-      "description": "string | null"
+      "description": "string | null",
+      "isDefault": "boolean"
     }
   ],
   "targetingRules": [
     {
       "id": "uuid",
       "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-      "priority": "integer",
+      "priority": "string",
       "variationId": "uuid",
       "conditions": "object",
       "isEnabled": "boolean"
@@ -573,7 +645,6 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId
   "description": "string",
   "isEnabled": "boolean",
   "status": "'draft' | 'active' | 'archived'",
-  "defaultVariationId": "uuid",
   "version": "integer (required for optimistic locking)"
 }
 ```
@@ -657,7 +728,7 @@ POST /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
 {
   "id": "uuid",
   "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-  "priority": "integer",
+  "priority": "string",
   "variationId": "uuid",
   "conditions": "object",
   "isEnabled": "boolean",
@@ -686,7 +757,7 @@ GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
     {
       "id": "uuid",
       "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-      "priority": "integer",
+      "priority": "string",
       "variationId": "uuid",
       "conditions": "object",
       "isEnabled": "boolean",
@@ -698,7 +769,7 @@ GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
 }
 ```
 
-**Notes**: Rules are returned sorted by priority (ascending).
+**Notes**: Rules are returned sorted by priority (lexicographical).
 
 ---
 
@@ -713,7 +784,8 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleI
 {
   "variationId": "uuid",
   "conditions": "object",
-  "isEnabled": "boolean"
+  "isEnabled": "boolean",
+  "priority": "string (for re-ordering)"
 }
 ```
 
@@ -722,7 +794,7 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleI
 {
   "id": "uuid",
   "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-  "priority": "integer",
+  "priority": "string",
   "variationId": "uuid",
   "conditions": "object",
   "isEnabled": "boolean",
@@ -780,11 +852,12 @@ GET /api/v1/audit-logs
       "id": "uuid",
       "organizationId": "uuid",
       "projectId": "uuid | null",
-      "actionType": "'create' | 'update' | 'delete' | 'toggle'",
-      "entityType": "'organization' | 'project' | 'environment' | 'feature_flag' | 'targeting_rule' | 'variation'",
+      "actionType": "enum (detailed)",
+      "entityType": "'organization' | 'project' | 'environment' | 'sdk_key' | 'feature_flag' | 'targeting_rule' | 'variation'",
       "entityId": "uuid",
       "actorId": "string",
       "actorType": "'user' | 'system'",
+      "actorEmail": "string",
       "changes": {
         "before": "object | null",
         "after": "object | null"
@@ -812,11 +885,12 @@ GET /api/v1/audit-logs/:logId
   "id": "uuid",
   "organizationId": "uuid",
   "projectId": "uuid | null",
-  "actionType": "'create' | 'update' | 'delete' | 'toggle'",
+  "actionType": "enum (detailed)",
   "entityType": "string",
   "entityId": "uuid",
   "actorId": "string",
   "actorType": "'user' | 'system'",
+  "actorEmail": "string",
   "changes": {
     "before": "object | null",
     "after": "object | null"
@@ -891,20 +965,17 @@ GET /api/v1/flags/:envId
       "name": "string",
       "flagType": "'boolean' | 'multivariate'",
       "isEnabled": "boolean",
-      "defaultVariation": {
-        "key": "string",
-        "value": "boolean | string | object"
-      },
       "variations": [
         {
           "key": "string",
-          "value": "boolean | string | object"
+          "value": "boolean | string | object",
+          "isDefault": "boolean"
         }
       ],
       "rules": [
         {
           "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-          "priority": "integer",
+          "priority": "string",
           "variationKey": "string",
           "conditions": "object",
           "isEnabled": "boolean"

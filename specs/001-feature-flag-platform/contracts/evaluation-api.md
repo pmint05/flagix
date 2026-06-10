@@ -63,7 +63,7 @@ Evaluate a single feature flag for a given user context.
 | `USER_TARGETING` | User-specific targeting rule matched |
 | `ROLE_TARGETING` | Role-based targeting rule matched |
 | `PERCENTAGE_ROLLOUT` | Percentage rollout rule matched via deterministic hash |
-| `DEFAULT` | No rule matched, returned default variation |
+| `DEFAULT` | No rule matched, returned variation marked as default |
 | `FLAG_NOT_FOUND` | Flag key does not exist, returned safe default |
 | `FLAG_ARCHIVED` | Flag is archived, returned safe default |
 | `FLAG_DRAFT` | Flag is in draft state, returned safe default |
@@ -144,10 +144,8 @@ The evaluation engine processes each request through this strict sequence:
 4. If flag status is 'draft' → return OFF with reason FLAG_DRAFT
 5. If flag isEnabled is false → return OFF with reason FLAG_DISABLED
 6. Check KILL SWITCH rules → if matched, return OFF with reason KILL_SWITCH
-7. Evaluate USER rules → if matched, return variation with reason USER_TARGETING
-8. Evaluate ROLE rules → if matched, return variation with reason ROLE_TARGETING
-9. Evaluate PERCENTAGE rules → if matched, return variation with reason PERCENTAGE_ROLLOUT
-10. Return default variation with reason DEFAULT
+7. Evaluate rules in lexicographical priority order → if matched, return variation with reason based on ruleType
+8. Return variation marked as default with reason DEFAULT
 ```
 
 **Anonymous User Handling** (missing userId):
@@ -176,7 +174,7 @@ For any given combination of:
 
 The evaluation result is ALWAYS identical across multiple requests. This is guaranteed by:
 - MurmurHash3 (x86, 32-bit) for percentage rollout bucketing
-- Deterministic rule priority ordering (KILL SWITCH > USER > ROLE > PERCENTAGE > DEFAULT)
+- Deterministic rule priority ordering (Lexicographical ordering of priority field)
 - Deterministic tie-breaking by rule ID order for same-priority rules
 - No randomness or external state dependencies in the evaluation engine
 

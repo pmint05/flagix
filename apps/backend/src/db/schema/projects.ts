@@ -27,6 +27,7 @@ export const projects = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    deletedAt: timestamp('deleted_at'),
   },
   (table) => [
     uniqueIndex('idx_projects_org_slug').on(table.organizationId, table.slug),

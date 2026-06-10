@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { projects } from './projects';
 import { featureFlags } from './feature-flags';
+import { sdkKeys } from './sdk-keys';
 
 export const environments = pgTable(
   'environments',
@@ -21,12 +22,12 @@ export const environments = pgTable(
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 100 }).notNull(),
     description: text('description'),
-    sdkKey: varchar('sdk_key', { length: 255 }).notNull().unique(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    deletedAt: timestamp('deleted_at'),
   },
   (table) => [
     uniqueIndex('idx_environments_project_slug').on(
@@ -34,7 +35,6 @@ export const environments = pgTable(
       table.slug,
     ),
     index('idx_environments_project').on(table.projectId),
-    uniqueIndex('idx_environments_sdk_key').on(table.sdkKey),
   ],
 );
 
@@ -46,5 +46,6 @@ export const environmentRelations = relations(
       references: [projects.id],
     }),
     featureFlags: many(featureFlags),
+    sdkKeys: many(sdkKeys),
   }),
 );

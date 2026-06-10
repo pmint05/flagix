@@ -95,9 +95,10 @@ Root tenant entity. All resources belong to exactly one organization.
 |-------|------|-------------|-------|
 | id | uuid | PK, auto-generated | Primary key |
 | name | varchar(255) | NOT NULL, UNIQUE | Organization display name |
-| slug | varchar(100) | NOT NULL, UNIQUE | URL-safe identifier |
+| slug | varchar(100) | NOT NULL, UNIQUE, CHECK(slug ~ '^[a-z0-9-]+$') | URL-safe identifier |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Relationships**:
 - Has many Projects (1:N)
@@ -121,6 +122,7 @@ Junction table linking Better Auth users to organizations with role assignments.
 | role | enum('admin', 'editor', 'viewer') | NOT NULL, default 'viewer' | User's role within this organization |
 | createdAt | timestamp | NOT NULL, default now() | Membership creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Constraints**:
 - UNIQUE(userId, organizationId) — one membership per user per organization
@@ -146,10 +148,11 @@ Logical grouping of feature flags within an organization.
 | id | uuid | PK, auto-generated | Primary key |
 | organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope |
 | name | varchar(255) | NOT NULL | Project display name |
-| slug | varchar(100) | NOT NULL | URL-safe identifier |
+| slug | varchar(100) | NOT NULL, CHECK(slug ~ '^[a-z0-9-]+$') | URL-safe identifier |
 | description | text | NULLABLE | Optional description |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Constraints**:
 - UNIQUE(organizationId, slug) — slug unique within organization
@@ -175,24 +178,55 @@ Isolation layer within a project (e.g., Development, Staging, Production).
 | id | uuid | PK, auto-generated | Primary key |
 | projectId | uuid | FK → Project.id, NOT NULL | Parent project |
 | name | varchar(100) | NOT NULL | Environment name |
-| slug | varchar(100) | NOT NULL | URL-safe identifier |
+| slug | varchar(100) | NOT NULL, CHECK(slug ~ '^[a-z0-9-]+$') | URL-safe identifier |
 | description | text | NULLABLE | Optional description |
-| sdkKey | varchar(255) | NOT NULL, UNIQUE | Read-only SDK key for this environment |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Constraints**:
 - UNIQUE(projectId, slug) — slug unique within project
-- UNIQUE(sdkKey) — globally unique SDK key
 
 **Relationships**:
 - Belongs to Project (N:1)
 - Has many FeatureFlags (1:N)
+- Has many SdkKeys (1:N)
 
 **Validation Rules**:
 - name: 1-100 characters
 - slug: 1-100 characters, lowercase alphanumeric + hyphens
-- sdkKey: auto-generated on creation, never exposed in management API responses
+
+---
+
+### SdkKey
+
+Secure authentication keys for SDKs. Multiple keys allowed per environment.
+
+| Field | Type | Constraints | Notes |
+|-------|------|-------------|-------|
+| id | uuid | PK, auto-generated | Primary key |
+| organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope (denormalized for performance) |
+| environmentId | uuid | FK → Environment.id, NOT NULL | Parent environment |
+| name | varchar(255) | NOT NULL | Human-readable name (e.g., "Main Web Key") |
+| keyHash | varchar(64) | NOT NULL, UNIQUE | SHA-256 hash of the raw key |
+| keyHint | varchar(8) | NOT NULL | First 6-8 chars of key for identification |
+| type | enum('client', 'server') | NOT NULL, default 'server' | Key classification |
+| isActive | boolean | NOT NULL, default true | Kill switch for specific key |
+| createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
+| updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp (revocation) |
+
+**Constraints**:
+- UNIQUE(keyHash) — prevent collisions
+
+**Relationships**:
+- Belongs to Organization (N:1)
+- Belongs to Environment (N:1)
+
+**Validation Rules**:
+- keyHash: MUST be valid SHA-256 string
+- keyHint: MUST match prefix of the raw key at creation time
+- Raw key returned ONLY once at creation time.
 
 ---
 
@@ -203,6 +237,7 @@ Core entity controlling feature availability. Scoped to a project and environmen
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | id | uuid | PK, auto-generated | Primary key |
+| organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope (denormalized for performance) |
 | environmentId | uuid | FK → Environment.id, NOT NULL | Parent environment |
 | key | varchar(255) | NOT NULL | Unique flag identifier |
 | name | varchar(255) | NOT NULL | Display name |
@@ -210,21 +245,20 @@ Core entity controlling feature availability. Scoped to a project and environmen
 | flagType | enum('boolean', 'multivariate') | NOT NULL, default 'boolean' | Flag mode |
 | status | enum('draft', 'active', 'archived') | NOT NULL, default 'draft' | Lifecycle state |
 | isEnabled | boolean | NOT NULL, default false | Global kill switch |
-| defaultVariationId | uuid | FK → Variation.id, NULLABLE | Default variation (set after creation) |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 | version | integer | NOT NULL, default 1 | Optimistic locking version |
 
 **Constraints**:
 - UNIQUE(environmentId, key) — flag key unique within environment
-- CHECK: defaultVariationId must reference a variation belonging to this flag
 
 **Relationships**:
+- Belongs to Organization (N:1)
 - Belongs to Environment (N:1)
 - Has many Variations (1:N)
 - Has many TargetingRules (1:N)
 - Has many AuditLogs (1:N, via entityId where entityType = 'feature_flag')
-- References defaultVariation → Variation (1:1)
 
 **State Transitions**:
 ```text
@@ -240,7 +274,6 @@ active → archived (user archives flag)
 - name: 1-255 characters
 - flagType: must be 'boolean' or 'multivariate'
 - status: must follow valid state transitions
-- defaultVariationId: must reference a variation of this flag (if set)
 
 ---
 
@@ -251,19 +284,23 @@ Possible output value of a feature flag.
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | id | uuid | PK, auto-generated | Primary key |
+| organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope (denormalized for performance) |
 | featureFlagId | uuid | FK → FeatureFlag.id, NOT NULL | Parent flag |
 | key | varchar(100) | NOT NULL | Variation identifier |
 | value | jsonb | NOT NULL | Resolved output value (boolean, string, or JSON object) |
 | description | text | NULLABLE | Optional description |
+| isDefault | boolean | NOT NULL, default false | Whether this is the fallback variation |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Constraints**:
 - UNIQUE(featureFlagId, key) — variation key unique within flag
+- UNIQUE(featureFlagId, isDefault) WHERE (isDefault = true) — exactly one default variation per flag
 
 **Relationships**:
+- Belongs to Organization (N:1)
 - Belongs to FeatureFlag (N:1)
-- Referenced by FeatureFlag.defaultVariationId (1:1)
 - Referenced by TargetingRule.variationId (1:N)
 
 **Validation Rules**:
@@ -272,6 +309,7 @@ Possible output value of a feature flag.
   - BOOLEAN flag: value must be boolean (true/false)
   - MULTIVARIATE flag: value can be string or JSON object
 - BOOLEAN flags auto-create "true" and "false" variations on creation (FR-018)
+- Exactly one variation MUST have `isDefault: true` per flag.
 
 ---
 
@@ -282,26 +320,24 @@ Defines targeting logic for a feature flag.
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | id | uuid | PK, auto-generated | Primary key |
+| organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope (denormalized for performance) |
 | featureFlagId | uuid | FK → FeatureFlag.id, NOT NULL | Parent flag |
 | ruleType | enum('kill_switch', 'user', 'role', 'percentage') | NOT NULL | Rule type |
-| priority | integer | NOT NULL | Evaluation order (lower = higher priority) |
+| priority | varchar(255) | NOT NULL | Lexicographical order (Fractional Indexing) |
 | variationId | uuid | FK → Variation.id, NOT NULL | Variation to return when matched |
 | conditions | jsonb | NOT NULL | Rule-specific conditions |
 | isEnabled | boolean | NOT NULL, default true | Rule-level toggle |
 | createdAt | timestamp | NOT NULL, default now() | Creation timestamp |
 | updatedAt | timestamp | NOT NULL, default now() | Last update timestamp |
+| deletedAt | timestamp | NULLABLE | Soft-delete timestamp |
 
 **Constraints**:
 - UNIQUE(featureFlagId, priority) — priority unique within flag
 - CHECK: variationId must reference a variation belonging to the same flag
 
-**Priority Mapping** (derived from ruleType):
-| ruleType | Priority Range | Notes |
-|----------|---------------|-------|
-| kill_switch | 0 | Highest priority, only one per flag |
-| user | 100-199 | User-specific targeting |
-| role | 200-299 | Role-based targeting |
-| percentage | 300-399 | Percentage rollout |
+**Priority Mapping**:
+- Priorities are stored as strings to allow infinite insertions between rules (e.g., using a fractional indexing strategy like Base62 or 'a'-'z').
+- Evaluation MUST follow lexicographical (alphabetical) order of the `priority` field.
 
 **Conditions Schema** (by ruleType):
 
@@ -336,6 +372,7 @@ List of roles to match against evaluation context role.
 Integer 0-100 representing the percentage of users to include.
 
 **Relationships**:
+- Belongs to Organization (N:1)
 - Belongs to FeatureFlag (N:1)
 - References Variation (N:1)
 
@@ -357,8 +394,8 @@ Immutable record of all state-mutating operations.
 | id | uuid | PK, auto-generated | Primary key |
 | organizationId | uuid | FK → Organization.id, NOT NULL | Tenant scope |
 | projectId | uuid | FK → Project.id, NULLABLE | Project scope (if applicable) |
-| actionType | enum('create', 'update', 'delete', 'toggle') | NOT NULL | Type of mutation |
-| entityType | enum('organization', 'project', 'environment', 'feature_flag', 'targeting_rule', 'variation') | NOT NULL | Type of entity mutated |
+| actionType | enum (detailed) | NOT NULL | Detailed entity-prefixed action (e.g., FLAG_CREATE) |
+| entityType | enum('organization', 'project', 'environment', 'sdk_key', 'feature_flag', 'targeting_rule', 'variation') | NOT NULL | Type of entity mutated |
 | entityId | uuid | NOT NULL | ID of the mutated entity |
 | actorId | string | FK → user.id (Better Auth), NULLABLE | Authenticated user who performed the action (null for system actions) |
 | actorType | enum('user', 'system') | NOT NULL, default 'user' | Actor classification |
@@ -410,12 +447,18 @@ Immutable record of all state-mutating operations.
 | projects | idx_projects_organization | organizationId | Tenant-scoped queries |
 | environments | idx_environments_project_slug | (projectId, slug) | Unique slug within project |
 | environments | idx_environments_project | projectId | Project-scoped queries |
-| environments | idx_environments_sdk_key | sdkKey | SDK key lookup (unique) |
+| sdk_keys | idx_sdk_keys_org | organizationId | Tenant-scoped keys |
+| sdk_keys | idx_sdk_keys_env | environmentId | Environment-scoped keys |
+| sdk_keys | idx_sdk_keys_hash | keyHash | Unique hash lookup |
+| feature_flags | idx_flags_org_env | (organizationId, environmentId) | Tenant + Env-scoped queries |
 | feature_flags | idx_flags_env_key | (environmentId, key) | Unique key within environment |
 | feature_flags | idx_flags_environment | environmentId | Environment-scoped queries |
 | feature_flags | idx_flags_status | status | Lifecycle state filtering |
+| variations | idx_variations_org | organizationId | Tenant-scoped variations |
 | variations | idx_variations_flag_key | (featureFlagId, key) | Unique key within flag |
+| variations | idx_variations_default | (featureFlagId, isDefault) | Partial unique index for default variation |
 | variations | idx_variations_flag | featureFlagId | Flag-scoped queries |
+| targeting_rules | idx_rules_org | organizationId | Tenant-scoped rules |
 | targeting_rules | idx_rules_flag_priority | (featureFlagId, priority) | Unique priority within flag |
 | targeting_rules | idx_rules_flag | featureFlagId | Flag-scoped queries |
 | audit_logs | idx_audit_org_timestamp | (organizationId, timestamp) | Org-scoped time queries |
@@ -442,12 +485,19 @@ Immutable record of all state-mutating operations.
 
 ### ActionType
 ```text
-'create' | 'update' | 'delete' | 'toggle'
+Organization: ORG_CREATE, ORG_UPDATE, ORG_DELETE
+Project: PROJ_CREATE, PROJ_UPDATE, PROJ_DELETE
+Environment: ENV_CREATE, ENV_UPDATE, ENV_DELETE, ENV_KEY_ROTATE
+Feature Flag: FLAG_CREATE, FLAG_UPDATE, FLAG_DELETE, FLAG_ACTIVATE, FLAG_ARCHIVE, FLAG_TOGGLE
+Targeting Rule: RULE_CREATE, RULE_UPDATE, RULE_DELETE, RULE_REORDER, RULE_TOGGLE
+Variation: VARIATION_CREATE, VARIATION_UPDATE, VARIATION_DELETE
+SDK Key: SDK_KEY_CREATE, SDK_KEY_REVOKE, SDK_KEY_ROTATE
+Membership: MBR_INVITE, MBR_REMOVE, MBR_ROLE_CHANGE
 ```
 
 ### EntityType
 ```text
-'organization' | 'project' | 'environment' | 'feature_flag' | 'targeting_rule' | 'variation'
+'organization' | 'project' | 'environment' | 'sdk_key' | 'feature_flag' | 'targeting_rule' | 'variation'
 ```
 
 ### ActorType

@@ -4,7 +4,9 @@
 
 **Created**: 2026-06-07
 
-**Status**: Draft
+**Status**: Refined
+
+**Refined**: 2026-06-10 — Addressed schema design issues: (1) Detailed, entity-prefixed audit action types for better traceability; (2) Resolved circular dependency by moving `isDefault` to `Variation` and adding unique partial index; (3) Added denormalized `organizationId` to core entities for multi-tenant query performance.
 
 **Input**: User description: "Core domain specification for Feature Flag SaaS platform defining multi-tenant structure, feature flag lifecycle, variation system, rule-based evaluation engine, A/B testing model, RBAC behavior, SDK responsibilities, and evaluation contracts."
 
@@ -56,10 +58,11 @@ As a product manager, I need to define multiple variations for a feature flag so
 **Acceptance Scenarios**:
 
 1. **Given** a user creates a feature flag, **When** they define variations with unique keys (e.g., "control", "variant-a"), **Then** each variation represents a distinct output value (boolean, string, or JSON object).
-2. **Given** a flag has multiple variations, **When** the user designates one as the default variation, **Then** that variation is returned when no targeting rule matches.
-3. **Given** a flag has variations of type string, **When** targeting rules assign different variations to different users, **Then** each user receives the string value associated with their matched variation.
-4. **Given** a flag has variations of type JSON object, **When** the system evaluates the flag, **Then** the complete JSON payload is returned as the resolved value.
-5. **Given** a flag is created without explicitly defining variations, **When** it's a BOOLEAN flag, **Then** the system automatically provides "true" and "false" variations.
+2. **Given** a flag has multiple variations, **When** the user designates one as the default variation (by setting `isDefault: true`), **Then** that variation is returned when no targeting rule matches.
+3. **Given** a flag has multiple variations, **When** a user attempts to set more than one variation as default, **Then** the system MUST enforce that only one default variation exists per flag.
+4. **Given** a flag has variations of type string, **When** targeting rules assign different variations to different users, **Then** each user receives the string value associated with their matched variation.
+5. **Given** a flag has variations of type JSON object, **When** the system evaluates the flag, **Then** the complete JSON payload is returned as the resolved value.
+6. **Given** a flag is created without explicitly defining variations, **When** it's a BOOLEAN flag, **Then** the system automatically provides "true" and "false" variations (one of which MUST be marked as default).
 
 ---
 
@@ -80,6 +83,7 @@ As a product manager, I need to configure targeting rules based on user ID, role
 5. **Given** a flag has no matching rules for a user, **When** the system evaluates the flag, **Then** the DEFAULT variation is returned.
 6. **Given** a PERCENTAGE rule exists, **When** the same user is evaluated multiple times, **Then** the same variation is returned every time (deterministic bucket assignment).
 7. **Given** a KILL SWITCH is activated for a flag or environment, **When** any evaluation request is made, **Then** the system immediately returns safe OFF variation without evaluating other rules.
+8. **Given** a list of targeting rules, **When** a user inserts a new rule between two existing ones, **Then** the system MUST use lexicographical ordering (fractional indexing) to determine priority without re-indexing all existing rules.
 
 ---
 
@@ -240,6 +244,7 @@ As an organization administrator, I need to manage which users belong to my orga
 - **FR-004**: Projects MUST be logical groupings of feature flags within an organization.
 - **FR-005**: Environments MUST provide isolation layers within a project (e.g., Development, Staging, Production).
 - **FR-006**: Each environment MUST maintain independent flag states and configurations.
+- **FR-006a**: All primary entities (Organization, Project, Environment, FeatureFlag, TargetingRule, Variation, SdkKey) MUST support soft-deletion via a `deletedAt` timestamp.
 
 #### Feature Flag Lifecycle
 
@@ -249,21 +254,26 @@ As an organization administrator, I need to manage which users belong to my orga
 - **FR-010**: Archived flags MUST always return safe default OFF behavior without evaluating rules.
 - **FR-011**: Flags MUST transition between states in the order: Draft → Active → Archived (no backward transitions).
 - **FR-012**: Each feature flag MUST have a unique key within its environment scope.
+- **FR-012a**: SDK Keys MUST be managed as separate entities (`SdkKey`) with a many-to-one relationship to an Environment.
+- **FR-012b**: System MUST store only the SHA-256 hash of the SDK Key and a 6-8 character prefix (hint) for identification; raw keys MUST NEVER be stored.
+- **FR-012c**: SDK Keys MUST be returned to the user ONLY ONCE upon creation.
+- **FR-012d**: System MUST support multiple active SDK Keys per environment (e.g., for rotation or different key types like 'client' and 'server').
 
 #### Variation Model
 
 - **FR-013**: Feature flags MAY have multiple variations representing possible output values.
 - **FR-014**: Each variation MUST have a unique key within the flag.
 - **FR-015**: Variations MUST support three value types: boolean, string, and JSON object.
-- **FR-016**: Every flag MUST explicitly define a default variation.
-- **FR-017**: If no targeting rule matches, the default variation MUST be returned.
-- **FR-018**: BOOLEAN flags MUST automatically provide "true" and "false" variations if not explicitly defined.
+- **FR-016**: Every flag MUST have exactly ONE variation marked as default (`isDefault: true`).
+- **FR-017**: If no targeting rule matches, the variation marked as default MUST be returned.
+- **FR-018**: BOOLEAN flags MUST automatically provide "true" and "false" variations if not explicitly defined (one of which MUST be marked as default).
 - **FR-019**: MULTIVARIATE flags MUST allow custom variations with string or JSON object values.
 
 #### Rule System
 
 - **FR-020**: System MUST support five rule types: KILL SWITCH (global override), USER targeting, ROLE targeting, PERCENTAGE rollout, and DEFAULT fallback.
-- **FR-021**: Rules MUST be evaluated in strict priority order: KILL SWITCH (highest) → USER → ROLE → PERCENTAGE → DEFAULT (lowest).
+- **FR-021**: Rules MUST be evaluated in strict priority order determined by a lexicographical (string-based) priority field (Fractional Indexing).
+- **FR-021a**: Lexicographical priority MUST allow infinite insertions between existing rules without requiring re-indexing of other rules.
 - **FR-022**: Only ONE rule can win per evaluation; if multiple rules match, the highest priority rule wins.
 - **FR-023**: If multiple rules of the same type and priority exist, the system MUST use deterministic tie-breaking (rule ID order).
 - **FR-023a**: KILL SWITCH rules MUST immediately return safe OFF variation when triggered, short-circuiting all subsequent rules.
@@ -321,9 +331,13 @@ As an organization administrator, I need to manage which users belong to my orga
 
 #### Audit Logging
 
-- **FR-061**: System MUST maintain immutable audit logs for all state-mutating operations (flag creation, updates, deletions, rule changes, toggle actions).
+- **FR-061**: System MUST maintain immutable audit logs for all state-mutating operations using detailed, entity-specific action types:
+  - **General**: ORG_CREATE/UPDATE/DELETE, PROJ_CREATE/UPDATE/DELETE, ENV_CREATE/UPDATE/DELETE.
+  - **Security**: SDK_KEY_CREATE, SDK_KEY_REVOKE.
+  - **Member**: MBR_INVITE, MBR_ROLE_CHANGE, MBR_REMOVE.
+  - **Flag**: FLAG_CREATE, FLAG_UPDATE, FLAG_TOGGLE_ON, FLAG_TOGGLE_OFF, FLAG_ACTIVATE, FLAG_ARCHIVE, FLAG_SOFT_DELETE, FLAG_RESTORE, FLAG_VAR_UPDATE, FLAG_RULE_UPDATE.
 - **FR-062**: Audit log entries MUST include: timestamp, authenticated user (actor), action type, affected entity, entity ID, and before/after state.
-- **FR-062a**: The actor field in audit log entries MUST reference the authenticated User who performed the action, including the user's identity (user ID and email) at the time of the action.
+- **FR-062a**: The actor field in audit log entries MUST reference the authenticated User who performed the action, including the user's identity (user ID and email) at the time of the action (snapshot for historical accuracy).
 - **FR-062b**: System-initiated actions (e.g., automated archival) MUST be recorded with a system actor type, distinct from user-initiated actions.
 - **FR-063**: Audit logs MUST be retained in active storage for 90 days from creation date.
 - **FR-064**: Audit logs older than 90 days MUST be archived to cold storage for long-term retention.
@@ -347,13 +361,15 @@ As an organization administrator, I need to manage which users belong to my orga
 
 - **Project**: Logical grouping of feature flags within an organization. Represents a product, application, or service. Contains multiple environments for different deployment stages.
 
-- **Environment**: Isolation layer within a project representing a deployment stage (Development, Staging, Production). Each environment maintains independent flag states and configurations. Feature flags are scoped to specific environments.
+- **Environment**: Isolation layer within a project representing a deployment stage (Development, Staging, Production). Each environment maintains independent flag states and configurations. Feature flags are scoped to specific environments. Environments support multiple `SdkKeys`.
 
-- **Feature Flag**: Core entity controlling feature availability. Has a unique key per environment. Supports two modes: BOOLEAN (on/off) and MULTIVARIATE (multiple variations). Includes lifecycle state (Draft, Active, Archived) and a default variation.
+- **SdkKey**: Represents a secure key used by SDKs to authenticate evaluation requests. Each key has a name, a type (client/server), and is stored as a SHA-256 hash. The system provides a 6-8 character prefix (hint) for identification. Raw keys are never stored and are only displayed once upon creation.
 
-- **Variation**: Represents a possible output value of a feature flag. Has a unique key within the flag. Can be boolean, string, or JSON object. Used for A/B testing and dynamic configuration. Every flag must have a default variation.
+- **Feature Flag**: Core entity controlling feature availability. Has a unique key per environment. Supports two modes: BOOLEAN (on/off) and MULTIVARIATE (multiple variations). Includes lifecycle state (Draft, Active, Archived). Exactly one of its variations MUST be marked as default.
 
-- **Rule**: Defines targeting logic for feature flags. Determines which variation is returned for a given evaluation context. Evaluated in strict priority order (KILL SWITCH > USER > ROLE > PERCENTAGE > DEFAULT). Only one rule can win per evaluation. Kill Switch rules provide global override capability.
+- **Variation**: Represents a possible output value of a feature flag. Has a unique key within the flag. Can be boolean, string, or JSON object. Used for A/B testing and dynamic configuration. Exactly one variation per flag MUST be marked as default (`isDefault: true`).
+
+- **Rule**: Defines targeting logic for feature flags. Determines which variation is returned for a given evaluation context. Evaluated in strict priority order determined by lexicographical ordering. Only one rule can win per evaluation. Kill Switch rules provide global override capability.
 
 - **Evaluation Context**: Input provided during flag evaluation. Includes userId (optional for anonymous), role (optional), and extensible attributes. Used by rules to determine which variation to return.
 

@@ -2,11 +2,19 @@
 
 **Branch**: `001-feature-flag-platform` | **Date**: 2026-06-07 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/001-feature-flag-platform/spec.md`
+**Propagated**: 2026-06-10 — Refined schema for performance and integrity: (1) Added denormalized `organizationId` to core entities; (2) Moved `isDefault` to `Variation` to fix circular dependency; (3) Detailed audit action types.
 
 ## Summary
 
-Build the core domain model and evaluation engine for a multi-tenant Feature Flag SaaS platform. The system enables organizations to create and manage feature flags with lifecycle states (Draft → Active → Archived), configure targeting rules (Kill Switch, User, Role, Percentage Rollout), and evaluate flags deterministically via SDK or API. Authentication is handled by Better Auth integrated into the NestJS backend, providing email/password auth, session management, and route protection via guards. The backend owns all evaluation logic; SDKs only send context, receive results, and cache locally with hybrid TTL + real-time updates.
+Build the core domain model and evaluation engine for a multi-tenant Feature Flag SaaS platform. The system enables organizations to create and manage feature flags with lifecycle states (Draft → Active → Archived), configure targeting rules (Kill Switch, User, Role, Percentage Rollout), and evaluate flags deterministically via SDK or API. 
+
+**Security & Integrity Refactor**: 
+1. **Multi-tenant Identity**: Authentication handled by Better Auth integrated into the NestJS backend, providing email/password auth, session management, and route protection via guards. 
+2. **SDK Key Security**: Raw SDK keys are never stored; only SHA-256 hashes and short prefixes are persisted. Keys are shown only once upon creation.
+3. **Data Integrity**: All primary entities support soft-deletion via `deletedAt` for auditability and recovery.
+4. **Flexible Priority**: Targeting rules use lexicographical ordering (fractional indexing) for infinite insertions without re-indexing.
+
+The backend owns all evaluation logic; SDKs only send context, receive results, and cache locally with hybrid TTL + real-time updates.
 
 ## Technical Context
 
@@ -16,7 +24,8 @@ Build the core domain model and evaluation engine for a multi-tenant Feature Fla
 - Backend: NestJS 11.x, Drizzle ORM 0.45.x, pg (node-postgres)
 - Authentication: Better Auth (better-auth) with `@thallesp/nestjs-better-auth` adapter
 - Validation: class-validator 0.15.x, Zod (shared schemas in packages/shared)
-- Hashing: imurmurhash (MurmurHash3 x86 32-bit for percentage rollout)
+- Hashing: imurmurhash (MurmurHash3 x86 32-bit for percentage rollout), SHA-256 (for SDK keys)
+- Logic Helpers: `lexicographical-order` (or custom fractional indexing util)
 - Database: PostgreSQL 15+ (via Docker)
 - Testing: Jest 30.x, Supertest 7.x
 
@@ -36,6 +45,8 @@ Build the core domain model and evaluation engine for a multi-tenant Feature Fla
 - Deterministic evaluation (no randomness)
 - 100% fail-safe behavior (never crash clients)
 - Multi-tenant isolation at all layers
+- **No raw SDK keys in database** (FR-012b)
+- **Immutable audit logs** (FR-066)
 
 **Scale/Scope**: 
 - Phase 1: Single-region deployment
@@ -78,6 +89,7 @@ Build the core domain model and evaluation engine for a multi-tenant Feature Fla
 
 ### Principle V: Rule Priority System
 - ✅ Spec defines strict priority: KILL SWITCH > USER > ROLE > PERCENTAGE > DEFAULT (FR-021)
+- ✅ Lexicographical ordering (fractional indexing) used for flexible priority assignment (FR-021, FR-021a)
 - ✅ Kill Switch short-circuits all rules (FR-023a)
 - ✅ Only one rule wins per evaluation (FR-022)
 
@@ -100,15 +112,15 @@ Build the core domain model and evaluation engine for a multi-tenant Feature Fla
 
 ### Principle VIII: Variation Model
 - ✅ Flags support boolean, string, JSON object variations (FR-015)
-- ✅ Every flag has explicit default variation (FR-016)
+- ✅ Every flag has exactly one variation marked as default (stored as `isDefault: true` on the `Variation` entity) (FR-016)
 - ✅ Variation types enforced at creation (FR-018, FR-019)
 
 **Status**: PASS
 
 ### Principle IX: Multi-Tenant Isolation & Security
-- ✅ All entities scoped by organization_id (FR-001, FR-002)
+- ✅ All entities scoped by organization_id (FR-001, FR-002), including denormalized IDs on core entities for query performance.
 - ✅ Cross-tenant access prevented (FR-003)
-- ✅ SDK keys are read-only, environment-scoped (assumption)
+- ✅ SDK keys are managed as separate `SdkKey` entities with SHA-256 hashing (FR-012a to FR-012d)
 - ✅ User authentication via Better Auth with cookie-based sessions (FR-067 to FR-078)
 - ✅ Management API routes protected by AuthGuard (session validation)
 - ✅ User-organization membership enforces tenant boundaries (FR-079 to FR-088)
@@ -116,9 +128,10 @@ Build the core domain model and evaluation engine for a multi-tenant Feature Fla
 **Status**: PASS
 
 ### Principle X: Auditability
-- ✅ All mutations recorded in immutable audit log (FR-061, FR-066)
+- ✅ All mutations recorded in immutable audit log using entity-prefixed action types (FR-061, FR-066)
 - ✅ Audit entries include: timestamp, actor, action, entity, before/after state (FR-062)
 - ✅ 90 days active retention + cold storage archival (FR-063, FR-064, FR-065)
+- ✅ Soft-deletion for all primary entities (FR-006a)
 
 **Status**: PASS
 
@@ -154,8 +167,9 @@ apps/
 │   │   │   ├── organizations/
 │   │   │   ├── projects/
 │   │   │   ├── environments/
+│   │   │   ├── sdk-keys/            # SDK Key management (Hashing logic)
 │   │   │   ├── feature-flags/
-│   │   │   ├── targeting-rules/
+│   │   │   ├── targeting-rules/     # Rule logic (Fractional Indexing)
 │   │   │   ├── evaluation/
 │   │   │   └── audit-logs/
 │   │   ├── db/
@@ -166,6 +180,7 @@ apps/
 │   │   │   │   ├── organization-members.ts
 │   │   │   │   ├── projects.ts
 │   │   │   │   ├── environments.ts
+│   │   │   │   ├── sdk-keys.ts      # New: Separate SDK keys table
 │   │   │   │   ├── feature-flags.ts
 │   │   │   │   ├── variations.ts
 │   │   │   │   ├── targeting-rules.ts
@@ -177,7 +192,8 @@ apps/
 │   │   │   ├── guards/            # RBAC guards (AuthGuard provided by @thallesp/nestjs-better-auth)
 │   │   │   ├── decorators/        # Custom decorators (@Session, @AllowAnonymous, @OrgRoles)
 │   │   │   ├── filters/           # Exception filters
-│   │   │   └── interceptors/      # Audit logging interceptor
+│   │   │   ├── interceptors/      # Audit logging + Soft-delete filtering
+│   │   │   └── utils/             # Fractional Indexing + Hashing utils
 │   │   └── main.ts
 │   └── test/
 │       ├── contract/              # API contract tests
@@ -205,4 +221,6 @@ infra/
 
 ## Complexity Tracking
 
-> **No constitution violations requiring justification.**
+- **Fractional Indexing**: Implementation of string-based priority requires careful handling of edge cases (start/end of list) and character set selection.
+- **SDK Key Hashing**: Ensuring raw keys are only displayed once and correctly hashed before storage while maintaining lookup efficiency (using prefixes).
+- **Soft Delete**: Universal application of `deletedAt` filtering across all repositories/queries to prevent data leaks.

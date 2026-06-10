@@ -2,6 +2,7 @@ export * from './organizations';
 export * from './organization-members';
 export * from './projects';
 export * from './environments';
+export * from './sdk-keys';
 export * from './feature-flags';
 export * from './variations';
 export * from './targeting-rules';

@@ -28,6 +28,7 @@ export const organizationMembers = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    deletedAt: timestamp('deleted_at'),
   },
   (table) => [
     uniqueIndex('idx_members_user_org').on(table.userId, table.organizationId),

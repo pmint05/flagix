@@ -4,6 +4,8 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 # Tasks: Feature Flag Platform — Backend & Shared Types Only
 
+**Propagated**: 2026-06-10 — Updated from spec.md refinement for security and integrity refactor (Soft-delete, SDK Key hashing, Fractional Indexing)
+
 **Input**: Design documents from `/specs/001-feature-flag-platform/`
 
 **Prerequisites**: plan.md (required), spec.md (required), data-model.md, contracts/management-api.md, contracts/evaluation-api.md, research.md
@@ -56,18 +58,19 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 **Purpose**: Define all platform-specific Drizzle tables with proper foreign keys to Better Auth `user.id`, and wire up the global authentication guard so that protected routes reject unauthenticated requests.
 
-**Independent Test**: `pnpm --filter backend db:push` creates all 8 platform tables; `POST /api/v1/projects` (or any protected route stub) returns 401 without a session cookie and 200 with a valid session cookie.
+**Independent Test**: `pnpm --filter backend db:push` creates all 9 platform tables; `POST /api/v1/projects` (or any protected route stub) returns 401 without a session cookie and 200 with a valid session cookie.
 
 ### Phase 2.1: Platform Drizzle Schema
 
-- [X] T013 [P] Define `organizations` table in `apps/backend/src/db/schema/organizations.ts` with columns: `id uuid PK defaultRandom()`, `name varchar(255) NOT NULL`, `slug varchar(100) NOT NULL UNIQUE`, `createdAt timestamp defaultNow()`, `updatedAt timestamp defaultNow()`; export as `organizations`
-- [X] T014 [P] Define `organizationMembers` table with FK `userId: text NOT NULL REFERENCES authUser.id ON DELETE CASCADE`, `organizationId: uuid NOT NULL REFERENCES organizations.id ON DELETE CASCADE`, `role: text NOT NULL DEFAULT 'viewer'` constrained to enum, UNIQUE(userId, organizationId); export as `organizationMembers`
-- [X] T015 [P] Define `projects` table with `organizationId uuid NOT NULL REFERENCES organizations.id ON DELETE CASCADE`, `name varchar(255) NOT NULL`, `slug varchar(100) NOT NULL`, `description text`, UNIQUE(organizationId, slug); export as `projects`
-- [X] T016 [P] Define `environments` table with `projectId uuid NOT NULL REFERENCES projects.id ON DELETE CASCADE`, `name varchar(100) NOT NULL`, `slug varchar(100) NOT NULL`, `description text`, `sdkKey varchar(255) NOT NULL UNIQUE`, UNIQUE(projectId, slug); export as `environments`
-- [X] T017 [P] Define `featureFlags` table with `environmentId uuid NOT NULL REFERENCES environments.id ON DELETE CASCADE`, `key varchar(255) NOT NULL`, `name varchar(255) NOT NULL`, `description text`, `flagType text NOT NULL DEFAULT 'boolean'`, `status text NOT NULL DEFAULT 'draft'`, `isEnabled boolean NOT NULL DEFAULT false`, `defaultVariationId uuid`, `version integer NOT NULL DEFAULT 1`, UNIQUE(environmentId, key); export as `featureFlags`
-- [X] T018 [P] Define `variations` table with `featureFlagId uuid NOT NULL REFERENCES featureFlags.id ON DELETE CASCADE`, `key varchar(100) NOT NULL`, `value jsonb NOT NULL`, `description text`, UNIQUE(featureFlagId, key); export as `variations`
-- [X] T019 [P] Define `targetingRules` table with `featureFlagId uuid NOT NULL REFERENCES featureFlags.id ON DELETE CASCADE`, `ruleType text NOT NULL`, `priority integer NOT NULL`, `variationId uuid NOT NULL REFERENCES variations.id`, `conditions jsonb NOT NULL`, `isEnabled boolean NOT NULL DEFAULT true`, UNIQUE(featureFlagId, priority); export as `targetingRules`
-- [X] T020 [P] Define `auditLogs` table with `organizationId uuid NOT NULL REFERENCES organizations.id`, `projectId uuid REFERENCES projects.id`, `actionType text NOT NULL`, `entityType text NOT NULL`, `entityId uuid NOT NULL`, `actorId text REFERENCES authUser.id` (nullable for system actions), `actorType text NOT NULL DEFAULT 'user'`, `actorEmail varchar(255)`, `changes jsonb NOT NULL`, `timestamp timestamp NOT NULL DEFAULT now()`; add composite indexes on (organizationId, timestamp) and (entityType, entityId) and (actorId); export as `auditLogs`
+- [X] T013 [P] Define `organizations` table in `apps/backend/src/db/schema/organizations.ts` with columns: `id uuid PK defaultRandom()`, `name varchar(255) NOT NULL`, `slug varchar(100) NOT NULL UNIQUE`, `createdAt timestamp defaultNow()`, `updatedAt timestamp defaultNow()`, `deletedAt timestamp`; export as `organizations`
+- [X] T014 [P] Define `organizationMembers` table with FK `userId: text NOT NULL REFERENCES authUser.id ON DELETE CASCADE`, `organizationId: uuid NOT NULL REFERENCES organizations.id ON DELETE CASCADE`, `role: text NOT NULL DEFAULT 'viewer'` constrained to enum, UNIQUE(userId, organizationId), `deletedAt timestamp`; export as `organizationMembers`
+- [X] T015 [P] Define `projects` table with `organizationId uuid NOT NULL REFERENCES organizations.id ON DELETE CASCADE`, `name varchar(255) NOT NULL`, `slug varchar(100) NOT NULL`, `description text`, UNIQUE(organizationId, slug), `deletedAt timestamp`; export as `projects`
+- [X] T016 [P] Define `environments` table with `projectId uuid NOT NULL REFERENCES projects.id ON DELETE CASCADE`, `name varchar(100) NOT NULL`, `slug varchar(100) NOT NULL`, `description text`, UNIQUE(projectId, slug), `deletedAt timestamp`; export as `environments`
+- [X] T111 [P] Define `sdkKeys` table with `id uuid PK defaultRandom()`, `organizationId uuid NOT NULL REFERENCES organizations.id`, `environmentId uuid NOT NULL REFERENCES environments.id`, `name varchar(255) NOT NULL`, `keyHash varchar(255) NOT NULL`, `keyHint varchar(8) NOT NULL`, `type text NOT NULL DEFAULT 'client'`, `createdAt timestamp defaultNow()`, `deletedAt timestamp`; add index on `organizationId`; export as `sdkKeys`
+- [X] T017 [P] Define `featureFlags` table with `organizationId uuid NOT NULL REFERENCES organizations.id`, `environmentId uuid NOT NULL REFERENCES environments.id ON DELETE CASCADE`, `key varchar(255) NOT NULL`, `name varchar(255) NOT NULL`, `description text`, `flagType text NOT NULL DEFAULT 'boolean'`, `status text NOT NULL DEFAULT 'draft'`, `isEnabled boolean NOT NULL DEFAULT false`, `version integer NOT NULL DEFAULT 1`, UNIQUE(environmentId, key), `deletedAt timestamp`; add composite index on (organizationId, environmentId); export as `featureFlags`
+- [X] T018 [P] Define `variations` table with `organizationId uuid NOT NULL REFERENCES organizations.id`, `featureFlagId uuid NOT NULL REFERENCES featureFlags.id ON DELETE CASCADE`, `key varchar(100) NOT NULL`, `value jsonb NOT NULL`, `description text`, `isDefault boolean NOT NULL DEFAULT false`, UNIQUE(featureFlagId, key), `deletedAt timestamp`; add partial unique index on (featureFlagId, isDefault) where isDefault = true; add index on `organizationId`; export as `variations`
+- [X] T019 [P] Define `targetingRules` table with `organizationId uuid NOT NULL REFERENCES organizations.id`, `featureFlagId uuid NOT NULL REFERENCES featureFlags.id ON DELETE CASCADE`, `ruleType text NOT NULL`, `priority varchar(255) NOT NULL`, `variationId uuid NOT NULL REFERENCES variations.id`, `conditions jsonb NOT NULL`, `isEnabled boolean NOT NULL DEFAULT true`, UNIQUE(featureFlagId, priority), `deletedAt timestamp`; add index on `organizationId`; export as `targetingRules`
+- [X] T020 [P] Define `auditLogs` table with `organizationId uuid NOT NULL REFERENCES organizations.id`, `projectId uuid REFERENCES projects.id`, `actionType text NOT NULL`, `entityType text NOT NULL`, `entityId uuid NOT NULL`, `actorId text REFERENCES authUser.id` (nullable for system actions), `actorType text NOT NULL DEFAULT 'user'`, `actorEmail varchar(255)`, `changes jsonb NOT NULL`, `timestamp timestamp NOT NULL DEFAULT now()`; add composite indexes on (organizationId, timestamp) and (entityType, entityId) and (actorId); export as `auditLogs` (ActionType uses detailed entity-prefixed enums)
 - [X] T021 Create `apps/backend/src/db/schema/index.ts` barrel re-export combining all per-entity schema files and re-exporting `auth-schema.ts` tables (`authUser`, `authSession`, `authAccount`, `authVerification`) for FK reference; ensure `drizzle()` is initialized with the full schema object
 
 ### Phase 2.2: Authentication & RBAC Guards
@@ -78,7 +81,7 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 - [X] T025 Create `apps/backend/src/common/decorators/org-roles.decorator.ts` exporting `@OrgRoles('admin' | 'editor' | 'viewer', { orgIdParam?: string })` (re-export + extension of the adapter's decorator to support custom orgId resolution)
 - [X] T026 Wire global `AuthGuard` (from `@thallesp/nestjs-better-auth`) in `apps/backend/src/app.module.ts` via `APP_GUARD` provider so all routes are protected by default; evaluation routes will be exempted with `@AllowAnonymous()` in Phase 4
 - [X] T027 Create stub controllers `apps/backend/src/modules/organizations/organizations.controller.ts` and `apps/backend/src/modules/projects/projects.controller.ts` with a single `GET /api/v1/projects` endpoint decorated with `@UseGuards(OrgMemberGuard)` to validate the guard wiring end-to-end (will be filled in Phase 3)
-- [X] T028 Run `pnpm --filter backend drizzle-kit generate` to create the initial migration file `apps/backend/src/db/migrations/0000_init.sql`; run `pnpm --filter backend drizzle-kit migrate` to apply; verify with `psql` that all 12 tables (4 auth + 8 platform) exist
+- [X] T028 Run `pnpm --filter backend drizzle-kit generate` to create the initial migration file `apps/backend/src/db/migrations/0000_init.sql`; run `pnpm --filter backend drizzle-kit migrate` to apply; verify with `psql` that all 13 tables (4 auth + 9 platform) exist
 - [X] T029 Add npm script `db:push` (uses `drizzle-kit push`) and `db:migrate` (uses `drizzle-kit migrate`) to `apps/backend/package.json`; document in a comment in `drizzle.config.ts`
 
 **Checkpoint**: Phase 2 complete — all platform tables exist with proper FKs to Better Auth `user.id`; AuthGuard + OrgRolesGuard reject unauthorized requests.
@@ -93,17 +96,17 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ### Phase 3.1: Shared Zod Schemas (packages/shared)
 
-- [ ] T030 [P] Create `packages/shared/src/schemas/enums.ts` with Zod enums: `flagTypeEnum = z.enum(['boolean', 'multivariate'])`, `flagStatusEnum = z.enum(['draft', 'active', 'archived'])`, `ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage'])`, `memberRoleEnum = z.enum(['admin', 'editor', 'viewer'])`, `actionTypeEnum = z.enum(['create', 'update', 'delete', 'toggle'])`, `entityTypeEnum = z.enum(['organization', 'project', 'environment', 'feature_flag', 'targeting_rule', 'variation'])`, `actorTypeEnum = z.enum(['user', 'system'])`
+- [ ] T030 [P] Create `packages/shared/src/schemas/enums.ts` with Zod enums: `flagTypeEnum = z.enum(['boolean', 'multivariate'])`, `flagStatusEnum = z.enum(['draft', 'active', 'archived'])`, `ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage'])`, `memberRoleEnum = z.enum(['admin', 'editor', 'viewer'])`, `actionTypeEnum = z.enum(['create', 'update', 'delete', 'toggle'])`, `entityTypeEnum = z.enum(['organization', 'project', 'environment', 'feature_flag', 'targeting_rule', 'variation', 'sdk_key'])`, `actorTypeEnum = z.enum(['user', 'system'])`
 - [ ] T031 [P] Create `packages/shared/src/schemas/evaluation-context.ts` with `evaluationContextSchema = z.object({ userId: z.string().optional(), role: z.string().optional(), attributes: z.record(z.union([z.string(), z.number(), z.boolean()])).optional() })` and export the inferred `EvaluationContext` type
 - [ ] T032 [P] Create `packages/shared/src/schemas/rule-conditions.ts` with a discriminated union: `killSwitchConditionsSchema = z.object({})`, `userConditionsSchema = z.object({ userIds: z.array(z.string().min(1)).min(1) })`, `roleConditionsSchema = z.object({ roles: z.array(z.string().min(1)).min(1) })`, `percentageConditionsSchema = z.object({ percentage: z.number().int().min(0).max(100) })`; combine into `ruleConditionsSchema` (discriminated by ruleType)
 - [ ] T033 [P] Create `packages/shared/src/schemas/variation.ts` with `variationValueSchema = z.union([z.boolean(), z.string(), z.record(z.unknown())])` and `variationInputSchema = z.object({ key: z.string().min(1).max(100), value: variationValueSchema, description: z.string().optional() })`
 - [ ] T034 [P] Create `packages/shared/src/schemas/feature-flag.ts` with `createFeatureFlagSchema = z.object({ key: z.string().regex(/^[a-zA-Z0-9_-]+$/).min(1).max(255), name: z.string().min(1).max(255), description: z.string().optional(), flagType: flagTypeEnum, variations: z.array(variationInputSchema).optional(), defaultVariationKey: z.string().min(1) })`; `updateFeatureFlagSchema = createFeatureFlagSchema.partial().extend({ version: z.number().int().positive() })`
 - [ ] T035 [P] Create `packages/shared/src/schemas/targeting-rule.ts` with `createTargetingRuleSchema = z.discriminatedUnion('ruleType', [...])` combining the four condition schemas; add `isEnabled: z.boolean().optional()` field
-- [ ] T036 [P] Create `packages/shared/src/schemas/organization.ts`, `project.ts`, `environment.ts` with corresponding create/update Zod schemas (name length 1-255, slug pattern `^[a-z0-9-]+$`, etc.) and exported types
+- [ ] T036 [P] Create `packages/shared/src/schemas/organization.ts`, `project.ts`, `environment.ts`, `sdk-key.ts` with corresponding create/update Zod schemas (name length 1-255, slug pattern `^[a-z0-9-]+$`, etc.) and exported types
 - [ ] T037 [P] Create `packages/shared/src/schemas/evaluation-result.ts` with `evaluationResultSchema = z.object({ flagKey: z.string(), enabled: z.boolean(), variationKey: z.string(), resolvedValue: variationValueSchema, evaluationReason: z.enum(['KILL_SWITCH', 'USER_TARGETING', 'ROLE_TARGETING', 'PERCENTAGE_ROLLOUT', 'DEFAULT', 'FLAG_NOT_FOUND', 'FLAG_ARCHIVED', 'FLAG_DRAFT', 'FLAG_DISABLED', 'EVALUATION_ERROR']) })`; export `EvaluationResult` type
 - [ ] T038 [P] Create `packages/shared/src/constants/roles.ts` exporting `ROLE_HIERARCHY = { viewer: 0, editor: 1, admin: 2 } as const` and `hasAtLeastRole(actual: MemberRole, required: MemberRole): boolean` helper
 - [ ] T039 [P] Create `packages/shared/src/constants/reasons.ts` exporting `EVALUATION_REASONS` const tuple and `EvaluationReason` type (mirrors the Zod enum from T037)
-- [ ] T040 Update `packages/shared/src/index.ts` to re-export everything from `schemas/`, `constants/`, plus `types/` (add type-only re-exports for `Organization`, `Project`, `Environment`, `FeatureFlag`, `Variation`, `TargetingRule`, `AuditLog` derived from the Zod schemas)
+- [ ] T040 Update `packages/shared/src/index.ts` to re-export everything from `schemas/`, `constants/`, plus `types/` (add type-only re-exports for `Organization`, `Project`, `Environment`, `FeatureFlag`, `Variation`, `TargetingRule`, `AuditLog`, `SdkKey` derived from the Zod schemas)
 
 ### Phase 3.2: Organizations Module
 
@@ -124,8 +127,8 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 ### Phase 3.4: Environments Module
 
 - [ ] T051 [P] Create `apps/backend/src/modules/environments/dto/*.dto.ts` files
-- [ ] T052 Create `apps/backend/src/modules/environments/environments.repository.ts` with `findById`, `findAllForProject`, `create` (auto-generates `sdkKey` via `crypto.randomBytes(32).toString('hex')`), `delete`
-- [ ] T053 Create `apps/backend/src/modules/environments/environments.service.ts` ensuring `sdkKey` is stripped from all responses except the create endpoint
+- [ ] T052 Create `apps/backend/src/modules/environments/environments.repository.ts` with `findById`, `findAllForProject`, `create`, `delete`
+- [ ] T053 Create `apps/backend/src/modules/environments/environments.service.ts` managing the lifecycle of environments; delegates SDK key creation to `SdkKeysService`
 - [ ] T054 Create `apps/backend/src/modules/environments/environments.controller.ts` with CRUD endpoints nested under `/api/v1/projects/:projectId/environments`
 - [ ] T055 Create `apps/backend/src/modules/environments/environments.module.ts`
 
@@ -133,22 +136,22 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 - [ ] T056 [P] Create `apps/backend/src/modules/feature-flags/dto/create-feature-flag.dto.ts` with nested `variations` array validated against the shared Zod schema (use `zodValidationPipe`); same for `update-feature-flag.dto.ts` with `version` required
 - [ ] T057 Create `apps/backend/src/modules/feature-flags/feature-flags.repository.ts` with `findById`, `findByKey(envId, key)`, `findAllForEnv(envId, statusFilter?)`, `create` (with nested variations in a transaction), `update` (with optimistic version check), `delete`
-- [ ] T058 Create `apps/backend/src/modules/feature-flags/feature-flags.service.ts` with: auto-creating `true`/`false` variations when `flagType='boolean'` and no variations provided; resolving `defaultVariationKey` → `defaultVariationId` after variation insert; validating status transitions (`draft → active → archived`, no backward); incrementing `version` on every update
+- [ ] T058 Create `apps/backend/src/modules/feature-flags/feature-flags.service.ts` with: auto-creating `true`/`false` variations when `flagType='boolean'` and no variations provided; setting `isDefault: true` on exactly one variation (derived from `defaultVariationKey`); validating status transitions (`draft → active → archived`, no backward); incrementing `version` on every update; ensuring all operations are scoped by `organizationId`
 - [ ] T059 Create `apps/backend/src/modules/feature-flags/feature-flags.controller.ts` with CRUD nested under `/api/v1/projects/:projectId/environments/:envId/flags`; DELETE decorated with `@OrgRoles('admin')` (only ADMIN can delete flags per FR-042)
 - [ ] T060 Create `apps/backend/src/modules/feature-flags/feature-flags.module.ts`
 
 ### Phase 3.6: Targeting Rules Module
 
 - [ ] T061 [P] Create `apps/backend/src/modules/targeting-rules/dto/create-targeting-rule.dto.ts` using the shared discriminated union Zod schema; pipe the body through `ZodValidationPipe`
-- [ ] T062 Create `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` with `findById`, `findAllForFlag`, `create` (auto-assigning `priority` based on `ruleType`: kill_switch=0, user=100+row, role=200+row, percentage=300+row, where `row` is the next available integer in that bucket), `update`, `delete`
-- [ ] T063 Create `apps/backend/src/modules/targeting-rules/targeting-rules.service.ts` with: rejecting a second `kill_switch` rule per flag; validating that `variationId` belongs to the parent flag; validating `conditions` shape per `ruleType` (delegated to the shared Zod schema)
+- [ ] T062 Create `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` with `findById`, `findAllForFlag`, `create` (auto-assigning `priority` using `priority.ts` utility), `update`, `delete`
+- [ ] T063 Create `apps/backend/src/modules/targeting-rules/targeting-rules.service.ts` with: rejecting a second `kill_switch` rule per flag; validating that `variationId` belongs to the parent flag; validating `conditions` shape per `ruleType` (delegated to the shared Zod schema); ensuring all operations are scoped by `organizationId`
 - [ ] T064 Create `apps/backend/src/modules/targeting-rules/targeting-rules.controller.ts` with CRUD nested under `/api/v1/.../flags/:flagId/rules`; DELETE allowed for `@OrgRoles('admin','editor')` per FR-042
 - [ ] T065 Create `apps/backend/src/modules/targeting-rules/targeting-rules.module.ts`
 
 ### Phase 3.7: Audit Logs Module
 
 - [ ] T066 Create `apps/backend/src/modules/audit-logs/audit-logs.repository.ts` with `findById`, `findMany({ orgId, projectId?, entityType?, actionType?, from?, to?, limit, offset })`, `insert(entry)`; only `insert` and `find` — no update/delete (immutability per FR-066)
-- [ ] T067 Create `apps/backend/src/modules/audit-logs/audit-logs.service.ts` with `list(query, callerUserId)` enforcing `organizationId` from caller's session; `record({ organizationId, projectId, actionType, entityType, entityId, actor, changes })` building the entry (snapshotting `actorEmail` at write time)
+- [ ] T067 Create `apps/backend/src/modules/audit-logs/audit-logs.service.ts` with `list(query, callerUserId)` enforcing `organizationId` from caller's session; `record({ organizationId, projectId, actionType, entityType, entityId, actor, changes })` building the entry (snapshotting `actorEmail` at write time); support detailed entity-prefixed `actionType` enums
 - [ ] T068 Create `apps/backend/src/modules/audit-logs/audit-logs.interceptor.ts` (`@Injectable() implements NestInterceptor`): for any POST/PATCH/DELETE under `/api/v1`, capture before/after state and call `auditLogsService.record(...)`; bind via `APP_INTERCEPTOR` in `app.module.ts`
 - [ ] T069 Create `apps/backend/src/modules/audit-logs/audit-logs.controller.ts` with `GET /api/v1/audit-logs` and `GET /api/v1/audit-logs/:logId`; apply `@OrgMemberGuard` to scope to caller's org
 - [ ] T070 Create `apps/backend/src/modules/audit-logs/audit-logs.module.ts` and export the service for use by other modules
@@ -167,6 +170,21 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 - [ ] T077 [P] Create `apps/backend/test/contract/feature-flags.contract.spec.ts` covering create flag (with boolean auto-variation), create with multivariate variations, list, get, update, delete — verify 403 for non-ADMIN on delete
 - [ ] T078 [P] Create `apps/backend/test/contract/targeting-rules.contract.spec.ts` covering all 4 rule types, conditions validation, second kill_switch rejection, priority auto-assignment
 - [ ] T079 [P] Create `apps/backend/test/contract/audit-logs.contract.spec.ts` performing a series of mutations and verifying audit entries are recorded with correct actor/email snapshot
+
+### Phase 3.10: SDK Keys Module (Security Refactor)
+
+- [ ] T112 [P] Create `packages/shared/src/schemas/sdk-key.ts` with `createSdkKeySchema = z.object({ name: z.string().min(1), type: z.enum(['client', 'server']) })`
+- [ ] T113 Create `apps/backend/src/modules/sdk-keys/sdk-keys.repository.ts` with `findById`, `findByHash(hash)`, `findAllForEnv(envId)`, `create`, `softDelete(id)`
+- [ ] T114 Create `apps/backend/src/modules/sdk-keys/sdk-keys.service.ts` with `create(envId, input, actor)`: (1) generate raw key, (2) hash with SHA-256, (3) extract 8-char prefix, (4) save hash + prefix with `organizationId` and `environmentId`, (5) return raw key to user ONLY ONCE
+- [ ] T115 Create `apps/backend/src/modules/sdk-keys/sdk-keys.controller.ts` nested under `/api/v1/.../environments/:envId/sdk-keys`
+- [ ] T116 Create `apps/backend/src/modules/sdk-keys/sdk-keys.module.ts`
+
+### Phase 3.11: Common Security & Integrity Utilities
+
+- [ ] T117 [P] Create `apps/backend/src/common/utils/priority.ts` implementing Fractional Indexing: `generateInitialPriority()`, `generatePriorityBetween(a, b)`, `generatePriorityAfter(last)` using a base-62 character set
+- [ ] T118 [P] Create `apps/backend/src/common/utils/crypto.ts` exporting `hashSdkKey(key: string): string` (SHA-256) and `generateRawKey(): string` (base64 or hex)
+- [ ] T119 Create `apps/backend/src/common/interceptors/soft-delete.interceptor.ts` to globally filter out `deletedAt IS NOT NULL` entities from responses (if not handled at repository layer)
+- [ ] T120 Update `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` to use `priority.ts` for lexicographical ordering on rule insertion (FR-021a)
 
 **Checkpoint**: Phase 3 complete — all management APIs from management-api.md implemented; contract tests pass; audit interceptor records every mutation.
 
@@ -187,9 +205,9 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 - [ ] T084 Create `apps/backend/src/modules/evaluation/evaluation.service.ts` with `evaluate(environmentId, flagKey, context)` that: (1) calls `flagLoader.loadFlag`, (2) if null returns `{ enabled: false, reason: 'FLAG_NOT_FOUND' }`, (3) calls `evaluationEngine.evaluate`, (4) wraps the whole method in a try/catch that on any throw returns the safe default with `reason: 'EVALUATION_ERROR'` and logs the error (FR-037, FR-056)
 - [ ] T085 Create `apps/backend/src/modules/evaluation/safe-default.util.ts` exporting `buildSafeDefault(flag: LoadedFlag | null, flagKey: string, reason: EvaluationReason): EvaluationResult` — returns the boolean `false` if flag is null, else the flag's `defaultVariation` resolved value
 
-### Phase 4.2: SDK Key Guard
+### Phase 4.2: SDK Key Guard (Security Refactor)
 
-- [ ] T086 Create `apps/backend/src/common/guards/sdk-key.guard.ts` implementing `CanActivate`: reads `X-SDK-Key` header, looks up `environments.sdkKey` via the repository, attaches `{ environmentId }` to `req.environment`; throws `UnauthorizedException` on missing/invalid key (HTTP 401)
+- [ ] T086 Create `apps/backend/src/common/guards/sdk-key.guard.ts` implementing `CanActivate`: reads `X-SDK-Key` header, hashes it, looks up `sdkKeys.keyHash` ensuring `deletedAt` is null, attaches `{ environmentId }` to `req.environment`; throws `UnauthorizedException` on missing/invalid key (HTTP 401)
 - [ ] T087 Create `apps/backend/src/common/decorators/sdk-environment.decorator.ts` exporting `@SdkEnvironment()` to inject the resolved environment object into controller parameters
 
 ### Phase 4.3: Evaluation Controller
@@ -285,14 +303,15 @@ Task: "T004 Create apps/backend/drizzle.config.ts"
 Task: "T005 Create apps/backend/src/db/index.ts"
 ```
 
-### Phase 2.1 (T013–T021)
+### Phase 2.1 (T013–T021, T111)
 
 ```bash
-# All 8 platform tables can be added in parallel
+# All 9 platform tables can be added in parallel
 Task: "T013 Define organizations table"
 Task: "T014 Define organizationMembers table"
 Task: "T015 Define projects table"
 Task: "T016 Define environments table"
+Task: "T111 Define sdkKeys table"
 Task: "T017 Define featureFlags table"
 Task: "T018 Define variations table"
 Task: "T019 Define targetingRules table"

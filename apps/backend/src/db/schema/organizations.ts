@@ -13,6 +13,7 @@ export const organizations = pgTable('organizations', {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const organizationRelations = relations(organizations, ({ many }) => ({
