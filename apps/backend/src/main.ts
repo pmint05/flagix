@@ -88,6 +88,9 @@ async function bootstrap() {
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}/api/v1`);
   logger.log(`Swagger UI: http://localhost:${port}/swagger`);
-  logger.log(`Scalar UI: http://localhost:${port}/docs`);
+  logger.log(`Scalar UI: http://localhost:${port}/api/docs`);
+  if (process.env.NODE_ENV !== 'production') {
+    logger.log(`ERD UI: http://localhost:${port}/erd`);
+  }
 }
 bootstrap();

@@ -4,10 +4,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { LoggerModule } from 'nestjs-pino';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { LoggerModule } from 'nestjs-pino';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
+const isProduction = process.env.NODE_ENV === 'production';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -25,6 +28,15 @@ import { ProjectsModule } from './modules/projects/projects.module';
         },
       }),
     }),
+    ...(!isProduction
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: join(process.cwd(), 'dist-erd'),
+            serveRoot: '/erd',
+            exclude: ['/api*'],
+          }),
+        ]
+      : []),
     DatabaseModule,
     AuthModule,
     OrganizationsModule,
