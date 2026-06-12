@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
@@ -10,6 +11,8 @@ import { EnvironmentsModule } from './modules/environments/environments.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
 import { TargetingRulesModule } from './modules/targeting-rules/targeting-rules.module';
 import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { AuditLogsInterceptor } from './modules/audit-logs/audit-logs.interceptor';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -48,9 +51,16 @@ const isProduction = process.env.NODE_ENV === 'production';
     EnvironmentsModule,
     FeatureFlagsModule,
     TargetingRulesModule,
+    AuditLogsModule,
     SdkKeysModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLogsInterceptor,
+    },
+  ],
 })
 export class AppModule {}
