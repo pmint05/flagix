@@ -6,6 +6,7 @@ import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { EnvironmentsModule } from './modules/environments/environments.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -41,6 +42,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     AuthModule,
     OrganizationsModule,
     ProjectsModule,
+    EnvironmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
