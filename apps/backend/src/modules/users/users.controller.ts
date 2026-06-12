@@ -12,7 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import { ActiveUser } from '@/common/decorators/active-user.decorator';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('Users')
 @Controller('users')
@@ -22,7 +22,7 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get current logged in user info' })
   @ApiResponse({ status: 200, description: 'Return current user.' })
-  getMe(@ActiveUser('user') user: any) {
+  getMe(@CurrentUser() user: any) {
     return user;
   }
 

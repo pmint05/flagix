@@ -96,73 +96,73 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ### Phase 3.1: Shared Zod Schemas (packages/shared)
 
-- [ ] T030 [P] Create `packages/shared/src/schemas/enums.ts` with Zod enums: `flagTypeEnum = z.enum(['boolean', 'multivariate'])`, `flagStatusEnum = z.enum(['draft', 'active', 'archived'])`, `ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage'])`, `memberRoleEnum = z.enum(['admin', 'editor', 'viewer'])`, `actionTypeEnum = z.enum(['create', 'update', 'delete', 'toggle'])`, `entityTypeEnum = z.enum(['organization', 'project', 'environment', 'feature_flag', 'targeting_rule', 'variation', 'sdk_key'])`, `actorTypeEnum = z.enum(['user', 'system'])`
-- [ ] T031 [P] Create `packages/shared/src/schemas/evaluation-context.ts` with `evaluationContextSchema = z.object({ userId: z.string().optional(), role: z.string().optional(), attributes: z.record(z.union([z.string(), z.number(), z.boolean()])).optional() })` and export the inferred `EvaluationContext` type
-- [ ] T032 [P] Create `packages/shared/src/schemas/rule-conditions.ts` with a discriminated union: `killSwitchConditionsSchema = z.object({})`, `userConditionsSchema = z.object({ userIds: z.array(z.string().min(1)).min(1) })`, `roleConditionsSchema = z.object({ roles: z.array(z.string().min(1)).min(1) })`, `percentageConditionsSchema = z.object({ percentage: z.number().int().min(0).max(100) })`; combine into `ruleConditionsSchema` (discriminated by ruleType)
-- [ ] T033 [P] Create `packages/shared/src/schemas/variation.ts` with `variationValueSchema = z.union([z.boolean(), z.string(), z.record(z.unknown())])` and `variationInputSchema = z.object({ key: z.string().min(1).max(100), value: variationValueSchema, description: z.string().optional() })`
-- [ ] T034 [P] Create `packages/shared/src/schemas/feature-flag.ts` with `createFeatureFlagSchema = z.object({ key: z.string().regex(/^[a-zA-Z0-9_-]+$/).min(1).max(255), name: z.string().min(1).max(255), description: z.string().optional(), flagType: flagTypeEnum, variations: z.array(variationInputSchema).optional(), defaultVariationKey: z.string().min(1) })`; `updateFeatureFlagSchema = createFeatureFlagSchema.partial().extend({ version: z.number().int().positive() })`
-- [ ] T035 [P] Create `packages/shared/src/schemas/targeting-rule.ts` with `createTargetingRuleSchema = z.discriminatedUnion('ruleType', [...])` combining the four condition schemas; add `isEnabled: z.boolean().optional()` field
-- [ ] T036 [P] Create `packages/shared/src/schemas/organization.ts`, `project.ts`, `environment.ts`, `sdk-key.ts` with corresponding create/update Zod schemas (name length 1-255, slug pattern `^[a-z0-9-]+$`, etc.) and exported types
-- [ ] T037 [P] Create `packages/shared/src/schemas/evaluation-result.ts` with `evaluationResultSchema = z.object({ flagKey: z.string(), enabled: z.boolean(), variationKey: z.string(), resolvedValue: variationValueSchema, evaluationReason: z.enum(['KILL_SWITCH', 'USER_TARGETING', 'ROLE_TARGETING', 'PERCENTAGE_ROLLOUT', 'DEFAULT', 'FLAG_NOT_FOUND', 'FLAG_ARCHIVED', 'FLAG_DRAFT', 'FLAG_DISABLED', 'EVALUATION_ERROR']) })`; export `EvaluationResult` type
-- [ ] T038 [P] Create `packages/shared/src/constants/roles.ts` exporting `ROLE_HIERARCHY = { viewer: 0, editor: 1, admin: 2 } as const` and `hasAtLeastRole(actual: MemberRole, required: MemberRole): boolean` helper
-- [ ] T039 [P] Create `packages/shared/src/constants/reasons.ts` exporting `EVALUATION_REASONS` const tuple and `EvaluationReason` type (mirrors the Zod enum from T037)
-- [ ] T040 Update `packages/shared/src/index.ts` to re-export everything from `schemas/`, `constants/`, plus `types/` (add type-only re-exports for `Organization`, `Project`, `Environment`, `FeatureFlag`, `Variation`, `TargetingRule`, `AuditLog`, `SdkKey` derived from the Zod schemas)
+- [X] T030 [P] Create `packages/shared/src/schemas/enums.ts` with Zod enums: `flagTypeEnum = z.enum(['boolean', 'multivariate'])`, `flagStatusEnum = z.enum(['draft', 'active', 'archived'])`, `ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage'])`, `memberRoleEnum = z.enum(['admin', 'editor', 'viewer'])`, `actionTypeEnum = z.enum(['create', 'update', 'delete', 'toggle'])`, `entityTypeEnum = z.enum(['organization', 'project', 'environment', 'feature_flag', 'targeting_rule', 'variation', 'sdk_key'])`, `actorTypeEnum = z.enum(['user', 'system'])`
+- [X] T031 [P] Create `packages/shared/src/schemas/evaluation-context.ts` with `evaluationContextSchema = z.object({ userId: z.string().optional(), role: z.string().optional(), attributes: z.record(z.union([z.string(), z.number(), z.boolean()])).optional() })` and export the inferred `EvaluationContext` type
+- [X] T032 [P] Create `packages/shared/src/schemas/rule-conditions.ts` with a discriminated union: `killSwitchConditionsSchema = z.object({})`, `userConditionsSchema = z.object({ userIds: z.array(z.string().min(1)).min(1) })`, `roleConditionsSchema = z.object({ roles: z.array(z.string().min(1)).min(1) })`, `percentageConditionsSchema = z.object({ percentage: z.number().int().min(0).max(100) })`; combine into `ruleConditionsSchema` (discriminated by ruleType)
+- [X] T033 [P] Create `packages/shared/src/schemas/variation.ts` with `variationValueSchema = z.union([z.boolean(), z.string(), z.record(z.unknown())])` and `variationInputSchema = z.object({ key: z.string().min(1).max(100), value: variationValueSchema, description: z.string().optional() })`
+- [X] T034 [P] Create `packages/shared/src/schemas/feature-flag.ts` with `createFeatureFlagSchema = z.object({ key: z.string().regex(/^[a-zA-Z0-9_-]+$/).min(1).max(255), name: z.string().min(1).max(255), description: z.string().optional(), flagType: flagTypeEnum, variations: z.array(variationInputSchema).optional(), defaultVariationKey: z.string().min(1) })`; `updateFeatureFlagSchema = createFeatureFlagSchema.partial().extend({ version: z.number().int().positive() })`
+- [X] T035 [P] Create `packages/shared/src/schemas/targeting-rule.ts` with `createTargetingRuleSchema = z.discriminatedUnion('ruleType', [...])` combining the four condition schemas; add `isEnabled: z.boolean().optional()` field
+- [X] T036 [P] Create `packages/shared/src/schemas/organization.ts`, `project.ts`, `environment.ts`, `sdk-key.ts` with corresponding create/update Zod schemas (name length 1-255, slug pattern `^[a-z0-9-]+$`, etc.) and exported types
+- [X] T037 [P] Create `packages/shared/src/schemas/evaluation-result.ts` with `evaluationResultSchema = z.object({ flagKey: z.string(), enabled: z.boolean(), variationKey: z.string(), resolvedValue: variationValueSchema, evaluationReason: z.enum(['KILL_SWITCH', 'USER_TARGETING', 'ROLE_TARGETING', 'PERCENTAGE_ROLLOUT', 'DEFAULT', 'FLAG_NOT_FOUND', 'FLAG_ARCHIVED', 'FLAG_DRAFT', 'FLAG_DISABLED', 'EVALUATION_ERROR']) })`; export `EvaluationResult` type
+- [X] T038 [P] Create `packages/shared/src/constants/roles.ts` exporting `ROLE_HIERARCHY = { viewer: 0, editor: 1, admin: 2 } as const` and `hasAtLeastRole(actual: MemberRole, required: MemberRole): boolean` helper
+- [X] T039 [P] Create `packages/shared/src/constants/reasons.ts` exporting `EVALUATION_REASONS` const tuple and `EvaluationReason` type (mirrors the Zod enum from T037)
+- [X] T040 Update `packages/shared/src/index.ts` to re-export everything from `schemas/`, `constants/`, plus `types/` (add type-only re-exports for `Organization`, `Project`, `Environment`, `FeatureFlag`, `Variation`, `TargetingRule`, `AuditLog`, `SdkKey` derived from the Zod schemas)
 
 ### Phase 3.2: Organizations Module
 
-- [ ] T041 Create `apps/backend/src/modules/organizations/dto/create-organization.dto.ts` (class-validator) with `@IsString @Length(1,255) name`, `@IsString @Matches(/^[a-z0-9-]+$/) @Length(1,100) slug`; same shape as `packages/shared` Zod schema
-- [ ] T042 Create `apps/backend/src/modules/organizations/organizations.repository.ts` with methods: `findById(id)`, `findBySlug(slug)`, `findAllForUser(userId)`, `create(input)`, `update(id, input)`, `delete(id)` — all using injected `DATABASE` token, returning Drizzle inferred types
-- [ ] T043 Create `apps/backend/src/modules/organizations/organizations.service.ts` with `create(input, actor)`, `findOneForUser(id, userId)` (verifies membership), `findAllForUser(userId)`, `update(id, input, actor)`, `remove(id, actor)` — calls repository and writes audit logs
-- [ ] T044 Create `apps/backend/src/modules/organizations/organizations.controller.ts` with `POST /api/v1/organizations`, `GET /api/v1/organizations`, `GET /api/v1/organizations/:organizationId`, `PATCH /api/v1/organizations/:organizationId` (`@OrgRoles('admin')`), `DELETE /api/v1/organizations/:organizationId` (`@OrgRoles('admin')`); use `@CurrentUser()` to get the actor
-- [ ] T045 Create `apps/backend/src/modules/organizations/organizations.module.ts` wiring controller, service, repository; export service for downstream modules
+- [X] T041 Create `apps/backend/src/modules/organizations/dto/create-organization.dto.ts` (class-validator) with `@IsString @Length(1,255) name`, `@IsString @Matches(/^[a-z0-9-]+$/) @Length(1,100) slug`; same shape as `packages/shared` Zod schema
+- [X] T042 Create `apps/backend/src/modules/organizations/organizations.repository.ts` with methods: `findById(id)`, `findBySlug(slug)`, `findAllForUser(userId)`, `create(input)`, `update(id, input)`, `delete(id)` — all using injected `DATABASE` token, returning Drizzle inferred types
+- [X] T043 Create `apps/backend/src/modules/organizations/organizations.service.ts` with `create(input, actor)`, `findOneForUser(id, userId)` (verifies membership), `findAllForUser(userId)`, `update(id, input, actor)`, `remove(id, actor)` — calls repository and writes audit logs
+- [X] T044 Create `apps/backend/src/modules/organizations/organizations.controller.ts` with `POST /api/v1/organizations`, `GET /api/v1/organizations`, `GET /api/v1/organizations/:organizationId`, `PATCH /api/v1/organizations/:organizationId` (`@OrgRoles('admin')`), `DELETE /api/v1/organizations/:organizationId` (`@OrgRoles('admin')`); use `@CurrentUser()` to get the actor
+- [X] T045 Create `apps/backend/src/modules/organizations/organizations.module.ts` wiring controller, service, repository; export service for downstream modules
 
 ### Phase 3.3: Projects Module
 
-- [ ] T046 [P] Create `apps/backend/src/modules/projects/dto/create-project.dto.ts` and `update-project.dto.ts` (class-validator) mirroring shared Zod schemas
-- [ ] T047 Create `apps/backend/src/modules/projects/projects.repository.ts` with `findById(id)`, `findAllForOrg(orgId)`, `create(input)`, `update(id, input)`, `delete(id)`
-- [ ] T048 Create `apps/backend/src/modules/projects/projects.service.ts` with `create(orgId, input, actor)`, `findAll(orgId)`, `findOne(projectId, userId)` (membership check), `update(projectId, input, actor)`, `remove(projectId, actor)`
-- [ ] T049 Create `apps/backend/src/modules/projects/projects.controller.ts` with `POST /api/v1/projects`, `GET /api/v1/projects`, `GET /api/v1/projects/:projectId`, `PATCH /api/v1/projects/:projectId` (`@OrgRoles('admin','editor')`), `DELETE /api/v1/projects/:projectId` (`@OrgRoles('admin')`)
-- [ ] T050 Create `apps/backend/src/modules/projects/projects.module.ts`
+- [X] T046 [P] Create `apps/backend/src/modules/projects/dto/create-project.dto.ts` and `update-project.dto.ts` (class-validator) mirroring shared Zod schemas
+- [X] T047 Create `apps/backend/src/modules/projects/projects.repository.ts` with `findById(id)`, `findAllForOrg(orgId)`, `create(input)`, `update(id, input)`, `delete(id)`
+- [X] T048 Create `apps/backend/src/modules/projects/projects.service.ts` with `create(orgId, input, actor)`, `findAll(orgId)`, `findOne(projectId, userId)` (membership check), `update(projectId, input, actor)`, `remove(projectId, actor)`
+- [X] T049 Create `apps/backend/src/modules/projects/projects.controller.ts` with `POST /api/v1/projects`, `GET /api/v1/projects`, `GET /api/v1/projects/:projectId`, `PATCH /api/v1/projects/:projectId` (`@OrgRoles('admin','editor')`), `DELETE /api/v1/projects/:projectId` (`@OrgRoles('admin')`)
+- [X] T050 Create `apps/backend/src/modules/projects/projects.module.ts`
 
 ### Phase 3.4: Environments Module
 
-- [ ] T051 [P] Create `apps/backend/src/modules/environments/dto/*.dto.ts` files
-- [ ] T052 Create `apps/backend/src/modules/environments/environments.repository.ts` with `findById`, `findAllForProject`, `create`, `delete`
-- [ ] T053 Create `apps/backend/src/modules/environments/environments.service.ts` managing the lifecycle of environments; delegates SDK key creation to `SdkKeysService`
-- [ ] T054 Create `apps/backend/src/modules/environments/environments.controller.ts` with CRUD endpoints nested under `/api/v1/projects/:projectId/environments`
-- [ ] T055 Create `apps/backend/src/modules/environments/environments.module.ts`
+- [X] T051 [P] Create `apps/backend/src/modules/environments/dto/*.dto.ts` files
+- [X] T052 Create `apps/backend/src/modules/environments/environments.repository.ts` with `findById`, `findAllForProject`, `create`, `delete`
+- [X] T053 Create `apps/backend/src/modules/environments/environments.service.ts` managing the lifecycle of environments; delegates SDK key creation to `SdkKeysService`
+- [X] T054 Create `apps/backend/src/modules/environments/environments.controller.ts` with CRUD endpoints nested under `/api/v1/projects/:projectId/environments`
+- [X] T055 Create `apps/backend/src/modules/environments/environments.module.ts`
 
 ### Phase 3.5: Feature Flags Module
 
-- [ ] T056 [P] Create `apps/backend/src/modules/feature-flags/dto/create-feature-flag.dto.ts` with nested `variations` array validated against the shared Zod schema (use `zodValidationPipe`); same for `update-feature-flag.dto.ts` with `version` required
-- [ ] T057 Create `apps/backend/src/modules/feature-flags/feature-flags.repository.ts` with `findById`, `findByKey(envId, key)`, `findAllForEnv(envId, statusFilter?)`, `create` (with nested variations in a transaction), `update` (with optimistic version check), `delete`
-- [ ] T058 Create `apps/backend/src/modules/feature-flags/feature-flags.service.ts` with: auto-creating `true`/`false` variations when `flagType='boolean'` and no variations provided; setting `isDefault: true` on exactly one variation (derived from `defaultVariationKey`); validating status transitions (`draft → active → archived`, no backward); incrementing `version` on every update; ensuring all operations are scoped by `organizationId`
-- [ ] T059 Create `apps/backend/src/modules/feature-flags/feature-flags.controller.ts` with CRUD nested under `/api/v1/projects/:projectId/environments/:envId/flags`; DELETE decorated with `@OrgRoles('admin')` (only ADMIN can delete flags per FR-042)
-- [ ] T060 Create `apps/backend/src/modules/feature-flags/feature-flags.module.ts`
+- [X] T056 [P] Create `apps/backend/src/modules/feature-flags/dto/create-feature-flag.dto.ts` with nested `variations` array validated against the shared Zod schema (use `zodValidationPipe`); same for `update-feature-flag.dto.ts` with `version` required
+- [X] T057 Create `apps/backend/src/modules/feature-flags/feature-flags.repository.ts` with `findById`, `findByKey(envId, key)`, `findAllForEnv(envId, statusFilter?)`, `create` (with nested variations in a transaction), `update` (with optimistic version check), `delete`
+- [X] T058 Create `apps/backend/src/modules/feature-flags/feature-flags.service.ts` with: auto-creating `true`/`false` variations when `flagType='boolean'` and no variations provided; setting `isDefault: true` on exactly one variation (derived from `defaultVariationKey`); validating status transitions (`draft → active → archived`, no backward); incrementing `version` on every update; ensuring all operations are scoped by `organizationId`
+- [X] T059 Create `apps/backend/src/modules/feature-flags/feature-flags.controller.ts` with CRUD nested under `/api/v1/projects/:projectId/environments/:envId/flags`; DELETE decorated with `@OrgRoles('admin')` (only ADMIN can delete flags per FR-042)
+- [X] T060 Create `apps/backend/src/modules/feature-flags/feature-flags.module.ts`
 
 ### Phase 3.6: Targeting Rules Module
 
-- [ ] T061 [P] Create `apps/backend/src/modules/targeting-rules/dto/create-targeting-rule.dto.ts` using the shared discriminated union Zod schema; pipe the body through `ZodValidationPipe`
-- [ ] T062 Create `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` with `findById`, `findAllForFlag`, `create` (auto-assigning `priority` using `priority.ts` utility), `update`, `delete`
-- [ ] T063 Create `apps/backend/src/modules/targeting-rules/targeting-rules.service.ts` with: rejecting a second `kill_switch` rule per flag; validating that `variationId` belongs to the parent flag; validating `conditions` shape per `ruleType` (delegated to the shared Zod schema); ensuring all operations are scoped by `organizationId`
-- [ ] T064 Create `apps/backend/src/modules/targeting-rules/targeting-rules.controller.ts` with CRUD nested under `/api/v1/.../flags/:flagId/rules`; DELETE allowed for `@OrgRoles('admin','editor')` per FR-042
-- [ ] T065 Create `apps/backend/src/modules/targeting-rules/targeting-rules.module.ts`
+- [X] T061 [P] Create `apps/backend/src/modules/targeting-rules/dto/create-targeting-rule.dto.ts` using the shared discriminated union Zod schema; pipe the body through `ZodValidationPipe`
+- [X] T062 Create `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` with `findById`, `findAllForFlag`, `create` (auto-assigning `priority` using `priority.ts` utility), `update`, `delete`
+- [X] T063 Create `apps/backend/src/modules/targeting-rules/targeting-rules.service.ts` with: rejecting a second `kill_switch` rule per flag; validating that `variationId` belongs to the parent flag; validating `conditions` shape per `ruleType` (delegated to the shared Zod schema); ensuring all operations are scoped by `organizationId`
+- [X] T064 Create `apps/backend/src/modules/targeting-rules/targeting-rules.controller.ts` with CRUD nested under `/api/v1/.../flags/:flagId/rules`; DELETE allowed for `@OrgRoles('admin','editor')` per FR-042
+- [X] T065 Create `apps/backend/src/modules/targeting-rules/targeting-rules.module.ts`
 
 ### Phase 3.7: Audit Logs Module
 
-- [ ] T066 Create `apps/backend/src/modules/audit-logs/audit-logs.repository.ts` with `findById`, `findMany({ orgId, projectId?, entityType?, actionType?, from?, to?, limit, offset })`, `insert(entry)`; only `insert` and `find` — no update/delete (immutability per FR-066)
-- [ ] T067 Create `apps/backend/src/modules/audit-logs/audit-logs.service.ts` with `list(query, callerUserId)` enforcing `organizationId` from caller's session; `record({ organizationId, projectId, actionType, entityType, entityId, actor, changes })` building the entry (snapshotting `actorEmail` at write time); support detailed entity-prefixed `actionType` enums
-- [ ] T068 Create `apps/backend/src/modules/audit-logs/audit-logs.interceptor.ts` (`@Injectable() implements NestInterceptor`): for any POST/PATCH/DELETE under `/api/v1`, capture before/after state and call `auditLogsService.record(...)`; bind via `APP_INTERCEPTOR` in `app.module.ts`
-- [ ] T069 Create `apps/backend/src/modules/audit-logs/audit-logs.controller.ts` with `GET /api/v1/audit-logs` and `GET /api/v1/audit-logs/:logId`; apply `@OrgMemberGuard` to scope to caller's org
-- [ ] T070 Create `apps/backend/src/modules/audit-logs/audit-logs.module.ts` and export the service for use by other modules
+- [X] T066 Create `apps/backend/src/modules/audit-logs/audit-logs.repository.ts` with `findById`, `findMany({ orgId, projectId?, entityType?, actionType?, from?, to?, limit, offset })`, `insert(entry)`; only `insert` and `find` — no update/delete (immutability per FR-066)
+- [X] T067 Create `apps/backend/src/modules/audit-logs/audit-logs.service.ts` with `list(query, callerUserId)` enforcing `organizationId` from caller's session; `record({ organizationId, projectId, actionType, entityType, entityId, actor, changes })` building the entry (snapshotting `actorEmail` at write time); support detailed entity-prefixed `actionType` enums
+- [X] T068 Create `apps/backend/src/modules/audit-logs/audit-logs.interceptor.ts` (`@Injectable() implements NestInterceptor`): for any POST/PATCH/DELETE under `/api/v1`, capture before/after state and call `auditLogsService.record(...)`; bind via `APP_INTERCEPTOR` in `app.module.ts`
+- [X] T069 Create `apps/backend/src/modules/audit-logs/audit-logs.controller.ts` with `GET /api/v1/audit-logs` and `GET /api/v1/audit-logs/:logId`; apply `@OrgMemberGuard` to scope to caller's org
+- [X] T070 Create `apps/backend/src/modules/audit-logs/audit-logs.module.ts` and export the service for use by other modules
 
 ### Phase 3.8: Cross-cutting Wiring
 
-- [ ] T071 Create `apps/backend/src/common/pipes/zod-validation.pipe.ts` generic NestJS pipe accepting a Zod schema and throwing `BadRequestException` with field-level error details
-- [ ] T072 Create `apps/backend/src/common/filters/http-exception.filter.ts` to ensure all error responses follow the shape `{ statusCode, error, message, details? }` per management-api.md
-- [ ] T073 Create `apps/backend/src/common/utils/slug.ts` exporting `slugify(input: string): string` (lowercase, hyphens, strip non-alphanumerics) used by organization/project/environment creation
-- [ ] T074 Update `apps/backend/src/app.module.ts` to import all feature modules (Organizations, Projects, Environments, FeatureFlags, TargetingRules, AuditLogs), bind `APP_INTERCEPTOR` to `AuditLogsInterceptor`, and ensure `DatabaseModule` is imported once globally
-- [ ] T075 Add npm scripts to `apps/backend/package.json`: `db:generate`, `db:migrate`, `db:push`, `db:studio`, `auth:generate` (wrapping the CLI), `test:unit`, `test:contract`
+- [X] T071 ~~Create `apps/backend/src/common/pipes/zod-validation.pipe.ts`~~ — Removed; backend uses DTOs with class-validator exclusively
+- [X] T072 Create `apps/backend/src/common/filters/http-exception.filter.ts` to ensure all error responses follow the shape `{ statusCode, error, message, details? }` per management-api.md
+- [X] T073 Create `apps/backend/src/common/utils/slug.ts` exporting `slugify(input: string): string` (lowercase, hyphens, strip non-alphanumerics) used by organization/project/environment creation
+- [X] T074 Update `apps/backend/src/app.module.ts` to import all feature modules (Organizations, Projects, Environments, FeatureFlags, TargetingRules, AuditLogs), bind `APP_INTERCEPTOR` to `AuditLogsInterceptor`, and ensure `DatabaseModule` is imported once globally
+- [X] T075 Add npm scripts to `apps/backend/package.json`: `db:generate`, `db:migrate`, `db:push`, `db:studio`, `auth:generate` (wrapping the CLI), `test:unit`, `test:contract`
 
 ### Phase 3.9: Contract Tests (OPTIONAL but recommended)
 
@@ -173,20 +173,44 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ### Phase 3.10: SDK Keys Module (Security Refactor)
 
-- [ ] T112 [P] Create `packages/shared/src/schemas/sdk-key.ts` with `createSdkKeySchema = z.object({ name: z.string().min(1), type: z.enum(['client', 'server']) })`
-- [ ] T113 Create `apps/backend/src/modules/sdk-keys/sdk-keys.repository.ts` with `findById`, `findByHash(hash)`, `findAllForEnv(envId)`, `create`, `softDelete(id)`
-- [ ] T114 Create `apps/backend/src/modules/sdk-keys/sdk-keys.service.ts` with `create(envId, input, actor)`: (1) generate raw key, (2) hash with SHA-256, (3) extract 8-char prefix, (4) save hash + prefix with `organizationId` and `environmentId`, (5) return raw key to user ONLY ONCE
-- [ ] T115 Create `apps/backend/src/modules/sdk-keys/sdk-keys.controller.ts` nested under `/api/v1/.../environments/:envId/sdk-keys`
-- [ ] T116 Create `apps/backend/src/modules/sdk-keys/sdk-keys.module.ts`
+- [X] T112 [P] Create `packages/shared/src/schemas/sdk-key.ts` with `createSdkKeySchema = z.object({ name: z.string().min(1), type: z.enum(['client', 'server']) })`
+- [X] T113 Create `apps/backend/src/modules/sdk-keys/sdk-keys.repository.ts` with `findById`, `findByHash(hash)`, `findAllForEnv(envId)`, `create`, `softDelete(id)`
+- [X] T114 Create `apps/backend/src/modules/sdk-keys/sdk-keys.service.ts` with `create(envId, input, actor)`: (1) generate raw key, (2) hash with SHA-256, (3) extract 8-char prefix, (4) save hash + prefix with `organizationId` and `environmentId`, (5) return raw key to user ONLY ONCE
+- [X] T115 Create `apps/backend/src/modules/sdk-keys/sdk-keys.controller.ts` nested under `/api/v1/.../environments/:envId/sdk-keys`
+- [X] T116 Create `apps/backend/src/modules/sdk-keys/sdk-keys.module.ts`
 
 ### Phase 3.11: Common Security & Integrity Utilities
 
-- [ ] T117 [P] Create `apps/backend/src/common/utils/priority.ts` implementing Fractional Indexing: `generateInitialPriority()`, `generatePriorityBetween(a, b)`, `generatePriorityAfter(last)` using a base-62 character set
-- [ ] T118 [P] Create `apps/backend/src/common/utils/crypto.ts` exporting `hashSdkKey(key: string): string` (SHA-256) and `generateRawKey(): string` (base64 or hex)
-- [ ] T119 Create `apps/backend/src/common/interceptors/soft-delete.interceptor.ts` to globally filter out `deletedAt IS NOT NULL` entities from responses (if not handled at repository layer)
-- [ ] T120 Update `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` to use `priority.ts` for lexicographical ordering on rule insertion (FR-021a)
+- [X] T117 [P] Create `apps/backend/src/common/utils/priority.ts` implementing Fractional Indexing: `generateInitialPriority()`, `generatePriorityBetween(a, b)`, `generatePriorityAfter(last)` using a base-62 character set
+- [X] T118 [P] Create `apps/backend/src/common/utils/crypto.ts` exporting `hashSdkKey(key: string): string` (SHA-256) and `generateRawKey(): string` (base64 or hex)
+- [X] T119 Create `apps/backend/src/common/interceptors/soft-delete.interceptor.ts` to globally filter out `deletedAt IS NOT NULL` entities from responses (if not handled at repository layer)
+- [X] T120 Update `apps/backend/src/modules/targeting-rules/targeting-rules.repository.ts` to use `priority.ts` for lexicographical ordering on rule insertion (FR-021a)
 
-**Checkpoint**: Phase 3 complete — all management APIs from management-api.md implemented; contract tests pass; audit interceptor records every mutation.
+### Phase 3.12: Security Hardening (Phase 1)
+
+- [X] T121 Merge `OrgMemberGuard` into `OrgRolesGuard` — single guard handles both membership check and role check; eliminates duplicate DB queries
+- [X] T122 Remove `ActiveUser` decorator; consolidate to `CurrentUser` decorator only
+- [X] T123 Enhance `OrgRolesGuard.resolveOrgId()` to resolve organizationId from `projectId` param by querying the projects table
+- [X] T124 Apply `@UseGuards(OrgRolesGuard)` at class level for `AuditLogsController`; remove redundant method-level guards from `FeatureFlagsController`, `TargetingRulesController`
+- [X] T125 Add global `AuthGuard` (from `@thallesp/nestjs-better-auth`) via `APP_GUARD` in `app.module.ts` so all routes require authentication by default
+- [X] T126 Add `@Auth()` decorator (Swagger bearer auth documentation) at class level for all management controllers
+- [X] T127 Update `spec.md` with Security Requirements section (SEC-001 through SEC-018)
+- [X] T128 Update `contracts/management-api.md` with Authentication & Authorization Model section
+
+### Phase 3.13: RESTful API Refactoring (Hybrid Nested Resources)
+
+- [X] T129 Refactor `OrgRolesGuard` to get `organizationId` directly from URL params (no DB lookup required)
+- [X] T130 Refactor `ProjectsController` — nested under `/organizations/:organizationId/projects`
+- [X] T131 Refactor `EnvironmentsController` — nested under `/organizations/:organizationId/projects/:projectId/environments`
+- [X] T132 Refactor `FeatureFlagsController` — hybrid approach: list/create nested, individual flat at `/organizations/:organizationId/flags/:flagId`
+- [X] T133 Create `FeatureFlagItemController` for individual flag operations (GET/PATCH/DELETE)
+- [X] T134 Refactor `TargetingRulesController` — nested under `/organizations/:organizationId/flags/:flagId/rules`
+- [X] T135 Refactor `SdkKeysController` — nested under `/organizations/:organizationId/environments/:envId/sdk-keys`
+- [X] T136 Refactor `AuditLogsController` — nested under `/organizations/:organizationId/audit-logs`
+- [X] T137 Update all services to accept `orgId` from params and validate resource ownership
+- [X] T138 Update `contracts/management-api.md` with new URL structure and design rationale
+
+**Checkpoint**: Phase 3 complete — all management APIs refactored to RESTful hybrid nested resource pattern; organizationId always present in URL for security checks; no DB lookup required for org resolution.
 
 ---
 
