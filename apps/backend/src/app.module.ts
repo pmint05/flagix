@@ -8,6 +8,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { ProjectsModule } from './modules/projects/projects.module';
 import { EnvironmentsModule } from './modules/environments/environments.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { TargetingRulesModule } from './modules/targeting-rules/targeting-rules.module';
 import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -46,6 +47,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     ProjectsModule,
     EnvironmentsModule,
     FeatureFlagsModule,
+    TargetingRulesModule,
     SdkKeysModule,
   ],
   controllers: [AppController],
