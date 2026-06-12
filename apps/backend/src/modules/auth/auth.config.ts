@@ -1,18 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { openAPI } from 'better-auth/plugins';
+import { bearer, openAPI } from 'better-auth/plugins';
 import { createDrizzleClient } from '@/db';
 import { organizations, organizationMembers } from '@/db/schema';
+import { slugify } from '@/common/utils/slug';
 
 const db = createDrizzleClient();
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 100);
-}
 
 export const auth = betterAuth({
   basePath: '/api/auth',
@@ -20,6 +13,7 @@ export const auth = betterAuth({
     openAPI({
       disableDefaultReference: process.env.NODE_ENV === 'production',
     }),
+    bearer(),
   ],
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -44,21 +38,32 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          const orgName = `${user.name}'s Organization`;
-          const baseSlug = slugify(user.name);
-          const [org] = await db
-            .insert(organizations)
-            .values({
-              name: orgName,
-              slug: `${baseSlug}-${user.id.slice(0, 8)}`,
-            })
-            .returning();
+          try {
+            const orgName = `${user.name || 'User'}'s Organization`;
+            const baseSlug = slugify(user.name || 'user');
+            const uniqueSlug = `${baseSlug || 'user'}-${user.id.slice(0, 8)}`;
 
-          await db.insert(organizationMembers).values({
-            userId: user.id,
-            organizationId: org.id,
-            role: 'admin',
-          });
+            await db.transaction(async (tx) => {
+              const [org] = await tx
+                .insert(organizations)
+                .values({
+                  name: orgName,
+                  slug: uniqueSlug,
+                })
+                .returning();
+
+              await tx.insert(organizationMembers).values({
+                userId: user.id,
+                organizationId: org.id,
+                role: 'admin',
+              });
+            });
+          } catch (error) {
+            console.error(
+              `Failed to create default organization for user ${user.id}:`,
+              error,
+            );
+          }
         },
       },
     },

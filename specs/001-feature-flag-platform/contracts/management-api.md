@@ -2,10 +2,92 @@
 
 **Feature**: 001-feature-flag-platform
 **Base URL**: `/api/v1`
-**Authentication**: Better Auth session (cookie-based). All management routes are protected by the global AuthGuard. Unauthenticated requests receive HTTP 401.
+**Authentication**: Better Auth session (cookie-based or bearer token). All management routes are protected by the global AuthGuard. Unauthenticated requests receive HTTP 401.
 **Content-Type**: `application/json`
 
 All management APIs require a valid Better Auth session and are scoped to an organization via the authenticated user's OrganizationMember membership.
+
+---
+
+## API URL Structure
+
+The API follows a **hybrid nested resource** pattern with organization as the root:
+
+### Level 1-3: Nested Resources (clear hierarchy)
+```
+/api/v1/organizations
+/api/v1/organizations/:organizationId
+/api/v1/organizations/:organizationId/projects
+/api/v1/organizations/:organizationId/projects/:projectId
+/api/v1/organizations/:organizationId/projects/:projectId/environments
+/api/v1/organizations/:organizationId/projects/:projectId/environments/:envId
+```
+
+### Level 4+: Hybrid (list nested, individual flat)
+```
+# Feature Flags
+/api/v1/organizations/:organizationId/projects/:projectId/environments/:envId/flags  (list/create)
+/api/v1/organizations/:organizationId/flags/:flagId                                  (get/update/delete)
+
+# Targeting Rules
+/api/v1/organizations/:organizationId/flags/:flagId/rules                            (list/create)
+/api/v1/organizations/:organizationId/flags/:flagId/rules/:ruleId                    (get/update/delete)
+
+# SDK Keys
+/api/v1/organizations/:organizationId/environments/:envId/sdk-keys                   (list/create)
+/api/v1/organizations/:organizationId/environments/:envId/sdk-keys/:keyId            (delete)
+
+# Audit Logs
+/api/v1/organizations/:organizationId/audit-logs
+/api/v1/organizations/:organizationId/audit-logs/:logId
+```
+
+### Design Rationale
+- **organizationId** is always present in the URL for security checks
+- **List/Create** operations are nested to provide clear context
+- **Individual** operations (GET/PATCH/DELETE by ID) are flat for brevity
+- **Guard** only needs orgId from params (no DB lookup required)
+
+---
+
+## Authentication & Authorization Model
+
+### Global Authentication
+
+All endpoints under `/api/v1/*` are protected by a global `AuthGuard` from `@thallesp/nestjs-better-auth`. Every request MUST include a valid session cookie or bearer token.
+
+**Session Cookie** (automatic):
+```
+Cookie: flagix.session=<session-token>
+```
+
+**Bearer Token** (manual):
+```
+Authorization: Bearer <session-token>
+```
+
+### Organization Membership Check
+
+All resource-scoped endpoints verify that the authenticated user is a member of the organization specified in the URL. This is enforced by `OrgRolesGuard` at the controller level.
+
+**Resolution**: The `organizationId` is always present in the URL params, so no DB lookup is required.
+
+### Role-Based Access Control
+
+Role-restricted endpoints use `@PlatformOrgRoles()` decorator. Role hierarchy: **ADMIN > EDITOR > VIEWER**.
+
+| Role | Permissions |
+|------|-------------|
+| ADMIN | Full access: create, read, update, delete all resources |
+| EDITOR | Read + create + update. Can manage targeting rules. Cannot delete orgs/projects/flags |
+| VIEWER | Read-only access to all resources within the organization |
+
+### Public Endpoints
+
+The following endpoints are exempt from session authentication:
+- `/api/auth/*` — Better Auth authentication routes
+- `/api/v1/evaluate` — SDK flag evaluation (uses SDK key auth)
+- `/api/v1/evaluate/all` — SDK bulk flag evaluation (uses SDK key auth)
 
 ---
 
@@ -174,26 +256,145 @@ POST /api/auth/change-password
 
 ---
 
-## Session Guard (NestJS Middleware)
+## Organizations
 
-All management API routes (`/api/v1/*`) are protected by Better Auth's global `AuthGuard` provided by `@thallesp/nestjs-better-auth`.
+### Create Organization
 
-**Behavior**:
-- Every request to `/api/v1/*` endpoints MUST include a valid Better Auth session cookie.
-- The AuthGuard validates the session against the database before the request reaches the controller.
-- If the session is invalid or missing, the request is rejected with HTTP 401 Unauthorized.
-- The `@Session()` decorator injects the authenticated user's session into controller parameters.
+```text
+POST /api/v1/organizations
+```
 
-**Route protection decorators**:
+**Request Body**:
+```json
+{
+  "name": "string (1-255 chars, required)",
+  "slug": "string (1-100 chars, optional, auto-generated from name)"
+}
+```
 
-| Decorator | Purpose |
-|-----------|---------|
-| `@Session()` | Injects the user session into a controller parameter |
-| `@AllowAnonymous()` | Marks a route as public (no auth required) |
-| `@OrgRoles('admin')` | Requires ADMIN role in the target organization |
-| `@OrgRoles('editor')` | Requires EDITOR or ADMIN role in the target organization |
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "slug": "string",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
 
-**Evaluation API exception**: Evaluation API routes (`/api/v1/evaluate`, `/api/v1/evaluate/all`) use SDK key authentication (not session cookies). These routes are marked with `@AllowAnonymous()` and use a custom `SdkKeyGuard` for SDK key validation.
+**Errors**:
+- 400: Validation error
+- 409: Slug already exists
+
+---
+
+### List Organizations
+
+```text
+GET /api/v1/organizations
+```
+
+**Response** (200 OK):
+```json
+{
+  "organizations": [
+    {
+      "id": "uuid",
+      "name": "string",
+      "slug": "string",
+      "role": "'admin' | 'editor' | 'viewer'",
+      "createdAt": "ISO 8601 timestamp",
+      "updatedAt": "ISO 8601 timestamp"
+    }
+  ],
+  "total": "integer"
+}
+```
+
+---
+
+### Get Organization
+
+```text
+GET /api/v1/organizations/:organizationId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "slug": "string",
+  "role": "'admin' | 'editor' | 'viewer'",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+**Errors**:
+- 403: Not a member of this organization
+- 404: Organization not found
+
+---
+
+### Update Organization
+
+```text
+PATCH /api/v1/organizations/:organizationId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+
+**Request Body** (all fields optional):
+```json
+{
+  "name": "string (1-255 chars)",
+  "slug": "string (1-100 chars)"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "slug": "string",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+**Errors**:
+- 400: Validation error
+- 403: Only ADMIN role can update organizations
+- 404: Organization not found
+- 409: Slug already exists
+
+---
+
+### Delete Organization
+
+```text
+DELETE /api/v1/organizations/:organizationId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+**Errors**:
+- 403: Only ADMIN role can delete organizations
+- 404: Organization not found
 
 ---
 
@@ -202,8 +403,11 @@ All management API routes (`/api/v1/*`) are protected by Better Auth's global `A
 ### Create Project
 
 ```text
-POST /api/v1/projects
+POST /api/v1/organizations/:organizationId/projects
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
 
 **Request Body**:
 ```json
@@ -213,8 +417,6 @@ POST /api/v1/projects
   "description": "string (optional)"
 }
 ```
-
-**Notes**: The authenticated user's organization is determined from their session and active organization context.
 
 **Response** (201 Created):
 ```json
@@ -230,7 +432,8 @@ POST /api/v1/projects
 ```
 
 **Errors**:
-- 400: Validation error (missing/invalid fields)
+- 400: Validation error
+- 403: Insufficient role (requires ADMIN or EDITOR)
 - 409: Slug already exists within organization
 
 ---
@@ -238,10 +441,11 @@ POST /api/v1/projects
 ### List Projects
 
 ```text
-GET /api/v1/projects
+GET /api/v1/organizations/:organizationId/projects
 ```
 
-**Query Parameters**: None (scoped to authenticated organization)
+**Path Parameters**:
+- `organizationId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -265,10 +469,11 @@ GET /api/v1/projects
 ### Get Project
 
 ```text
-GET /api/v1/projects/:projectId
+GET /api/v1/organizations/:organizationId/projects/:projectId
 ```
 
 **Path Parameters**:
+- `organizationId`: UUID (required)
 - `projectId`: UUID (required)
 
 **Response** (200 OK):
@@ -279,13 +484,6 @@ GET /api/v1/projects/:projectId
   "slug": "string",
   "description": "string | null",
   "organizationId": "uuid",
-  "environments": [
-    {
-      "id": "uuid",
-      "name": "string",
-      "slug": "string"
-    }
-  ],
   "createdAt": "ISO 8601 timestamp",
   "updatedAt": "ISO 8601 timestamp"
 }
@@ -299,10 +497,11 @@ GET /api/v1/projects/:projectId
 ### Update Project
 
 ```text
-PATCH /api/v1/projects/:projectId
+PATCH /api/v1/organizations/:organizationId/projects/:projectId
 ```
 
 **Path Parameters**:
+- `organizationId`: UUID (required)
 - `projectId`: UUID (required)
 
 **Request Body** (all fields optional):
@@ -326,6 +525,7 @@ PATCH /api/v1/projects/:projectId
 
 **Errors**:
 - 400: Validation error
+- 403: Insufficient role (requires ADMIN or EDITOR)
 - 404: Project not found
 
 ---
@@ -333,10 +533,11 @@ PATCH /api/v1/projects/:projectId
 ### Delete Project
 
 ```text
-DELETE /api/v1/projects/:projectId
+DELETE /api/v1/organizations/:organizationId/projects/:projectId
 ```
 
 **Path Parameters**:
+- `organizationId`: UUID (required)
 - `projectId`: UUID (required)
 
 **Response** (200 OK):
@@ -357,10 +558,11 @@ DELETE /api/v1/projects/:projectId
 ### Create Environment
 
 ```text
-POST /api/v1/projects/:projectId/environments
+POST /api/v1/organizations/:organizationId/projects/:projectId/environments
 ```
 
 **Path Parameters**:
+- `organizationId`: UUID (required)
 - `projectId`: UUID (required)
 
 **Request Body**:
@@ -395,8 +597,12 @@ POST /api/v1/projects/:projectId/environments
 ### List Environments
 
 ```text
-GET /api/v1/projects/:projectId/environments
+GET /api/v1/organizations/:organizationId/projects/:projectId/environments
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `projectId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -417,13 +623,69 @@ GET /api/v1/projects/:projectId/environments
 
 ---
 
+### Get Environment
+
+```text
+GET /api/v1/organizations/:organizationId/projects/:projectId/environments/:envId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `projectId`: UUID (required)
+- `envId`: UUID (required)
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "slug": "string",
+  "description": "string | null",
+  "projectId": "uuid",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+**Errors**:
+- 404: Environment not found
+
+---
+
+### Delete Environment
+
+```text
+DELETE /api/v1/organizations/:organizationId/projects/:projectId/environments/:envId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `projectId`: UUID (required)
+- `envId`: UUID (required)
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+**Errors**:
+- 404: Environment not found
+
+---
+
 ## SDK Keys
 
 ### Create SDK Key
 
 ```text
-POST /api/v1/projects/:projectId/environments/:envId/sdk-keys
+POST /api/v1/organizations/:organizationId/environments/:envId/sdk-keys
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `envId`: UUID (required)
 
 **Request Body**:
 ```json
@@ -455,8 +717,12 @@ POST /api/v1/projects/:projectId/environments/:envId/sdk-keys
 ### List SDK Keys
 
 ```text
-GET /api/v1/projects/:projectId/environments/:envId/sdk-keys
+GET /api/v1/organizations/:organizationId/environments/:envId/sdk-keys
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `envId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -479,8 +745,13 @@ GET /api/v1/projects/:projectId/environments/:envId/sdk-keys
 ### Revoke SDK Key (Soft Delete)
 
 ```text
-DELETE /api/v1/projects/:projectId/environments/:envId/sdk-keys/:keyId
+DELETE /api/v1/organizations/:organizationId/environments/:envId/sdk-keys/:keyId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `envId`: UUID (required)
+- `keyId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -496,10 +767,11 @@ DELETE /api/v1/projects/:projectId/environments/:envId/sdk-keys/:keyId
 ### Create Feature Flag
 
 ```text
-POST /api/v1/projects/:projectId/environments/:envId/flags
+POST /api/v1/organizations/:organizationId/projects/:projectId/environments/:envId/flags
 ```
 
 **Path Parameters**:
+- `organizationId`: UUID (required)
 - `projectId`: UUID (required)
 - `envId`: UUID (required)
 
@@ -558,8 +830,13 @@ POST /api/v1/projects/:projectId/environments/:envId/flags
 ### List Feature Flags
 
 ```text
-GET /api/v1/projects/:projectId/environments/:envId/flags
+GET /api/v1/organizations/:organizationId/projects/:projectId/environments/:envId/flags
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `projectId`: UUID (required)
+- `envId`: UUID (required)
 
 **Query Parameters**:
 - `status`: `'draft' | 'active' | 'archived'` (optional filter)
@@ -589,8 +866,12 @@ GET /api/v1/projects/:projectId/environments/:envId/flags
 ### Get Feature Flag
 
 ```text
-GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId
+GET /api/v1/organizations/:organizationId/flags/:flagId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -635,8 +916,12 @@ GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId
 ### Update Feature Flag
 
 ```text
-PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId
+PATCH /api/v1/organizations/:organizationId/flags/:flagId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
 
 **Request Body** (all fields optional):
 ```json
@@ -677,8 +962,12 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId
 ### Delete Feature Flag
 
 ```text
-DELETE /api/v1/projects/:projectId/environments/:envId/flags/:flagId
+DELETE /api/v1/organizations/:organizationId/flags/:flagId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -698,8 +987,12 @@ DELETE /api/v1/projects/:projectId/environments/:envId/flags/:flagId
 ### Create Targeting Rule
 
 ```text
-POST /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
+POST /api/v1/organizations/:organizationId/flags/:flagId/rules
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
 
 **Request Body**:
 ```json
@@ -720,7 +1013,7 @@ POST /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
 ```
 
 **Notes**:
-- Priority is auto-assigned based on ruleType (kill_switch=0, user=100+, role=200+, percentage=300+).
+- Priority is auto-assigned using fractional indexing (lexicographical ordering).
 - Only one kill_switch rule per flag is allowed.
 
 **Response** (201 Created):
@@ -747,8 +1040,12 @@ POST /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
 ### List Targeting Rules
 
 ```text
-GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
+GET /api/v1/organizations/:organizationId/flags/:flagId/rules
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -773,11 +1070,46 @@ GET /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules
 
 ---
 
+### Get Targeting Rule
+
+```text
+GET /api/v1/organizations/:organizationId/flags/:flagId/rules/:ruleId
+```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
+- `ruleId`: UUID (required)
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
+  "priority": "string",
+  "variationId": "uuid",
+  "conditions": "object",
+  "isEnabled": "boolean",
+  "createdAt": "ISO 8601 timestamp",
+  "updatedAt": "ISO 8601 timestamp"
+}
+```
+
+**Errors**:
+- 404: Rule not found
+
+---
+
 ### Update Targeting Rule
 
 ```text
-PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleId
+PATCH /api/v1/organizations/:organizationId/flags/:flagId/rules/:ruleId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
+- `ruleId`: UUID (required)
 
 **Request Body** (all fields optional):
 ```json
@@ -804,6 +1136,7 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleI
 
 **Errors**:
 - 400: Validation error
+- 403: Insufficient role (requires ADMIN or EDITOR)
 - 404: Rule not found
 
 ---
@@ -811,8 +1144,13 @@ PATCH /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleI
 ### Delete Targeting Rule
 
 ```text
-DELETE /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:ruleId
+DELETE /api/v1/organizations/:organizationId/flags/:flagId/rules/:ruleId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `flagId`: UUID (required)
+- `ruleId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -822,6 +1160,7 @@ DELETE /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:rule
 ```
 
 **Errors**:
+- 403: Insufficient role (requires ADMIN or EDITOR)
 - 404: Rule not found
 
 ---
@@ -831,11 +1170,13 @@ DELETE /api/v1/projects/:projectId/environments/:envId/flags/:flagId/rules/:rule
 ### List Audit Logs
 
 ```text
-GET /api/v1/audit-logs
+GET /api/v1/organizations/:organizationId/audit-logs
 ```
 
+**Path Parameters**:
+- `organizationId`: UUID (required)
+
 **Query Parameters**:
-- `flagId`: UUID (optional, filter by feature flag)
 - `projectId`: UUID (optional, filter by project)
 - `entityType`: enum (optional, filter by entity type)
 - `actionType`: enum (optional, filter by action type)
@@ -876,8 +1217,12 @@ GET /api/v1/audit-logs
 ### Get Audit Log Entry
 
 ```text
-GET /api/v1/audit-logs/:logId
+GET /api/v1/organizations/:organizationId/audit-logs/:logId
 ```
+
+**Path Parameters**:
+- `organizationId`: UUID (required)
+- `logId`: UUID (required)
 
 **Response** (200 OK):
 ```json
@@ -904,94 +1249,6 @@ GET /api/v1/audit-logs/:logId
 
 ---
 
-## Real-Time Updates (SSE)
-
-### Subscribe to Flag Updates
-
-```text
-GET /api/v1/stream/:envId
-```
-
-**Authentication**: SDK Key (header: `X-SDK-Key`)
-
-**Response**: Server-Sent Events stream
-
-**Event Types**:
-
-**flag.updated**:
-```text
-event: flag.updated
-data: {"flagKey": "string", "updatedAt": "ISO 8601 timestamp"}
-```
-
-**flag.deleted**:
-```text
-event: flag.deleted
-data: {"flagKey": "string"}
-```
-
-**heartbeat**:
-```text
-event: heartbeat
-data: {}
-```
-
-**Notes**:
-- Heartbeat sent every 30 seconds to keep connection alive.
-- Clients should implement reconnection with exponential backoff.
-- Falls back to polling if SSE connection cannot be established.
-
----
-
-## Polling Endpoint
-
-### Get All Flags for Environment
-
-```text
-GET /api/v1/flags/:envId
-```
-
-**Authentication**: SDK Key (header: `X-SDK-Key`)
-
-**Headers**:
-- `If-None-Match`: ETag value (optional, for conditional requests)
-
-**Response** (200 OK):
-```json
-{
-  "flags": [
-    {
-      "key": "string",
-      "name": "string",
-      "flagType": "'boolean' | 'multivariate'",
-      "isEnabled": "boolean",
-      "variations": [
-        {
-          "key": "string",
-          "value": "boolean | string | object",
-          "isDefault": "boolean"
-        }
-      ],
-      "rules": [
-        {
-          "ruleType": "'kill_switch' | 'user' | 'role' | 'percentage'",
-          "priority": "string",
-          "variationKey": "string",
-          "conditions": "object",
-          "isEnabled": "boolean"
-        }
-      ]
-    }
-  ],
-  "etag": "string"
-}
-```
-
-**Response** (304 Not Modified):
-- Returned when `If-None-Match` header matches current ETag (no changes since last poll).
-
----
-
 ## Error Response Format
 
 All error responses follow this format:
@@ -1007,8 +1264,8 @@ All error responses follow this format:
 
 **Common Error Codes**:
 - 400: Bad Request (validation error)
-- 401: Unauthorized (missing or invalid API key)
-- 403: Forbidden (insufficient permissions)
+- 401: Unauthorized (missing or invalid session)
+- 403: Forbidden (insufficient permissions or not a member of organization)
 - 404: Not Found
 - 409: Conflict (duplicate key, version conflict, invalid state transition)
 - 500: Internal Server Error

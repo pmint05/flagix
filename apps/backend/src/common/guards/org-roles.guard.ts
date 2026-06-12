@@ -22,17 +22,16 @@ export class OrgRolesGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const metadata = this.reflector.getAllAndOverride<{
       roles: string[];
-      options?: { orgIdParam?: string };
     }>(PLATFORM_ORG_ROLES_KEY, [context.getHandler(), context.getClass()]);
-
-    if (!metadata) return true;
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     if (!user) throw new ForbiddenException('Not authenticated');
 
-    const orgId = this.resolveOrgId(request, metadata.options?.orgIdParam);
-    if (!orgId) throw new ForbiddenException('Organization ID not found');
+    // orgId is always available in params with new URL structure
+    const orgId = request.params?.organizationId ?? request.params?.orgId;
+    if (!orgId)
+      throw new ForbiddenException('Organization ID not found in route');
 
     const [membership] = await this.db
       .select()
@@ -48,15 +47,14 @@ export class OrgRolesGuard implements CanActivate {
     if (!membership)
       throw new ForbiddenException('Not a member of this organization');
 
+    // If no metadata, just check membership
+    if (!metadata) return true;
+
+    // Check role requirement
     if (!metadata.roles.includes(membership.role)) {
       throw new ForbiddenException('Insufficient organization role');
     }
 
     return true;
-  }
-
-  private resolveOrgId(request: any, orgIdParam?: string): string | undefined {
-    const paramName = orgIdParam ?? 'organizationId';
-    return request.params?.[paramName] ?? request.body?.organizationId;
   }
 }

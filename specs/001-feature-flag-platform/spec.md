@@ -375,6 +375,38 @@ As an organization administrator, I need to manage which users belong to my orga
 
 - **Role**: Access control assignment (ADMIN, EDITOR, VIEWER) scoped to a user's membership within an organization. Determines user permissions for management operations. Enforced at API layer, not SDK layer. A user may hold different roles across different organizations.
 
+## Security Requirements
+
+### Authentication
+
+- **SEC-001**: All management API endpoints (`/api/v1/*`) MUST require a valid Better Auth session (cookie-based or bearer token). Unauthenticated requests MUST receive HTTP 401 Unauthorized.
+- **SEC-002**: Evaluation API endpoints (`/api/v1/evaluate`, `/api/v1/evaluate/all`) MUST use SDK key authentication via `X-SDK-Key` header. These endpoints are exempt from session authentication.
+- **SEC-003**: Authentication endpoints (`/api/auth/*`) are public and do not require session authentication.
+- **SEC-004**: A global `AuthGuard` MUST be applied to all routes by default. Public routes MUST explicitly opt out using `@AllowAnonymous()`.
+
+### Multi-Tenant Authorization
+
+- **SEC-005**: All management API requests MUST verify that the authenticated user is a member of the organization that owns the requested resource. Cross-tenant access MUST return HTTP 403 Forbidden.
+- **SEC-006**: Organization membership MUST be checked via `OrgRolesGuard` at the controller level for all resource-scoped endpoints.
+- **SEC-007**: When a route contains `organizationId` as a path parameter, the guard MUST verify membership against that organization directly.
+- **SEC-008**: When a route contains `projectId` (but not `organizationId`), the guard MUST resolve the parent organization from the project and verify membership against it.
+- **SEC-009**: Endpoints that create new resources without an existing organization context (e.g., `POST /organizations`, `POST /projects`) rely on service-level validation to scope resources to the user's organization.
+
+### Role-Based Access Control (RBAC)
+
+- **SEC-010**: Role-restricted endpoints MUST use `@PlatformOrgRoles()` decorator to specify required roles.
+- **SEC-011**: Role hierarchy: ADMIN > EDITOR > VIEWER. A user with a higher role automatically satisfies lower role requirements.
+- **SEC-012**: Only ADMIN users can delete organizations, projects, and feature flags.
+- **SEC-013**: ADMIN and EDITOR users can update and delete targeting rules.
+- **SEC-014**: All authenticated organization members can read resources they have membership access to.
+
+### SDK Key Security
+
+- **SEC-015**: Raw SDK keys MUST NEVER be stored in the database. Only SHA-256 hashes and short prefixes (hints) are persisted.
+- **SEC-016**: Raw SDK keys MUST be displayed only once, at creation time. Subsequent retrieval is not possible.
+- **SEC-017**: SDK key lookup MUST use the hash comparison, not prefix matching.
+- **SEC-018**: Revoked (soft-deleted) SDK keys MUST be rejected by the `SdkKeyGuard`.
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
