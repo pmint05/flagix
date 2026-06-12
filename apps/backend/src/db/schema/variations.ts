@@ -39,7 +39,9 @@ export const variations = pgTable(
     uniqueIndex('idx_variations_flag_key').on(table.featureFlagId, table.key),
     index('idx_variations_flag').on(table.featureFlagId),
     index('idx_variations_organization').on(table.organizationId),
-    uniqueIndex('idx_variations_default').on(table.featureFlagId).where(sql`${table.isDefault} = true`),
+    uniqueIndex('idx_variations_default')
+      .on(table.featureFlagId)
+      .where(sql`${table.isDefault} = true`),
   ],
 );
 
