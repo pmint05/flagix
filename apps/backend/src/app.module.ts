@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { EnvironmentsModule } from './modules/environments/environments.module';
+import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -43,6 +44,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     OrganizationsModule,
     ProjectsModule,
     EnvironmentsModule,
+    SdkKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService],
