@@ -4,6 +4,7 @@ import { environments } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type { CreateEnvironmentDto } from './dto/create-environment.dto';
+import type { UpdateEnvironmentDto } from './dto/update-environment.dto';
 
 @Injectable()
 export class EnvironmentsRepository {
@@ -56,6 +57,20 @@ export class EnvironmentsRepository {
       })
       .returning();
     return env;
+  }
+
+  async update(id: string, input: UpdateEnvironmentDto) {
+    const [env] = await this.db
+      .update(environments)
+      .set({
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+      })
+      .where(eq(environments.id, id))
+      .returning();
+    return env ?? null;
   }
 
   async softDelete(id: string) {

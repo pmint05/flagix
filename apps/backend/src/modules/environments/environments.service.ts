@@ -6,6 +6,7 @@ import {
 import { EnvironmentsRepository } from './environments.repository';
 import { slugify } from '@/common/utils/slug';
 import type { CreateEnvironmentDto } from './dto/create-environment.dto';
+import type { UpdateEnvironmentDto } from './dto/update-environment.dto';
 
 @Injectable()
 export class EnvironmentsService {
@@ -32,6 +33,21 @@ export class EnvironmentsService {
     if (!env || env.projectId !== projectId)
       throw new NotFoundException('Environment not found');
     return env;
+  }
+
+  async update(
+    orgId: string,
+    projectId: string,
+    envId: string,
+    dto: UpdateEnvironmentDto,
+  ) {
+    const env = await this.envRepo.findById(envId);
+    if (!env || env.projectId !== projectId)
+      throw new NotFoundException('Environment not found');
+
+    const updated = await this.envRepo.update(envId, dto);
+    if (!updated) throw new NotFoundException('Environment not found');
+    return updated;
   }
 
   async remove(orgId: string, projectId: string, envId: string) {

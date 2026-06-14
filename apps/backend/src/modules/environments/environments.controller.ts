@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -11,8 +12,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
+import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
 import { EnvironmentsService } from './environments.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
+import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Environments')
@@ -53,6 +56,18 @@ export class EnvironmentsController {
     @Param('envId') envId: string,
   ) {
     return this.envService.findOne(orgId, projectId, envId);
+  }
+
+  @Patch(':envId')
+  @PlatformOrgRoles(['admin', 'editor'])
+  @ApiOperation({ summary: 'Update environment' })
+  async update(
+    @Param('organizationId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Param('envId') envId: string,
+    @Body() dto: UpdateEnvironmentDto,
+  ) {
+    return this.envService.update(orgId, projectId, envId, dto);
   }
 
   @Delete(':envId')
