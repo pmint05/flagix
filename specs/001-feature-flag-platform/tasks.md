@@ -263,17 +263,17 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 **Purpose**: Backend hardening, observability, and verification before any frontend is built.
 
-- [ ] T100 Add structured logging via `nestjs-pino` in `apps/backend/src/app.module.ts`: JSON logs in production, pretty in dev; ensure all evaluation errors are logged with `flagKey`, `environmentId`, `userId` (hashed), and stack trace
-- [ ] T101 Add request ID middleware in `apps/backend/src/common/middleware/request-id.middleware.ts` injecting `X-Request-Id` into every request and response
-- [ ] T102 Add health check endpoint `GET /api/v1/health` (`@AllowAnonymous()`) returning `{ status: 'ok', db: 'ok' | 'error' }`; verify DB connectivity with `SELECT 1`
-- [ ] T103 Add NestJS rate limiting (`@nestjs/throttler`) configured at 10 req/min for `/api/auth/*` (FR-076) and 1000 req/min for `/api/v1/evaluate` per SDK key
-- [ ] T104 Add a `cors` configuration allowing the dashboard origin (placeholder `http://localhost:5173`) and the demo origin (`http://localhost:3001`); credentials enabled for session cookies
-- [ ] T105 Add a `drizzle-zod` integration in `apps/backend/src/modules/organizations/dto/` as a worked example of deriving Zod schemas from the Drizzle table definitions (document the pattern in a code comment for future modules)
-- [ ] T106 Add `class-validator` validation messages localized to English with stable error codes (e.g., `flag.invalid_key`) so the frontend can render field-level errors
-- [ ] T107 Add a comprehensive `README.md` in `apps/backend/` documenting: env vars, db commands, auth commands, run/test/lint scripts, and the `bodyParser: false` requirement (with link to issue if disabled)
-- [ ] T108 Run `pnpm --filter backend lint` and `pnpm --filter backend typecheck`; fix all errors
-- [ ] T109 Run `pnpm --filter backend test` (unit + contract + integration); ensure 100% pass; generate coverage report and target ≥80% on the evaluation engine module
-- [ ] T110 Validate `specs/001-feature-flag-platform/quickstart.md` Scenarios 0, 1, 2, 4, 5, 6, 7, 8 (Auth + all backend flows). Skip Scenarios 3, 9, 10 (frontend/dashboard). Document any deviations in a `BACKEND_VALIDATION.md` file in the feature dir
+- [X] T100 Add structured logging via `nestjs-pino` in `apps/backend/src/app.module.ts`: JSON logs in production, pretty in dev; ensure all evaluation errors are logged with `flagKey`, `environmentId`, `userId` (hashed), and stack trace
+- [X] T101 Add request ID middleware in `apps/backend/src/common/middleware/request-id.middleware.ts` injecting `X-Request-Id` into every request and response
+- [X] T102 Add health check endpoint `GET /api/v1/health` (`@AllowAnonymous()`) returning `{ status: 'ok', db: 'ok' | 'error' }`; verify DB connectivity with `SELECT 1`
+- [X] T103 Add NestJS rate limiting (`@nestjs/throttler`) configured at 10 req/min for `/api/auth/*` (FR-076) and 1000 req/min for `/api/v1/evaluate` per SDK key
+- [X] T104 Add a `cors` configuration allowing the dashboard origin (placeholder `http://localhost:5173`) and the demo origin (`http://localhost:3001`); credentials enabled for session cookies
+- [X] T105 Add a `drizzle-zod` integration in `apps/backend/src/modules/organizations/dto/` as a worked example of deriving Zod schemas from the Drizzle table definitions (document the pattern in a code comment for future modules)
+- [X] T106 Add `class-validator` validation messages localized to English with stable error codes (e.g., `flag.invalid_key`) so the frontend can render field-level errors
+- [X] T107 Add a comprehensive `README.md` in `apps/backend/` documenting: env vars, db commands, auth commands, run/test/lint scripts, and the `bodyParser: false` requirement (with link to issue if disabled)
+- [X] T108 Run `pnpm --filter backend lint` and `pnpm --filter backend typecheck`; fix all errors
+- [X] T109 Run `pnpm --filter backend test` (unit + contract + integration); ensure 100% pass; generate coverage report and target ≥80% on the evaluation engine module
+- [X] T110 Validate `specs/001-feature-flag-platform/quickstart.md` Scenarios 0, 1, 2, 4, 5, 6, 7, 8 (Auth + all backend flows). Skip Scenarios 3, 9, 10 (frontend/dashboard). Document any deviations in a `BACKEND_VALIDATION.md` file in the feature dir
 
 **Checkpoint**: Backend is production-ready for an MVP; all P1 success criteria satisfied without any frontend or SDK code.
 

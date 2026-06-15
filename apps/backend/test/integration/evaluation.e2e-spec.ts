@@ -32,7 +32,9 @@ describe('Evaluation API (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication({ bodyParser: false });
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     db = moduleFixture.get<Database>(DATABASE);
@@ -237,9 +239,8 @@ describe('Evaluation API (e2e)', () => {
       const [draftFlag] = await db
         .insert(featureFlags)
         .values({
-          organizationId: (
-            await db.select().from(organizations).limit(1)
-          )[0].id,
+          organizationId: (await db.select().from(organizations).limit(1))[0]
+            .id,
           environmentId: envId,
           key: 'draft-flag',
           name: 'Draft Flag',
@@ -268,7 +269,9 @@ describe('Evaluation API (e2e)', () => {
       );
       expect(flagKeys).not.toContain('draft-flag');
 
-      await db.delete(variations).where(eq(variations.featureFlagId, draftFlag.id));
+      await db
+        .delete(variations)
+        .where(eq(variations.featureFlagId, draftFlag.id));
       await db.delete(featureFlags).where(eq(featureFlags.id, draftFlag.id));
     });
   });
@@ -309,7 +312,8 @@ describe('Evaluation API (e2e)', () => {
       const [pctFlag] = await db
         .insert(featureFlags)
         .values({
-          organizationId: (await db.select().from(organizations).limit(1))[0].id,
+          organizationId: (await db.select().from(organizations).limit(1))[0]
+            .id,
           environmentId: envId,
           key: 'pct-flag',
           name: 'Percentage Flag',
@@ -322,7 +326,8 @@ describe('Evaluation API (e2e)', () => {
       const [pctVarTrue] = await db
         .insert(variations)
         .values({
-          organizationId: (await db.select().from(organizations).limit(1))[0].id,
+          organizationId: (await db.select().from(organizations).limit(1))[0]
+            .id,
           featureFlagId: pctFlag.id,
           key: 'true',
           value: true,
@@ -368,8 +373,12 @@ describe('Evaluation API (e2e)', () => {
       expect(actualPercentage).toBeGreaterThan(25);
       expect(actualPercentage).toBeLessThan(35);
 
-      await db.delete(targetingRules).where(eq(targetingRules.featureFlagId, pctFlag.id));
-      await db.delete(variations).where(eq(variations.featureFlagId, pctFlag.id));
+      await db
+        .delete(targetingRules)
+        .where(eq(targetingRules.featureFlagId, pctFlag.id));
+      await db
+        .delete(variations)
+        .where(eq(variations.featureFlagId, pctFlag.id));
       await db.delete(featureFlags).where(eq(featureFlags.id, pctFlag.id));
     }, 120000);
   });

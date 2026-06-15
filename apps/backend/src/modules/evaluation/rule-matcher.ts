@@ -1,4 +1,8 @@
-import type { EvaluationContext, EvaluationReason, RuleType } from '@flagix/shared';
+import type {
+  EvaluationContext,
+  EvaluationReason,
+  RuleType,
+} from '@flagix/shared';
 import { bucket } from './hash.util';
 
 export interface RuleForMatching {
@@ -12,7 +16,11 @@ export interface RuleForMatching {
 export interface RuleMatcherStrategy {
   ruleType: RuleType;
   reason: EvaluationReason;
-  matchFn: (rule: RuleForMatching, flagKey: string, context: EvaluationContext) => boolean;
+  matchFn: (
+    rule: RuleForMatching,
+    flagKey: string,
+    context: EvaluationContext,
+  ) => boolean;
 }
 
 export function matchesKillSwitch(
@@ -56,34 +64,42 @@ export function matchesPercentageRule(
   return bucket(flagKey, context.userId) < percentage;
 }
 
-export const RULE_MATCHER_REGISTRY: ReadonlyMap<RuleType, RuleMatcherStrategy> = new Map<
-  RuleType,
-  RuleMatcherStrategy
->([
-  [
-    'kill_switch',
-    { ruleType: 'kill_switch', reason: 'KILL_SWITCH', matchFn: matchesKillSwitch },
-  ],
-  [
-    'user',
-    { ruleType: 'user', reason: 'USER_TARGETING', matchFn: matchesUserRule },
-  ],
-  [
-    'role',
-    { ruleType: 'role', reason: 'ROLE_TARGETING', matchFn: matchesRoleRule },
-  ],
-  [
-    'percentage',
-    {
-      ruleType: 'percentage',
-      reason: 'PERCENTAGE_ROLLOUT',
-      matchFn: matchesPercentageRule,
-    },
-  ],
-]);
+export const RULE_MATCHER_REGISTRY: ReadonlyMap<RuleType, RuleMatcherStrategy> =
+  new Map<RuleType, RuleMatcherStrategy>([
+    [
+      'kill_switch',
+      {
+        ruleType: 'kill_switch',
+        reason: 'KILL_SWITCH',
+        matchFn: matchesKillSwitch,
+      },
+    ],
+    [
+      'user',
+      { ruleType: 'user', reason: 'USER_TARGETING', matchFn: matchesUserRule },
+    ],
+    [
+      'role',
+      { ruleType: 'role', reason: 'ROLE_TARGETING', matchFn: matchesRoleRule },
+    ],
+    [
+      'percentage',
+      {
+        ruleType: 'percentage',
+        reason: 'PERCENTAGE_ROLLOUT',
+        matchFn: matchesPercentageRule,
+      },
+    ],
+  ]);
 
-export const MATCHER_TIERS: readonly RuleType[] = ['user', 'role', 'percentage'];
+export const MATCHER_TIERS: readonly RuleType[] = [
+  'user',
+  'role',
+  'percentage',
+];
 
-export function getMatcher(ruleType: RuleType): RuleMatcherStrategy | undefined {
+export function getMatcher(
+  ruleType: RuleType,
+): RuleMatcherStrategy | undefined {
   return RULE_MATCHER_REGISTRY.get(ruleType);
 }

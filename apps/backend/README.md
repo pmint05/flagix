@@ -1,98 +1,154 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Flagix Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend for the Flagix Feature Flag Management platform.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Prerequisites
 
-## Description
+- Node.js 20+ LTS
+- pnpm 10+
+- Docker (for PostgreSQL)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Quick Start
 
 ```bash
-$ pnpm install
+# Start PostgreSQL
+docker compose -f ../../infra/docker/docker-compose.yml up -d
+
+# Install dependencies
+pnpm install
+
+# Push schema to database
+pnpm --filter backend db:push
+
+# Generate Better Auth schema
+pnpm --filter backend auth:generate
+
+# Start dev server
+pnpm --filter backend dev
 ```
 
-## Compile and run the project
+Server runs at `http://localhost:9000/api/v1`.
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | `postgresql://flagix:root@localhost:5432/flagix_dev` | PostgreSQL connection string |
+| `BETTER_AUTH_SECRET` | Yes | — | 32+ char secret for session signing |
+| `BETTER_AUTH_URL` | Yes | `http://localhost:9000` | Base URL for auth callbacks |
+| `PORT` | No | `9000` | Server port |
+| `NODE_ENV` | No | `development` | `production` enables JSON logs |
+| `WHITE_LISTED_ORIGINS` | No | `http://localhost:3000,http://localhost:5173` | Comma-separated CORS origins |
+
+## Scripts
 
 ```bash
-# development
-$ pnpm run start
+# Development
+pnpm --filter backend dev          # Watch mode
+pnpm --filter backend start:debug  # Debug mode
 
-# watch mode
-$ pnpm run start:dev
+# Database
+pnpm --filter backend db:push      # Push schema (dev)
+pnpm --filter backend db:generate  # Generate migrations
+pnpm --filter backend db:migrate   # Run migrations
+pnpm --filter backend db:studio    # Drizzle Studio UI
 
-# production mode
-$ pnpm run start:prod
+# Auth
+pnpm --filter backend auth:generate  # Regenerate auth-schema.ts
+
+# Build
+pnpm --filter backend build
+
+# Test
+pnpm --filter backend test          # All tests
+pnpm --filter backend test:unit     # Unit tests only
+pnpm --filter backend test:contract # Contract tests only
+pnpm --filter backend test:cov      # With coverage
+
+# Lint
+pnpm --filter backend lint
 ```
 
-## Run tests
+## Architecture
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+```
+src/
+├── modules/
+│   ├── auth/           # Better Auth configuration
+│   ├── organizations/  # Multi-tenant org management
+│   ├── projects/       # Project CRUD
+│   ├── environments/   # Environment management
+│   ├── feature-flags/  # Flag lifecycle (draft → active → archived)
+│   ├── targeting-rules/# Rule engine (kill switch, user, role, percentage)
+│   ├── evaluation/     # Deterministic flag evaluation (SDK endpoint)
+│   ├── sdk-keys/       # SDK key management (SHA-256 hashed)
+│   ├── audit-logs/     # Immutable audit trail
+│   └── health/         # Health check endpoint
+├── common/
+│   ├── guards/         # AuthGuard, OrgRolesGuard, SdkKeyGuard
+│   ├── decorators/     # @CurrentUser, @PlatformOrgRoles, @SdkEnvironment
+│   ├── filters/        # Global exception filter
+│   ├── interceptors/   # Audit logging, response transform
+│   ├── middleware/      # Request ID injection
+│   ├── pipes/          # Validation pipe with stable error codes
+│   └── utils/          # Fractional indexing, crypto, slug utilities
+└── db/
+    ├── schema/         # Drizzle table definitions
+    └── migrations/     # Generated SQL migrations
 ```
 
-## Deployment
+## Key Design Decisions
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### `bodyParser: false`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+The Better Auth adapter requires the raw request body for signature verification. The global `bodyParser: false` setting in `NestFactory.create()` is **mandatory**. Do not enable body parsing globally — NestJS pipes and class-validator work correctly with this setting.
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+### SDK Key Security
+
+Raw SDK keys are shown **only once** at creation time. The backend stores only SHA-256 hashes with 8-character prefixes for lookup. Lost keys must be regenerated.
+
+### Evaluation Engine
+
+The evaluation engine (`src/modules/evaluation/`) is a pure function with no side effects. It enforces strict rule priority: Kill Switch > User > Role > Percentage > Default. All failures return safe defaults (`enabled: false`).
+
+### Rate Limiting
+
+| Route | Limit | Scope |
+|---|---|---|
+| `/api/auth/*` | 10 req/min | Per IP |
+| `/api/v1/evaluate` | 1000 req/min | Per SDK key |
+
+### Validation Errors
+
+All validation errors return a consistent shape:
+
+```json
+{
+  "statusCode": 400,
+  "error": "ValidationException",
+  "message": "Organization name is required",
+  "details": [
+    {
+      "field": "name",
+      "code": "create_organization.name.isNotEmpty",
+      "message": "Organization name is required"
+    }
+  ]
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Error codes follow the pattern: `{entity}.{field}.{constraint}`.
 
-## Resources
+## API Endpoints
 
-Check out a few resources that may come in handy when working with NestJS:
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | None | Health check |
+| `POST` | `/api/v1/organizations` | Session | Create organization |
+| `GET` | `/api/v1/organizations` | Session | List user's organizations |
+| `POST` | `/api/v1/evaluate` | SDK Key | Evaluate single flag |
+| `POST` | `/api/v1/evaluate/all` | SDK Key | Evaluate all flags in env |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Full API docs available at:
+- Swagger UI: `http://localhost:9000/swagger`
+- Scalar UI: `http://localhost:9000/api/docs`

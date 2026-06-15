@@ -1,8 +1,6 @@
 import { createHash, randomBytes } from 'crypto';
 import { BASE62_ALPHABET } from '../constants';
 
-
-
 export function hashSdkKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }

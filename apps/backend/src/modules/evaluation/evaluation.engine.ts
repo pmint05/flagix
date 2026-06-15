@@ -1,7 +1,15 @@
-import type { EvaluationContext, EvaluationResult, RuleType } from '@flagix/shared';
+import type {
+  EvaluationContext,
+  EvaluationResult,
+  RuleType,
+} from '@flagix/shared';
 import type { LoadedFlag } from './safe-default.util';
 import { buildSafeDefault } from './safe-default.util';
-import { getMatcher, MATCHER_TIERS, type RuleForMatching } from './rule-matcher';
+import {
+  getMatcher,
+  MATCHER_TIERS,
+  type RuleForMatching,
+} from './rule-matcher';
 
 export function evaluate(
   flag: LoadedFlag,
@@ -21,11 +29,16 @@ export function evaluate(
 
   const killSwitchMatcher = getMatcher('kill_switch');
   const killSwitchRule = flag.rules.find(
-    (r) => r.ruleType === 'kill_switch' && r.isEnabled && killSwitchMatcher?.matchFn(r, flag.key, context),
+    (r) =>
+      r.ruleType === 'kill_switch' &&
+      r.isEnabled &&
+      killSwitchMatcher?.matchFn(r, flag.key, context),
   );
 
   if (killSwitchRule) {
-    const variation = flag.variations.find((v) => v.id === killSwitchRule.variationId);
+    const variation = flag.variations.find(
+      (v) => v.id === killSwitchRule.variationId,
+    );
     return {
       flagKey: flag.key,
       enabled: false,
@@ -62,10 +75,12 @@ function evaluateTier(
   const matcher = getMatcher(ruleType);
   if (!matcher) return null;
 
-  const tierRules = flag.rules.filter((r) => r.ruleType === ruleType && r.isEnabled);
+  const tierRules = flag.rules.filter(
+    (r) => r.ruleType === ruleType && r.isEnabled,
+  );
 
   for (const rule of tierRules) {
-    if (!matcher.matchFn(rule as RuleForMatching, flag.key, context)) continue;
+    if (!matcher.matchFn(rule, flag.key, context)) continue;
 
     const variation = flag.variations.find((v) => v.id === rule.variationId);
     if (variation) {

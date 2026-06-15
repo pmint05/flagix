@@ -1,6 +1,7 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Throttle } from '@nestjs/throttler';
 import { SdkKeyGuard } from '@/common/guards/sdk-key.guard';
 import {
   SdkEnvironment,
@@ -13,6 +14,7 @@ import { EvaluateAllDto } from './dto/evaluate-all.dto';
 @ApiTags('Evaluation')
 @Controller('evaluate')
 @UseGuards(SdkKeyGuard)
+@Throttle({ evaluate: { ttl: 60_000, limit: 1000 } })
 @AllowAnonymous()
 @ApiHeader({
   name: 'X-SDK-Key',

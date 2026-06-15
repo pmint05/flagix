@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
@@ -14,6 +15,7 @@ import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditLogsInterceptor } from './modules/audit-logs/audit-logs.interceptor';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
+import { HealthModule } from './modules/health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -22,6 +24,24 @@ const isProduction = process.env.NODE_ENV === 'production';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'auth',
+        ttl: 60_000,
+        limit: 10,
+      },
+      {
+        name: 'evaluate',
+        ttl: 60_000,
+        limit: 1000,
+        getTracker: (req: Record<string, any>) =>
+          Promise.resolve(
+            (req.headers?.['x-sdk-key'] as string) || req.ip || 'unknown',
+          ),
+        generateKey: (context, trackerString, throttlerName) =>
+          `${throttlerName}:${trackerString}`,
+      },
+    ]),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -55,10 +75,15 @@ const isProduction = process.env.NODE_ENV === 'production';
     AuditLogsModule,
     SdkKeysModule,
     EvaluationModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditLogsInterceptor,

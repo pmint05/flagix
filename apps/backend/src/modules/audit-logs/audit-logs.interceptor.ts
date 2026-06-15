@@ -48,7 +48,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
               actorType: 'user',
               actorEmail: user?.email,
               changes: {
-                before: method === 'POST' ? null : request.body ?? null,
+                before: method === 'POST' ? null : (request.body ?? null),
                 after: ['PATCH', 'PUT', 'POST'].includes(method)
                   ? (responseData ?? null)
                   : null,

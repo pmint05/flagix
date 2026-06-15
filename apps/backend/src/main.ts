@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { createFlagixValidationPipe } from './common/pipes/validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +17,12 @@ async function bootstrap() {
 
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.set('trust proxy', true);
+
+  // Request ID — injects X-Request-Id on every request/response
+  const requestIdMiddleware = new RequestIdMiddleware();
+  app.use((req: any, res: any, next: any) =>
+    requestIdMiddleware.use(req, res, next),
+  );
 
   // Pino Logger Integration
   const logger = app.get(Logger);
@@ -41,13 +49,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  app.useGlobalPipes(createFlagixValidationPipe());
 
   app.enableShutdownHooks();
 
