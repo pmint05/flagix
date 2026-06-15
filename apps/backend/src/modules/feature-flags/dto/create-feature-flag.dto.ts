@@ -6,6 +6,8 @@ import {
   IsEnum,
   IsArray,
   ValidateNested,
+  IsDefined,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -17,6 +19,7 @@ class VariationDto {
   key!: string;
 
   @ApiProperty()
+  @IsDefined()
   value!: boolean | string | Record<string, unknown>;
 
   @ApiPropertyOptional()
@@ -26,6 +29,7 @@ class VariationDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsBoolean()
   isDefault?: boolean;
 }
 

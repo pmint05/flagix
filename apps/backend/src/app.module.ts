@@ -13,6 +13,7 @@ import { TargetingRulesModule } from './modules/targeting-rules/targeting-rules.
 import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditLogsInterceptor } from './modules/audit-logs/audit-logs.interceptor';
+import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -53,6 +54,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     TargetingRulesModule,
     AuditLogsModule,
     SdkKeysModule,
+    EvaluationModule,
   ],
   controllers: [AppController],
   providers: [

@@ -214,7 +214,7 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ---
 
-## Phase 4: Feature Flag Evaluation Engine (Lõi hệ thống)
+## Phase 4: Feature Flag Evaluation Engine
 
 **Purpose**: Build the deterministic evaluation engine as a pure function and expose it via the SDK-key-authenticated `/api/v1/evaluate` and `/api/v1/evaluate/all` endpoints.
 
@@ -222,38 +222,38 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ### Phase 4.1: Pure Evaluation Engine
 
-- [ ] T080 [P] Create `apps/backend/src/modules/evaluation/hash.util.ts` exporting `bucket(flagKey: string, userId: string): number` using `imurmurhash` (`murmurhash3_x86_32(\`${flagKey}:${userId}\`, 0) % 100`); with a unit test `apps/backend/src/modules/evaluation/hash.util.spec.ts` asserting determinism (same input → same output over 1000 calls) and distribution (10 000 random userIds within 2% of 30%)
-- [ ] T081 [P] Create `apps/backend/src/modules/evaluation/rule-matcher.ts` exporting pure functions: `matchesKillSwitch(rule, flag)`, `matchesUserRule(rule, context)`, `matchesRoleRule(rule, context)`, `matchesPercentageRule(rule, flagKey, context)` — each returns boolean; rule-matcher has no DB/I/O dependency
-- [ ] T082 Create `apps/backend/src/modules/evaluation/evaluation.engine.ts` exporting `evaluate(flag: LoadedFlag, context: EvaluationContext): EvaluationResult` as a pure function implementing the strict flow from evaluation-api.md: lifecycle check → kill switch → user → role → percentage → default; returns `{ flagKey, enabled, variationKey, resolvedValue, evaluationReason }`; includes a unit test `evaluation.engine.spec.ts` covering every priority level and every edge case (anonymous user, missing role, archived flag, draft flag, invalid attributes)
-- [ ] T083 Create `apps/backend/src/modules/evaluation/flag-loader.ts` with `loadFlag(environmentId, flagKey): Promise<LoadedFlag | null>` that joins `featureFlags + variations + targetingRules` in a single query, returning null if not found; `LoadedFlag` type derived from Drizzle inference including nested `variations` and sorted `rules`
-- [ ] T084 Create `apps/backend/src/modules/evaluation/evaluation.service.ts` with `evaluate(environmentId, flagKey, context)` that: (1) calls `flagLoader.loadFlag`, (2) if null returns `{ enabled: false, reason: 'FLAG_NOT_FOUND' }`, (3) calls `evaluationEngine.evaluate`, (4) wraps the whole method in a try/catch that on any throw returns the safe default with `reason: 'EVALUATION_ERROR'` and logs the error (FR-037, FR-056)
-- [ ] T085 Create `apps/backend/src/modules/evaluation/safe-default.util.ts` exporting `buildSafeDefault(flag: LoadedFlag | null, flagKey: string, reason: EvaluationReason): EvaluationResult` — returns the boolean `false` if flag is null, else the flag's `defaultVariation` resolved value
+- [X] T080 [P] Create `apps/backend/src/modules/evaluation/hash.util.ts` exporting `bucket(flagKey: string, userId: string): number` using `imurmurhash` (`murmurhash3_x86_32(\`${flagKey}:${userId}\`, 0) % 100`); with a unit test `apps/backend/src/modules/evaluation/hash.util.spec.ts` asserting determinism (same input → same output over 1000 calls) and distribution (10 000 random userIds within 2% of 30%)
+- [X] T081 [P] Create `apps/backend/src/modules/evaluation/rule-matcher.ts` exporting pure functions: `matchesKillSwitch(rule, flag)`, `matchesUserRule(rule, context)`, `matchesRoleRule(rule, context)`, `matchesPercentageRule(rule, flagKey, context)` — each returns boolean; rule-matcher has no DB/I/O dependency
+- [X] T082 Create `apps/backend/src/modules/evaluation/evaluation.engine.ts` exporting `evaluate(flag: LoadedFlag, context: EvaluationContext): EvaluationResult` as a pure function implementing the strict flow from evaluation-api.md: lifecycle check → kill switch → user → role → percentage → default; returns `{ flagKey, enabled, variationKey, resolvedValue, evaluationReason }`; includes a unit test `evaluation.engine.spec.ts` covering every priority level and every edge case (anonymous user, missing role, archived flag, draft flag, invalid attributes)
+- [X] T083 Create `apps/backend/src/modules/evaluation/flag-loader.ts` with `loadFlag(environmentId, flagKey): Promise<LoadedFlag | null>` that joins `featureFlags + variations + targetingRules` in a single query, returning null if not found; `LoadedFlag` type derived from Drizzle inference including nested `variations` and sorted `rules`
+- [X] T084 Create `apps/backend/src/modules/evaluation/evaluation.service.ts` with `evaluate(environmentId, flagKey, context)` that: (1) calls `flagLoader.loadFlag`, (2) if null returns `{ enabled: false, reason: 'FLAG_NOT_FOUND' }`, (3) calls `evaluationEngine.evaluate`, (4) wraps the whole method in a try/catch that on any throw returns the safe default with `reason: 'EVALUATION_ERROR'` and logs the error (FR-037, FR-056)
+- [X] T085 Create `apps/backend/src/modules/evaluation/safe-default.util.ts` exporting `buildSafeDefault(flag: LoadedFlag | null, flagKey: string, reason: EvaluationReason): EvaluationResult` — returns the boolean `false` if flag is null, else the flag's `defaultVariation` resolved value
 
 ### Phase 4.2: SDK Key Guard (Security Refactor)
 
-- [ ] T086 Create `apps/backend/src/common/guards/sdk-key.guard.ts` implementing `CanActivate`: reads `X-SDK-Key` header, hashes it, looks up `sdkKeys.keyHash` ensuring `deletedAt` is null, attaches `{ environmentId }` to `req.environment`; throws `UnauthorizedException` on missing/invalid key (HTTP 401)
-- [ ] T087 Create `apps/backend/src/common/decorators/sdk-environment.decorator.ts` exporting `@SdkEnvironment()` to inject the resolved environment object into controller parameters
+- [X] T086 Create `apps/backend/src/common/guards/sdk-key.guard.ts` implementing `CanActivate`: reads `X-SDK-Key` header, hashes it, looks up `sdkKeys.keyHash` ensuring `deletedAt` is null, attaches `{ environmentId }` to `req.environment`; throws `UnauthorizedException` on missing/invalid key (HTTP 401)
+- [X] T087 Create `apps/backend/src/common/decorators/sdk-environment.decorator.ts` exporting `@SdkEnvironment()` to inject the resolved environment object into controller parameters
 
 ### Phase 4.3: Evaluation Controller
 
-- [ ] T088 Create `apps/backend/src/modules/evaluation/dto/evaluate-flag.dto.ts` with `flagKey: z.string().min(1)`, `context: evaluationContextSchema`; pipe through `ZodValidationPipe`
-- [ ] T089 Create `apps/backend/src/modules/evaluation/dto/evaluate-all.dto.ts` with `context: evaluationContextSchema` (no flagKey)
-- [ ] T090 Create `apps/backend/src/modules/evaluation/evaluation.controller.ts` with `POST /api/v1/evaluate` (single flag) and `POST /api/v1/evaluate/all` (all active flags in env); both decorated with `@AllowAnonymous()` + `@UseGuards(SdkKeyGuard)`; controller uses `@SdkEnvironment()` to get the env, then delegates to `EvaluationService`
-- [ ] T091 Create `apps/backend/src/modules/evaluation/evaluation.module.ts` importing the DatabaseModule, exporting `EvaluationService` and the controller
+- [X] T088 Create `apps/backend/src/modules/evaluation/dto/evaluate-flag.dto.ts` with `flagKey: z.string().min(1)`, `context: evaluationContextSchema`; pipe through `ZodValidationPipe`
+- [X] T089 Create `apps/backend/src/modules/evaluation/dto/evaluate-all.dto.ts` with `context: evaluationContextSchema` (no flagKey)
+- [X] T090 Create `apps/backend/src/modules/evaluation/evaluation.controller.ts` with `POST /api/v1/evaluate` (single flag) and `POST /api/v1/evaluate/all` (all active flags in env); both decorated with `@AllowAnonymous()` + `@UseGuards(SdkKeyGuard)`; controller uses `@SdkEnvironment()` to get the env, then delegates to `EvaluationService`
+- [X] T091 Create `apps/backend/src/modules/evaluation/evaluation.module.ts` importing the DatabaseModule, exporting `EvaluationService` and the controller
 
 ### Phase 4.4: Evaluation Tests (REQUIRED per spec SC-003, SC-004, SC-005, SC-006)
 
-- [ ] T092 Create `apps/backend/test/unit/evaluation.engine.spec.ts` (Jest, no NestJS): test cases for every priority level — KILL SWITCH wins over USER; USER wins over ROLE; ROLE wins over PERCENTAGE; PERCENTAGE wins over DEFAULT; DEFAULT used when no rule matches; one rule per evaluation even when multiple match; deterministic tie-breaking by rule ID order
-- [ ] T093 Create `apps/backend/test/unit/rule-matcher.spec.ts` covering: user rule matches when userId is in `userIds` and skipped when not; role rule matches when role is in `roles`; percentage rule with `bucket() < percentage` → match; kill_switch always matches when `isEnabled`
-- [ ] T094 Create `apps/backend/test/integration/evaluate.endpoint.spec.ts` (Supertest): start the Nest app, seed an environment + 3 flags + rules, send `POST /api/v1/evaluate` with the SDK key; verify response shape matches evaluation-api.md; assert 401 for invalid key, 400 for missing flagKey
-- [ ] T095 Create `apps/backend/test/integration/evaluate-all.endpoint.spec.ts` (Supertest): verify all active flags are evaluated; archived and draft flags are excluded; per-flag failure does not affect siblings
-- [ ] T096 Create `apps/backend/test/integration/percentage-distribution.spec.ts`: seed a 30% percentage rule, call `POST /api/v1/evaluate` with 10 000 distinct synthetic userIds, assert that 28–32% receive the rollout variation (SC-005); assert the same userId always returns the same variation across 100 calls (SC-006)
+- [X] T092 Create `apps/backend/test/unit/evaluation.engine.spec.ts` (Jest, no NestJS): test cases for every priority level — KILL SWITCH wins over USER; USER wins over ROLE; ROLE wins over PERCENTAGE; PERCENTAGE wins over DEFAULT; DEFAULT used when no rule matches; one rule per evaluation even when multiple match; deterministic tie-breaking by rule ID order
+- [X] T093 Create `apps/backend/test/unit/rule-matcher.spec.ts` covering: user rule matches when userId is in `userIds` and skipped when not; role rule matches when role is in `roles`; percentage rule with `bucket() < percentage` → match; kill_switch always matches when `isEnabled`
+- [X] T094 Create `apps/backend/test/integration/evaluate.endpoint.spec.ts` (Supertest): start the Nest app, seed an environment + 3 flags + rules, send `POST /api/v1/evaluate` with the SDK key; verify response shape matches evaluation-api.md; assert 401 for invalid key, 400 for missing flagKey
+- [X] T095 Create `apps/backend/test/integration/evaluate-all.endpoint.spec.ts` (Supertest): verify all active flags are evaluated; archived and draft flags are excluded; per-flag failure does not affect siblings
+- [X] T096 Create `apps/backend/test/integration/percentage-distribution.spec.ts`: seed a 30% percentage rule, call `POST /api/v1/evaluate` with 10 000 distinct synthetic userIds, assert that 28–32% receive the rollout variation (SC-005); assert the same userId always returns the same variation across 100 calls (SC-006)
 
 ### Phase 4.5: Fail-Safe Verification
 
-- [ ] T097 Create `apps/backend/test/integration/evaluation-fail-safe.spec.ts`: simulate a database error (close the pool mid-request) and assert the endpoint still returns 200 with `enabled: false, reason: 'EVALUATION_ERROR'`; assert no unhandled promise rejection crashes the process (FR-037, FR-055, FR-056)
-- [ ] T098 Create `apps/backend/test/integration/anonymous-evaluation.spec.ts`: send context with no `userId`, assert USER rules and PERCENTAGE rules are skipped (FR-034); ROLE rules are still evaluated; DEFAULT returned when no ROLE match
-- [ ] T099 Create `apps/backend/test/integration/kill-switch.spec.ts` (the mandatory spec test from `plan.md`): a flag with KILL SWITCH + USER + ROLE + PERCENTAGE rules; for a context that matches ALL rules, assert the response has `reason: 'KILL_SWITCH'` and `enabled: false` (SC-004)
+- [X] T097 Create `apps/backend/test/integration/evaluation-fail-safe.spec.ts`: simulate a database error (close the pool mid-request) and assert the endpoint still returns 200 with `enabled: false, reason: 'EVALUATION_ERROR'`; assert no unhandled promise rejection crashes the process (FR-037, FR-055, FR-056)
+- [X] T098 Create `apps/backend/test/integration/anonymous-evaluation.spec.ts`: send context with no `userId`, assert USER rules and PERCENTAGE rules are skipped (FR-034); ROLE rules are still evaluated; DEFAULT returned when no ROLE match
+- [X] T099 Create `apps/backend/test/integration/kill-switch.spec.ts` (the mandatory spec test from `plan.md`): a flag with KILL SWITCH + USER + ROLE + PERCENTAGE rules; for a context that matches ALL rules, assert the response has `reason: 'KILL_SWITCH'` and `enabled: false` (SC-004)
 
 **Checkpoint**: Phase 4 complete — evaluation engine is deterministic, fail-safe, and enforces strict rule priority; all spec success criteria SC-003, SC-004, SC-005, SC-006, SC-008 verified by integration tests.
 
