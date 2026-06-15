@@ -51,7 +51,7 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: { userIds: ['user-1', 'user-2', 'user-3'] },
       };
-      expect(matchesUserRule(rule, { userId: 'user-2' })).toBe(true);
+      expect(matchesUserRule(rule, 'flag', { userId: 'user-2' })).toBe(true);
     });
 
     it('should return false when userId is not in the list', () => {
@@ -60,7 +60,7 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: { userIds: ['user-1', 'user-2'] },
       };
-      expect(matchesUserRule(rule, { userId: 'user-999' })).toBe(false);
+      expect(matchesUserRule(rule, 'flag', { userId: 'user-999' })).toBe(false);
     });
 
     it('should return false when context has no userId (anonymous)', () => {
@@ -69,7 +69,7 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: { userIds: ['user-1'] },
       };
-      expect(matchesUserRule(rule, {})).toBe(false);
+      expect(matchesUserRule(rule, 'flag', {})).toBe(false);
     });
 
     it('should return false when conditions.userIds is missing', () => {
@@ -78,7 +78,7 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: {},
       };
-      expect(matchesUserRule(rule, { userId: 'user-1' })).toBe(false);
+      expect(matchesUserRule(rule, 'flag', { userId: 'user-1' })).toBe(false);
     });
   });
 
@@ -89,7 +89,7 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin', 'editor'] },
       };
-      expect(matchesRoleRule(rule, { role: 'admin' })).toBe(true);
+      expect(matchesRoleRule(rule, 'flag', { role: 'admin' })).toBe(true);
     });
 
     it('should return false when role is not in the list', () => {
@@ -98,7 +98,7 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin'] },
       };
-      expect(matchesRoleRule(rule, { role: 'viewer' })).toBe(false);
+      expect(matchesRoleRule(rule, 'flag', { role: 'viewer' })).toBe(false);
     });
 
     it('should return false when context has no role', () => {
@@ -107,7 +107,7 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin'] },
       };
-      expect(matchesRoleRule(rule, { userId: 'user-1' })).toBe(false);
+      expect(matchesRoleRule(rule, 'flag', { userId: 'user-1' })).toBe(false);
     });
   });
 

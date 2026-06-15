@@ -48,8 +48,10 @@ export class AuditLogsInterceptor implements NestInterceptor {
               actorType: 'user',
               actorEmail: user?.email,
               changes: {
-                before: ['PATCH', 'PUT'].includes(method) ? request.body : null,
-                after: responseData ?? null,
+                before: method === 'POST' ? null : request.body ?? null,
+                after: ['PATCH', 'PUT', 'POST'].includes(method)
+                  ? (responseData ?? null)
+                  : null,
               },
             })
             .catch(() => {});
@@ -84,6 +86,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
         entityType: 'targeting_rule',
         actionType: `RULE_${action.toUpperCase()}`,
         entityId: params.ruleId,
+        organizationId: params.organizationId,
         projectId: params.projectId,
       };
     }
@@ -93,6 +96,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
         entityType: 'feature_flag',
         actionType: `FLAG_${action.toUpperCase()}`,
         entityId: params.flagId,
+        organizationId: params.organizationId,
         projectId: params.projectId,
       };
     }
@@ -105,7 +109,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
             ? 'SDK_KEY_REVOKE'
             : `SDK_KEY_${action.toUpperCase()}`,
         entityId: params.keyId,
-        projectId: params.projectId,
+        organizationId: params.organizationId,
       };
     }
 
@@ -114,6 +118,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
         entityType: 'environment',
         actionType: `ENV_${action.toUpperCase()}`,
         entityId: params.envId,
+        organizationId: params.organizationId,
         projectId: params.projectId,
       };
     }
@@ -121,8 +126,9 @@ export class AuditLogsInterceptor implements NestInterceptor {
     if (path.includes('/projects')) {
       return {
         entityType: 'project',
-        actionType: `PROJECT_${action.toUpperCase()}`,
+        actionType: `PROJ_${action.toUpperCase()}`,
         entityId: params.projectId,
+        organizationId: params.organizationId,
       };
     }
 
@@ -131,6 +137,7 @@ export class AuditLogsInterceptor implements NestInterceptor {
         entityType: 'organization',
         actionType: `ORG_${action.toUpperCase()}`,
         entityId: params.organizationId,
+        organizationId: params.organizationId,
       };
     }
 

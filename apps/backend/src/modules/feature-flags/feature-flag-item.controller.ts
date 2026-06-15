@@ -33,6 +33,7 @@ export class FeatureFlagItemController {
   }
 
   @Patch()
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Update feature flag' })
   async update(
     @Param('organizationId') orgId: string,

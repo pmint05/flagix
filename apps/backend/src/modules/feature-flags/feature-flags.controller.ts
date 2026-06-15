@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
+import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
 import { FeatureFlagsService } from './feature-flags.service';
 import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
@@ -23,6 +24,7 @@ export class FeatureFlagsController {
   constructor(private readonly flagsService: FeatureFlagsService) {}
 
   @Post()
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create feature flag' })
   async create(
     @Param('organizationId') orgId: string,

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
+import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
 import { SdkKeysService } from './sdk-keys.service';
 import { CreateSdkKeyDto } from './dto/create-sdk-key.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
@@ -23,6 +24,7 @@ export class SdkKeysController {
   constructor(private readonly sdkKeysService: SdkKeysService) {}
 
   @Post()
+  @PlatformOrgRoles(['admin'])
   @ApiOperation({ summary: 'Create SDK key' })
   async create(
     @Param('organizationId') orgId: string,
@@ -43,6 +45,7 @@ export class SdkKeysController {
   }
 
   @Delete(':keyId')
+  @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke SDK key' })
   async revoke(

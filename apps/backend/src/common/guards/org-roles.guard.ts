@@ -6,9 +6,9 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { PLATFORM_ORG_ROLES_KEY } from '../decorators/org-roles.decorator';
-import { organizationMembers } from '@/db/schema';
+import { organizationMembers, organizations } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 
@@ -33,6 +33,14 @@ export class OrgRolesGuard implements CanActivate {
     if (!orgId)
       throw new ForbiddenException('Organization ID not found in route');
 
+    const [org] = await this.db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(and(eq(organizations.id, orgId), isNull(organizations.deletedAt)))
+      .limit(1);
+
+    if (!org) throw new ForbiddenException('Organization not found');
+
     const [membership] = await this.db
       .select()
       .from(organizationMembers)
@@ -40,6 +48,7 @@ export class OrgRolesGuard implements CanActivate {
         and(
           eq(organizationMembers.userId, user.id),
           eq(organizationMembers.organizationId, orgId),
+          isNull(organizationMembers.deletedAt),
         ),
       )
       .limit(1);

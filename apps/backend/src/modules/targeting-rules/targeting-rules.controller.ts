@@ -28,6 +28,7 @@ export class TargetingRulesController {
   constructor(private readonly rulesService: TargetingRulesService) {}
 
   @Post()
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create targeting rule' })
   async create(
     @Param('organizationId') orgId: string,

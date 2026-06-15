@@ -1,24 +1,7 @@
-import type {
-  EvaluationContext,
-  EvaluationResult,
-  EvaluationReason,
-  RuleType,
-} from '@flagix/shared';
+import type { EvaluationContext, EvaluationResult, RuleType } from '@flagix/shared';
 import type { LoadedFlag } from './safe-default.util';
 import { buildSafeDefault } from './safe-default.util';
-import {
-  matchesUserRule,
-  matchesRoleRule,
-  matchesPercentageRule,
-  type RuleForMatching,
-} from './rule-matcher';
-
-const RULE_TYPE_TO_REASON: Record<RuleType, EvaluationReason> = {
-  kill_switch: 'KILL_SWITCH',
-  user: 'USER_TARGETING',
-  role: 'ROLE_TARGETING',
-  percentage: 'PERCENTAGE_ROLLOUT',
-};
+import { getMatcher, MATCHER_TIERS, type RuleForMatching } from './rule-matcher';
 
 export function evaluate(
   flag: LoadedFlag,
@@ -36,47 +19,25 @@ export function evaluate(
     return buildSafeDefault(flag, flag.key, 'FLAG_DISABLED');
   }
 
-  const sortedRules = [...flag.rules].sort((a, b) =>
-    a.priority.localeCompare(b.priority),
+  const killSwitchMatcher = getMatcher('kill_switch');
+  const killSwitchRule = flag.rules.find(
+    (r) => r.ruleType === 'kill_switch' && r.isEnabled && killSwitchMatcher?.matchFn(r, flag.key, context),
   );
 
-  const killSwitchRule = sortedRules.find(
-    (r) => r.ruleType === 'kill_switch' && r.isEnabled,
-  );
   if (killSwitchRule) {
-    const variation = flag.variations.find(
-      (v) => v.id === killSwitchRule.variationId,
-    );
-    if (variation) {
-      return {
-        flagKey: flag.key,
-        enabled: false,
-        variationKey: variation.key,
-        resolvedValue: variation.value,
-        evaluationReason: 'KILL_SWITCH',
-      };
-    }
+    const variation = flag.variations.find((v) => v.id === killSwitchRule.variationId);
+    return {
+      flagKey: flag.key,
+      enabled: false,
+      variationKey: variation?.key ?? '',
+      resolvedValue: variation?.value ?? false,
+      evaluationReason: 'KILL_SWITCH',
+    };
   }
 
-  const nonKillSwitchRules = sortedRules.filter(
-    (r) => r.ruleType !== 'kill_switch' && r.isEnabled,
-  );
-
-  for (const rule of nonKillSwitchRules) {
-    const matched = matchRule(rule, flag.key, context);
-    if (!matched) continue;
-
-    const reason = RULE_TYPE_TO_REASON[rule.ruleType];
-    const variation = flag.variations.find((v) => v.id === rule.variationId);
-    if (variation) {
-      return {
-        flagKey: flag.key,
-        enabled: true,
-        variationKey: variation.key,
-        resolvedValue: variation.value,
-        evaluationReason: reason,
-      };
-    }
+  for (const tier of MATCHER_TIERS) {
+    const result = evaluateTier(tier, flag, context);
+    if (result) return result;
   }
 
   const defaultVariation = flag.variations.find((v) => v.isDefault);
@@ -93,19 +54,30 @@ export function evaluate(
   return buildSafeDefault(flag, flag.key, 'EVALUATION_ERROR');
 }
 
-function matchRule(
-  rule: RuleForMatching,
-  flagKey: string,
+function evaluateTier(
+  ruleType: RuleType,
+  flag: LoadedFlag,
   context: EvaluationContext,
-): boolean {
-  switch (rule.ruleType) {
-    case 'user':
-      return matchesUserRule(rule, context);
-    case 'role':
-      return matchesRoleRule(rule, context);
-    case 'percentage':
-      return matchesPercentageRule(rule, flagKey, context);
-    default:
-      return false;
+): EvaluationResult | null {
+  const matcher = getMatcher(ruleType);
+  if (!matcher) return null;
+
+  const tierRules = flag.rules.filter((r) => r.ruleType === ruleType && r.isEnabled);
+
+  for (const rule of tierRules) {
+    if (!matcher.matchFn(rule as RuleForMatching, flag.key, context)) continue;
+
+    const variation = flag.variations.find((v) => v.id === rule.variationId);
+    if (variation) {
+      return {
+        flagKey: flag.key,
+        enabled: true,
+        variationKey: variation.key,
+        resolvedValue: variation.value,
+        evaluationReason: matcher.reason,
+      };
+    }
   }
+
+  return null;
 }

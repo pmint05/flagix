@@ -26,6 +26,7 @@ export class EnvironmentsController {
   constructor(private readonly envService: EnvironmentsService) {}
 
   @Post()
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create environment' })
   async create(
     @Param('organizationId') orgId: string,
@@ -71,6 +72,7 @@ export class EnvironmentsController {
   }
 
   @Delete(':envId')
+  @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete environment' })
   async remove(
