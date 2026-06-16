@@ -8,6 +8,10 @@ import {
 import { FeatureFlagsRepository } from './feature-flags.repository';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import { FlagChangeEventType } from '../flag-changes/flag-change.types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { getActorId } from '@/common/audit/audit-context';
+import { resolveFlagAction } from '@/common/audit/resolve-action';
+import { sanitizeFlag } from '@/common/audit/sanitize';
 import type {
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
@@ -24,6 +28,7 @@ export class FeatureFlagsService {
   constructor(
     private readonly flagRepo: FeatureFlagsRepository,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
+    @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
   async create(
@@ -70,9 +75,11 @@ export class FeatureFlagsService {
       );
     }
 
-    const flag = await this.flagRepo.createWithVariations(
+    const actorId = getActorId();
+    const { flag, variations: createdVariations } = await this.flagRepo.createWithVariations(
       { ...dto, organizationId: orgId, environmentId: envId },
       variationData,
+      actorId,
     );
 
     if (this.flagChangePublisher) {
@@ -85,8 +92,21 @@ export class FeatureFlagsService {
       });
     }
 
-    const flagVariations = await this.flagRepo.findVariationsForFlag(flag.id);
-    return { ...flag, variations: flagVariations };
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId: projectId,
+        environmentId: envId,
+        entityType: 'feature_flag',
+        entityId: flag.id,
+        before: null,
+        after: flag,
+        resolveAction: resolveFlagAction,
+        sanitize: sanitizeFlag,
+      });
+    }
+
+    return { ...flag, variations: createdVariations };
   }
 
   async findAllForEnv(orgId: string, envId: string, statusFilter?: string) {
@@ -103,9 +123,11 @@ export class FeatureFlagsService {
   }
 
   async update(orgId: string, flagId: string, dto: UpdateFeatureFlagDto) {
-    const flag = await this.flagRepo.findById(flagId);
-    if (!flag || flag.organizationId !== orgId)
+    const result = await this.flagRepo.findByIdWithProject(flagId);
+    if (!result || result.flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
+
+    const { flag, projectId } = result;
 
     if (dto.status && dto.status !== flag.status) {
       const allowed = VALID_TRANSITIONS[flag.status] ?? [];
@@ -123,7 +145,8 @@ export class FeatureFlagsService {
       );
     }
 
-    const updated = await this.flagRepo.update(flagId, dto, flag.version);
+    const actorId = getActorId();
+    const updated = await this.flagRepo.update(flagId, dto, flag.version, actorId);
     if (!updated)
       throw new ConflictException(
         'Version conflict (optimistic locking failure)',
@@ -131,15 +154,32 @@ export class FeatureFlagsService {
 
     this.emitFlagChangeEvent(flag, updated);
 
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId,
+        environmentId: flag.environmentId,
+        entityType: 'feature_flag',
+        entityId: flagId,
+        before: flag,
+        after: updated,
+        resolveAction: resolveFlagAction,
+        sanitize: sanitizeFlag,
+      });
+    }
+
     return updated;
   }
 
   async remove(orgId: string, flagId: string) {
-    const flag = await this.flagRepo.findById(flagId);
-    if (!flag || flag.organizationId !== orgId)
+    const result = await this.flagRepo.findByIdWithProject(flagId);
+    if (!result || result.flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
-    await this.flagRepo.softDelete(flagId);
+    const { flag, projectId } = result;
+
+    const actorId = getActorId();
+    const deleted = await this.flagRepo.softDelete(flagId, actorId);
 
     if (this.flagChangePublisher) {
       this.flagChangePublisher.publish(flag.environmentId, {
@@ -147,6 +187,20 @@ export class FeatureFlagsService {
         flagKey: flag.key,
         environmentId: flag.environmentId,
         timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId,
+        environmentId: flag.environmentId,
+        entityType: 'feature_flag',
+        entityId: flagId,
+        before: flag,
+        after: deleted,
+        resolveAction: resolveFlagAction,
+        sanitize: sanitizeFlag,
       });
     }
 

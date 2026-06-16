@@ -46,7 +46,7 @@ export class EnvironmentsRepository {
     return env ?? null;
   }
 
-  async create(input: CreateEnvironmentDto & { projectId: string }) {
+  async create(input: CreateEnvironmentDto & { projectId: string }, actorId?: string) {
     const [env] = await this.db
       .insert(environments)
       .values({
@@ -54,12 +54,13 @@ export class EnvironmentsRepository {
         name: input.name,
         slug: input.slug!,
         description: input.description ?? null,
+        createdBy: actorId ?? null,
       })
       .returning();
     return env;
   }
 
-  async update(id: string, input: UpdateEnvironmentDto) {
+  async update(id: string, input: UpdateEnvironmentDto, actorId?: string) {
     const [env] = await this.db
       .update(environments)
       .set({
@@ -67,16 +68,17 @@ export class EnvironmentsRepository {
         ...(input.description !== undefined && {
           description: input.description,
         }),
+        updatedBy: actorId ?? null,
       })
       .where(eq(environments.id, id))
       .returning();
     return env ?? null;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorId?: string) {
     const [env] = await this.db
       .update(environments)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
       .where(eq(environments.id, id))
       .returning();
     return env ?? null;

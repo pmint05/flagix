@@ -14,6 +14,7 @@ import { organizations } from './organizations';
 import { environments } from './environments';
 import { variations } from './variations';
 import { targetingRules } from './targeting-rules';
+import { user } from './auth-schema';
 
 export const featureFlags = pgTable(
   'feature_flags',
@@ -36,6 +37,9 @@ export const featureFlags = pgTable(
       .default('draft'),
     isEnabled: boolean('is_enabled').notNull().default(false),
     version: integer('version').notNull().default(1),
+    createdBy: text('created_by').references(() => user.id),
+    updatedBy: text('updated_by').references(() => user.id),
+    deletedBy: text('deleted_by').references(() => user.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

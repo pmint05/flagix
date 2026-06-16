@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, and, isNull, asc } from 'drizzle-orm';
-import { targetingRules } from '@/db/schema';
+import { targetingRules, variations } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type {
@@ -49,6 +49,21 @@ export class TargetingRulesRepository {
     return rule ?? null;
   }
 
+  async findVariationForFlag(flagId: string, variationId: string) {
+    const [variation] = await this.db
+      .select()
+      .from(variations)
+      .where(
+        and(
+          eq(variations.id, variationId),
+          eq(variations.featureFlagId, flagId),
+          isNull(variations.deletedAt),
+        ),
+      )
+      .limit(1);
+    return variation ?? null;
+  }
+
   async findLastRuleForFlag(flagId: string) {
     const rules = await this.db
       .select()
@@ -71,6 +86,7 @@ export class TargetingRulesRepository {
       featureFlagId: string;
       priority: string;
     },
+    actorId?: string,
   ) {
     const [rule] = await this.db
       .insert(targetingRules)
@@ -82,12 +98,13 @@ export class TargetingRulesRepository {
         variationId: input.variationId,
         conditions: input.conditions,
         isEnabled: input.isEnabled ?? true,
+        createdBy: actorId ?? null,
       })
       .returning();
     return rule;
   }
 
-  async update(id: string, input: UpdateTargetingRuleDto) {
+  async update(id: string, input: UpdateTargetingRuleDto, actorId?: string) {
     const [rule] = await this.db
       .update(targetingRules)
       .set({
@@ -97,16 +114,17 @@ export class TargetingRulesRepository {
         ...(input.conditions !== undefined && { conditions: input.conditions }),
         ...(input.isEnabled !== undefined && { isEnabled: input.isEnabled }),
         ...(input.priority !== undefined && { priority: input.priority }),
+        updatedBy: actorId ?? null,
       })
       .where(eq(targetingRules.id, id))
       .returning();
     return rule ?? null;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorId?: string) {
     const [rule] = await this.db
       .update(targetingRules)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
       .where(eq(targetingRules.id, id))
       .returning();
     return rule ?? null;

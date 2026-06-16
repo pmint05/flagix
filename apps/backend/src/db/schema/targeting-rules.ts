@@ -13,6 +13,7 @@ import {
 import { organizations } from './organizations';
 import { featureFlags } from './feature-flags';
 import { variations } from './variations';
+import { user } from './auth-schema';
 
 export const targetingRules = pgTable(
   'targeting_rules',
@@ -33,6 +34,9 @@ export const targetingRules = pgTable(
       .references(() => variations.id),
     conditions: jsonb('conditions').notNull(),
     isEnabled: boolean('is_enabled').notNull().default(true),
+    createdBy: text('created_by').references(() => user.id),
+    updatedBy: text('updated_by').references(() => user.id),
+    deletedBy: text('deleted_by').references(() => user.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

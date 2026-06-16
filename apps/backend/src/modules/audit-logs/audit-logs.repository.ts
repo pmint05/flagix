@@ -7,6 +7,7 @@ import { type Database } from '@/db';
 export interface AuditLogQuery {
   orgId: string;
   projectId?: string;
+  environmentId?: string;
   entityType?: string;
   actionType?: string;
   from?: Date;
@@ -33,6 +34,9 @@ export class AuditLogsRepository {
 
     if (query.projectId) {
       conditions.push(eq(auditLogs.projectId, query.projectId));
+    }
+    if (query.environmentId) {
+      conditions.push(eq(auditLogs.environmentId, query.environmentId));
     }
     if (query.entityType) {
       conditions.push(eq(auditLogs.entityType, query.entityType as any));
@@ -70,12 +74,20 @@ export class AuditLogsRepository {
   async insert(entry: {
     organizationId: string;
     projectId?: string;
+    environmentId?: string;
     actionType: string;
     entityType: string;
     entityId: string;
     actorId?: string;
     actorType: string;
     actorEmail?: string;
+    actorIp?: string;
+    userAgent?: string;
+    requestId?: string;
+    requestMethod?: string;
+    requestPath?: string;
+    source?: string;
+    description?: string;
     changes: unknown;
   }) {
     const [log] = await this.db
@@ -83,12 +95,20 @@ export class AuditLogsRepository {
       .values({
         organizationId: entry.organizationId,
         projectId: entry.projectId ?? null,
+        environmentId: entry.environmentId ?? null,
         actionType: entry.actionType as any,
         entityType: entry.entityType as any,
         entityId: entry.entityId,
         actorId: entry.actorId ?? null,
         actorType: entry.actorType as 'user' | 'system',
         actorEmail: entry.actorEmail ?? null,
+        actorIp: entry.actorIp ?? null,
+        userAgent: entry.userAgent ?? null,
+        requestId: entry.requestId ? entry.requestId : null,
+        requestMethod: entry.requestMethod ?? null,
+        requestPath: entry.requestPath ?? null,
+        source: entry.source as any ?? null,
+        description: entry.description ?? null,
         changes: entry.changes,
       })
       .returning();

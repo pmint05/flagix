@@ -11,6 +11,7 @@ import {
 import { projects } from './projects';
 import { featureFlags } from './feature-flags';
 import { sdkKeys } from './sdk-keys';
+import { user } from './auth-schema';
 
 export const environments = pgTable(
   'environments',
@@ -22,6 +23,9 @@ export const environments = pgTable(
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 100 }).notNull(),
     description: text('description'),
+    createdBy: text('created_by').references(() => user.id),
+    updatedBy: text('updated_by').references(() => user.id),
+    deletedBy: text('deleted_by').references(() => user.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

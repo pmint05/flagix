@@ -11,6 +11,7 @@ import {
 import { organizations } from './organizations';
 import { environments } from './environments';
 import { auditLogs } from './audit-logs';
+import { user } from './auth-schema';
 
 export const projects = pgTable(
   'projects',
@@ -22,6 +23,9 @@ export const projects = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 100 }).notNull(),
     description: text('description'),
+    createdBy: text('created_by').references(() => user.id),
+    updatedBy: text('updated_by').references(() => user.id),
+    deletedBy: text('deleted_by').references(() => user.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

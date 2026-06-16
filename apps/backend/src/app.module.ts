@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -14,13 +14,14 @@ import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module
 import { TargetingRulesModule } from './modules/targeting-rules/targeting-rules.module';
 import { SdkKeysModule } from './modules/sdk-keys/sdk-keys.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
-import { AuditLogsInterceptor } from './modules/audit-logs/audit-logs.interceptor';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { HealthModule } from './modules/health/health.module';
 import { FlagChangesModule } from './modules/flag-changes/flag-changes.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AuditContextMiddleware } from './common/middleware/audit-context.middleware';
+import { AuditContextEnhancerInterceptor } from './common/audit/audit-context.enhancer';
 
 const isProduction = process.env.NODE_ENV === 'production';
 @Module({
@@ -101,8 +102,12 @@ const isProduction = process.env.NODE_ENV === 'production';
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: AuditLogsInterceptor,
+      useClass: AuditContextEnhancerInterceptor,
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuditContextMiddleware).forRoutes('*');
+  }
+}

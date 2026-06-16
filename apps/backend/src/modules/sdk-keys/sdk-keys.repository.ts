@@ -40,7 +40,7 @@ export class SdkKeysRepository {
     keyHash: string;
     keyHint: string;
     type: string;
-  }) {
+  }, actorId?: string) {
     const [key] = await this.db
       .insert(sdkKeys)
       .values({
@@ -50,15 +50,16 @@ export class SdkKeysRepository {
         keyHash: input.keyHash,
         keyHint: input.keyHint,
         type: input.type as 'client' | 'server',
+        createdBy: actorId ?? null,
       })
       .returning();
     return key;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorId?: string) {
     const [key] = await this.db
       .update(sdkKeys)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
       .where(eq(sdkKeys.id, id))
       .returning();
     return key ?? null;

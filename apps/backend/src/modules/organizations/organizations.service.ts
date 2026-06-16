@@ -1,14 +1,14 @@
 import {
-  Inject,
   Injectable,
   NotFoundException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
-import { eq, and, isNull } from 'drizzle-orm';
-import { organizationMembers } from '@/db/schema';
-import { DATABASE } from '@/modules/database/database.module';
-import { type Database } from '@/db';
 import { OrganizationsRepository } from './organizations.repository';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { getActorId } from '@/common/audit/audit-context';
+import { resolveOrganizationAction } from '@/common/audit/resolve-action';
+import { sanitizeOrganization } from '@/common/audit/sanitize';
 import { slugify } from '@/common/utils/slug';
 import type {
   CreateOrganizationDto,
@@ -19,7 +19,7 @@ import type {
 export class OrganizationsService {
   constructor(
     private readonly orgRepo: OrganizationsRepository,
-    @Inject(DATABASE) private readonly db: Database,
+    @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
   async create(input: CreateOrganizationDto, actorId: string) {
@@ -30,13 +30,21 @@ export class OrganizationsService {
       throw new ConflictException('Organization slug already exists');
     }
 
-    const org = await this.orgRepo.create({ ...input, slug });
+    const org = await this.orgRepo.create({ ...input, slug }, actorId);
 
-    await this.db.insert(organizationMembers).values({
-      userId: actorId,
-      organizationId: org.id,
-      role: 'admin',
-    });
+    await this.orgRepo.addMember(org.id, actorId, 'admin');
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: org.id,
+        entityType: 'organization',
+        entityId: org.id,
+        before: null,
+        after: org,
+        resolveAction: resolveOrganizationAction,
+        sanitize: sanitizeOrganization,
+      });
+    }
 
     return org;
   }
@@ -45,18 +53,7 @@ export class OrganizationsService {
     const org = await this.orgRepo.findById(id);
     if (!org) throw new NotFoundException('Organization not found');
 
-    const [membership] = await this.db
-      .select()
-      .from(organizationMembers)
-      .where(
-        and(
-          eq(organizationMembers.userId, userId),
-          eq(organizationMembers.organizationId, id),
-          isNull(organizationMembers.deletedAt),
-        ),
-      )
-      .limit(1);
-
+    const membership = await this.orgRepo.findMembership(id, userId);
     if (!membership) throw new NotFoundException('Organization not found');
 
     return { ...org, role: membership.role };
@@ -77,8 +74,22 @@ export class OrganizationsService {
       }
     }
 
-    const updated = await this.orgRepo.update(id, input);
+    const actorId = getActorId();
+    const updated = await this.orgRepo.update(id, input, actorId);
     if (!updated) throw new NotFoundException('Organization not found');
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: id,
+        entityType: 'organization',
+        entityId: id,
+        before: org,
+        after: updated,
+        resolveAction: resolveOrganizationAction,
+        sanitize: sanitizeOrganization,
+      });
+    }
+
     return updated;
   }
 
@@ -86,7 +97,21 @@ export class OrganizationsService {
     const org = await this.orgRepo.findById(id);
     if (!org) throw new NotFoundException('Organization not found');
 
-    await this.orgRepo.softDelete(id);
+    const actorId = getActorId();
+    const deleted = await this.orgRepo.softDelete(id, actorId);
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: id,
+        entityType: 'organization',
+        entityId: id,
+        before: org,
+        after: deleted,
+        resolveAction: resolveOrganizationAction,
+        sanitize: sanitizeOrganization,
+      });
+    }
+
     return { success: true };
   }
 }

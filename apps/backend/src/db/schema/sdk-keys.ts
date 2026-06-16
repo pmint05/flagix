@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { environments } from './environments';
+import { user } from './auth-schema';
 
 export const sdkKeys = pgTable(
   'sdk_keys',
@@ -29,6 +30,9 @@ export const sdkKeys = pgTable(
       .notNull()
       .default('client'),
     isActive: boolean('is_active').notNull().default(true),
+    createdBy: text('created_by').references(() => user.id),
+    updatedBy: text('updated_by').references(() => user.id),
+    deletedBy: text('deleted_by').references(() => user.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

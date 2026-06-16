@@ -34,13 +34,13 @@ describe('Flag Change Detection', () => {
         flagKey: 'existing-flag',
         environmentId,
         timestamp: new Date().toISOString(),
-        changes: { name: { before: 'Old Name', after: 'New Name' } },
+        metadata: { version: 2 },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
         expect(received.type).toBe('flag.updated');
         expect(received.flagKey).toBe('existing-flag');
-        expect(received.changes).toBeDefined();
+        expect(received.metadata).toBeDefined();
         done();
       });
 
@@ -54,10 +54,7 @@ describe('Flag Change Detection', () => {
         flagKey: 'toggle-flag',
         environmentId,
         timestamp: new Date().toISOString(),
-        changes: {
-          before: { isEnabled: false },
-          after: { isEnabled: true },
-        },
+        metadata: { isEnabled: true },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
@@ -96,13 +93,13 @@ describe('Flag Change Detection', () => {
         flagKey: 'target-flag',
         environmentId,
         timestamp: new Date().toISOString(),
-        changes: { ruleId: 'rule-1' },
+        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
         expect(received.type).toBe('rule.created');
         expect(received.flagKey).toBe('target-flag');
-        expect(received.changes).toEqual({ ruleId: 'rule-1' });
+        expect(received.metadata?.ruleId).toBe('rule-1');
         done();
       });
 
@@ -116,7 +113,7 @@ describe('Flag Change Detection', () => {
         flagKey: 'target-flag',
         environmentId,
         timestamp: new Date().toISOString(),
-        changes: { ruleId: 'rule-1' },
+        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
@@ -135,7 +132,7 @@ describe('Flag Change Detection', () => {
         flagKey: 'target-flag',
         environmentId,
         timestamp: new Date().toISOString(),
-        changes: { ruleId: 'rule-1' },
+        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {

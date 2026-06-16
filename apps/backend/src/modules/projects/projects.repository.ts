@@ -43,7 +43,7 @@ export class ProjectsRepository {
     return project ?? null;
   }
 
-  async create(input: CreateProjectDto & { organizationId: string }) {
+  async create(input: CreateProjectDto & { organizationId: string }, actorId?: string) {
     const [project] = await this.db
       .insert(projects)
       .values({
@@ -51,12 +51,13 @@ export class ProjectsRepository {
         name: input.name,
         slug: input.slug!,
         description: input.description ?? null,
+        createdBy: actorId ?? null,
       })
       .returning();
     return project;
   }
 
-  async update(id: string, input: UpdateProjectDto) {
+  async update(id: string, input: UpdateProjectDto, actorId?: string) {
     const [project] = await this.db
       .update(projects)
       .set({
@@ -64,16 +65,17 @@ export class ProjectsRepository {
         ...(input.description !== undefined && {
           description: input.description,
         }),
+        updatedBy: actorId ?? null,
       })
       .where(eq(projects.id, id))
       .returning();
     return project ?? null;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorId?: string) {
     const [project] = await this.db
       .update(projects)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
       .where(eq(projects.id, id))
       .returning();
     return project ?? null;

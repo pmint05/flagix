@@ -316,6 +316,68 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ---
 
+## Phase 7: Audit Log Refactor (Service-Layer Audit + Forensics)
+
+**Purpose**: Chuyển audit log từ HTTP interceptor sang service layer, đảm bảo diff chính xác, forensics đầy đủ, RBAC chặt, đồng thời giữ SSE broadcast hoạt động.
+
+**Depends on**: Phase 6 (Backend SSE) complete.
+
+**Independent Test**: Audit log có before/after diff chính xác; actor/IP/user-agent được ghi lại; audit read chỉ admin; không có secret trong audit log.
+
+### Phase 7.1: Schema Migration
+
+- [X] T153 Thêm forensics columns vào `audit_logs`: `environmentId`, `actorIp`, `userAgent`, `requestId`, `requestMethod`, `requestPath`, `source`, `description`
+- [X] T154 Thêm ownership columns cho resource tables: `createdBy`, `updatedBy`, `deletedBy` cho `feature_flags`, `targeting_rules`, `environments`, `projects`, `organizations`, `sdk_keys`
+- [X] T155 Chạy `drizzle-kit generate` và verify migration SQL
+
+### Phase 7.2: Audit Context Propagation
+
+- [X] T156 Tạo `apps/backend/src/common/audit/audit-context.ts` với `AsyncLocalStorage<AuditContext>`
+- [X] T157 Tạo `apps/backend/src/common/middleware/audit-context.middleware.ts` để set context từ request
+
+### Phase 7.3: Audit Service & Repository Update
+
+- [X] T158 Cập nhật `apps/backend/src/modules/audit-logs/audit-logs.service.ts`: đọc context từ ALS, merge vào entry, catch lỗi và log qua Pino
+- [X] T159 Cập nhật `apps/backend/src/modules/audit-logs/audit-logs.repository.ts`: insert đầy đủ cột mới, hỗ trợ `environmentId` filter
+- [X] T160 Cập nhật `apps/backend/src/modules/audit-logs/audit-logs.controller.ts`: `@PlatformOrgRoles(['admin'])`, thêm query param `environmentId`
+
+### Phase 7.4: Audit Helpers
+
+- [X] T161 Tạo `apps/backend/src/common/audit/resolve-action.ts`: `resolveFlagAction`, `resolveRuleAction`, `resolveSdkKeyAction`, `resolveProjectAction`, `resolveEnvironmentAction`, `resolveOrganizationAction`
+- [X] T162 Tạo `apps/backend/src/common/audit/sanitize.ts`: `sanitizeFlag`, `sanitizeSdkKey` (omit rawKey), `sanitizeRule`, `sanitizeProject`, `sanitizeEnvironment`, `sanitizeOrganization`
+
+### Phase 7.5: Service-Layer Audit Wiring
+
+- [X] T169 `feature-flags.service.ts`: inject AuditLogsService, thêm audit calls cho create/update/delete + resolveFlagAction + sanitizeFlag
+- [X] T170 `targeting-rules.service.ts`: inject AuditLogsService, thêm audit calls cho create/update/delete + resolveRuleAction + sanitizeRule
+- [X] T171 `environments.service.ts`: inject AuditLogsService, thêm audit calls cho create/update/delete
+- [X] T172 `projects.service.ts`: inject AuditLogsService, thêm audit calls cho create/update/delete
+- [X] T173 `organizations.service.ts`: inject AuditLogsService, thêm audit calls cho create/update/delete
+- [X] T174 `sdk-keys.service.ts`: inject AuditLogsService, thêm audit calls cho create (redact rawKey) + revoke
+
+### Phase 7.6: Remove Interceptor
+
+- [X] T175 Xóa `AuditLogsInterceptor` khỏi `APP_INTERCEPTOR` trong `app.module.ts`
+- [X] T176 Đăng ký `AuditContextMiddleware` toàn cục trong `app.module.ts`
+
+### Phase 7.7: RBAC & Controller
+
+- [X] T177 `audit-logs.controller.ts`: chỉ admin đọc được (`@PlatformOrgRoles(['admin'])`)
+- [X] T178 `audit-logs.service.ts`: hỗ trợ filter theo `environmentId`
+
+### Phase 7.8: Tests
+
+- [X] T179 Unit test `apps/backend/src/common/audit/resolve-action.spec.ts`
+- [X] T180 Unit test `apps/backend/src/common/audit/sanitize.spec.ts` (đảm bảo rawKey bị loại)
+- [X] T181 Unit test `apps/backend/src/common/audit/audit-context.spec.ts`
+- [X] T182 Integration test: create flag → audit log row có before=null, after=sanitized, actor đúng
+- [X] T183 Integration test: update flag → audit log có before và after diff đúng
+- [X] T184 Integration test: viewer không thể đọc audit log (403)
+
+**Checkpoint**: Tất cả create/update/delete operations ghi audit log đúng; audit log có before/after diff chính xác; không có secret trong audit log; audit read chỉ admin; SSE broadcast vẫn hoạt động.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -326,6 +388,7 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 - **Phase 4 (Evaluation Engine)**: Depends on Phase 2 (schema) AND Phase 3 (seed data via API); Phase 4.1 (pure engine + unit tests) can be done in parallel with Phase 3 once Phase 2 is done
 - **Phase 5 (Polish)**: Depends on all prior phases
 - **Phase 6 (Backend SSE)**: Depends on Phase 5 — Adds real-time flag change notifications
+- **Phase 7 (Audit Log Refactor)**: Depends on Phase 6 — Service-layer audit with forensics
 
 ### Within Each Phase
 

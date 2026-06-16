@@ -54,35 +54,64 @@ export class OrganizationsRepository {
       );
   }
 
-  async create(input: CreateOrganizationDto) {
+  async create(input: CreateOrganizationDto, actorId?: string) {
     const [org] = await this.db
       .insert(organizations)
       .values({
         name: input.name,
         slug: input.slug!,
+        createdBy: actorId ?? null,
       })
       .returning();
     return org;
   }
 
-  async update(id: string, input: UpdateOrganizationDto) {
+  async update(id: string, input: UpdateOrganizationDto, actorId?: string) {
     const [org] = await this.db
       .update(organizations)
       .set({
         ...(input.name !== undefined && { name: input.name }),
         ...(input.slug !== undefined && { slug: input.slug }),
+        updatedBy: actorId ?? null,
       })
       .where(eq(organizations.id, id))
       .returning();
     return org ?? null;
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, actorId?: string) {
     const [org] = await this.db
       .update(organizations)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
       .where(eq(organizations.id, id))
       .returning();
     return org ?? null;
+  }
+
+  async addMember(orgId: string, userId: string, role: 'admin' | 'editor' | 'viewer' = 'admin') {
+    const [member] = await this.db
+      .insert(organizationMembers)
+      .values({
+        userId,
+        organizationId: orgId,
+        role,
+      })
+      .returning();
+    return member;
+  }
+
+  async findMembership(orgId: string, userId: string) {
+    const [membership] = await this.db
+      .select()
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.organizationId, orgId),
+          isNull(organizationMembers.deletedAt),
+        ),
+      )
+      .limit(1);
+    return membership ?? null;
   }
 }

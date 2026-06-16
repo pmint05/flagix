@@ -11,6 +11,7 @@ import {
 import { user } from './auth-schema';
 import { organizations } from './organizations';
 import { projects } from './projects';
+import { environments } from './environments';
 
 export const auditLogs = pgTable(
   'audit_logs',
@@ -20,6 +21,7 @@ export const auditLogs = pgTable(
       .notNull()
       .references(() => organizations.id),
     projectId: uuid('project_id').references(() => projects.id),
+    environmentId: uuid('environment_id').references(() => environments.id),
     actionType: text('action_type', {
       enum: [
         'ORG_CREATE',
@@ -71,6 +73,13 @@ export const auditLogs = pgTable(
       .notNull()
       .default('user'),
     actorEmail: varchar('actor_email', { length: 255 }),
+    actorIp: varchar('actor_ip', { length: 45 }),
+    userAgent: text('user_agent'),
+    requestId: uuid('request_id'),
+    requestMethod: varchar('request_method', { length: 10 }),
+    requestPath: text('request_path'),
+    source: text('source', { enum: ['web', 'api', 'sdk', 'system'] }),
+    description: text('description'),
     changes: jsonb('changes').notNull(),
     timestamp: timestamp('timestamp').defaultNow().notNull(),
   },
@@ -90,6 +99,10 @@ export const auditLogRelations = relations(auditLogs, ({ one }) => ({
   project: one(projects, {
     fields: [auditLogs.projectId],
     references: [projects.id],
+  }),
+  environment: one(environments, {
+    fields: [auditLogs.environmentId],
+    references: [environments.id],
   }),
   actor: one(user, {
     fields: [auditLogs.actorId],

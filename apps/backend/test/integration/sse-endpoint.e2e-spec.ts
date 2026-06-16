@@ -55,7 +55,6 @@ describe('SSE Endpoint (e2e)', () => {
     const [env] = await db
       .insert(environments)
       .values({
-        organizationId: org.id,
         projectId: project.id,
         name: 'Production',
         slug: 'production',
@@ -71,6 +70,7 @@ describe('SSE Endpoint (e2e)', () => {
       environmentId: envId,
       name: 'SSE Test Key',
       keyHash,
+      keyHint: sdkKey.slice(0, 8),
       isActive: true,
     });
   }

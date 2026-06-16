@@ -1,12 +1,14 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
+import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
 import { AuditLogsService } from './audit-logs.service';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Audit Logs')
 @Controller('organizations/:organizationId/audit-logs')
 @UseGuards(OrgRolesGuard)
+@PlatformOrgRoles(['admin'])
 @Auth()
 export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
@@ -16,6 +18,7 @@ export class AuditLogsController {
   async findAll(
     @Param('organizationId') orgId: string,
     @Query('projectId') projectId?: string,
+    @Query('environmentId') environmentId?: string,
     @Query('entityType') entityType?: string,
     @Query('actionType') actionType?: string,
     @Query('from') from?: string,
@@ -26,6 +29,7 @@ export class AuditLogsController {
     return this.auditLogsService.list({
       orgId,
       projectId,
+      environmentId,
       entityType,
       actionType,
       from: from ? new Date(from) : undefined,
