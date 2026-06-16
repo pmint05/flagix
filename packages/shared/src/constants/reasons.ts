@@ -1,0 +1,14 @@
+export const EVALUATION_REASONS = [
+  'KILL_SWITCH',
+  'USER_TARGETING',
+  'ROLE_TARGETING',
+  'PERCENTAGE_ROLLOUT',
+  'DEFAULT',
+  'FLAG_NOT_FOUND',
+  'FLAG_ARCHIVED',
+  'FLAG_DRAFT',
+  'FLAG_DISABLED',
+  'EVALUATION_ERROR',
+] as const;
+
+export type EvaluationReason = (typeof EVALUATION_REASONS)[number];

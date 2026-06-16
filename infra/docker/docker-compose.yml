@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: flagix_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: flagix
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: flagix_dev
+    volumes:
+      - flagix_pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flagix -d flagix_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  flagix_pg_data:
+    name: flagix_pg_data

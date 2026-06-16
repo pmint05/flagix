@@ -6,14 +6,22 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
+		"dev:frontend": "turbo run dev --filter=frontend",
+		"dev:backend": "turbo run dev --filter=backend --filter=@flagix/shared",
+		"build:shared": "turbo run build --filter=@flagix/shared",
+		"build:frontend": "turbo run build --filter=frontend",
+		"build:backend": "turbo run build --filter=backend --filter=@flagix/shared",
 		"lint": "turbo run lint",
 		"typecheck": "turbo run typecheck",
-		"clean": "turbo run clean && rm -rf node_modules"
+		"clean": "turbo run clean && rm -rf node_modules",
+		"db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+		"db:down": "docker compose -f infra/docker/docker-compose.yml down",
+		"db:logs": "docker logs flagix_postgres -f"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
-	"packageManager": "pnpm@10.33.4",
+	"packageManager": "pnpm@11.6.0",
 	"devDependencies": {
 		"@types/node": "^25.9.2",
 		"turbo": "^2.9.16",
