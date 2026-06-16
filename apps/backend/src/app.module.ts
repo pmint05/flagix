@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
@@ -16,6 +17,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditLogsInterceptor } from './modules/audit-logs/audit-logs.interceptor';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { HealthModule } from './modules/health/health.module';
+import { FlagChangesModule } from './modules/flag-changes/flag-changes.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -23,6 +25,7 @@ import { join } from 'path';
 const isProduction = process.env.NODE_ENV === 'production';
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {
@@ -34,6 +37,17 @@ const isProduction = process.env.NODE_ENV === 'production';
         name: 'evaluate',
         ttl: 60_000,
         limit: 1000,
+        getTracker: (req: Record<string, any>) =>
+          Promise.resolve(
+            (req.headers?.['x-sdk-key'] as string) || req.ip || 'unknown',
+          ),
+        generateKey: (context, trackerString, throttlerName) =>
+          `${throttlerName}:${trackerString}`,
+      },
+      {
+        name: 'sse',
+        ttl: 60_000,
+        limit: 100,
         getTracker: (req: Record<string, any>) =>
           Promise.resolve(
             (req.headers?.['x-sdk-key'] as string) || req.ip || 'unknown',
@@ -76,6 +90,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     SdkKeysModule,
     EvaluationModule,
     HealthModule,
+    FlagChangesModule,
   ],
   controllers: [AppController],
   providers: [

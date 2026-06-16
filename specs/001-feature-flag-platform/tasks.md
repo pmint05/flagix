@@ -279,6 +279,43 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 
 ---
 
+## Phase 6: Backend SSE Support (Real-time Flag Updates)
+
+**Purpose**: Add Server-Sent Events endpoint for real-time flag change notifications, enabling SDKs to receive instant updates when flags are modified (FR-046a, FR-046b, FR-046c).
+
+**Depends on**: Phase 5 (backend complete)
+
+**Independent Test**: SSE connection established; flag mutation triggers event to connected clients; SDK key auth works on SSE endpoint; reconnection handled gracefully.
+
+### Phase 6.1: Event Infrastructure
+
+- [X] T140 Install `@nestjs/event-emitter` in `apps/backend/package.json` and register `EventEmitterModule.forRoot()` in `apps/backend/src/app.module.ts`
+- [X] T141 Create `apps/backend/src/modules/flag-changes/flag-change.types.ts` exporting `FlagChangeEvent` interface: `{ type: 'flag.created' | 'flag.updated' | 'flag.toggled' | 'flag.archived' | 'rule.created' | 'rule.updated' | 'rule.deleted'; flagKey: string; environmentId: string; timestamp: string; changes?: Record<string, unknown> }`
+- [X] T142 Create `apps/backend/src/modules/flag-changes/flag-change.publisher.ts` as `@Injectable()` service: holds a `Map<string, Subject<FlagChangeEvent>>` keyed by `environmentId`; exposes `publish(environmentId, event)` and `subscribe(environmentId): Observable<FlagChangeEvent>` methods
+- [X] T143 Create `apps/backend/src/modules/flag-changes/flag-changes.module.ts` providing and exporting `FlagChangePublisher`
+
+### Phase 6.2: SSE Endpoint
+
+- [X] T144 Create `apps/backend/src/modules/flag-changes/flag-changes.controller.ts` with `GET /api/v1/flags/stream` using NestJS `@Sse()` decorator; protected by `SdkKeyGuard` (reads `X-SDK-Key` header); accepts optional `flagKey` query param to filter events; returns `Observable<MessageEvent>` from `FlagChangePublisher.subscribe(environmentId)`
+- [X] T145 Add SSE-specific rate limiting: 100 concurrent connections per SDK key; use `@ThrottlerGuard` with custom limit on the SSE endpoint
+- [X] T146 Wire `FlagChangesModule` into `apps/backend/src/app.module.ts` imports
+
+### Phase 6.3: Flag Change Detection
+
+- [X] T147 Modify `apps/backend/src/modules/audit-logs/audit-logs.interceptor.ts` to emit `FlagChangeEvent` via `FlagChangePublisher.publish()` after successful flag mutations (FLAG_CREATE, FLAG_UPDATE, FLAG_TOGGLE_ON, FLAG_TOGGLE_OFF, FLAG_ACTIVATE, FLAG_ARCHIVE, RULE_CREATE, RULE_UPDATE, RULE_DELETE)
+- [X] T148 Modify `apps/backend/src/modules/feature-flags/feature-flags.service.ts` to emit `flag.toggled` event when `isEnabled` changes (separate from general audit log)
+- [X] T149 Modify `apps/backend/src/modules/targeting-rules/targeting-rules.service.ts` to emit rule change events after create/update/delete
+
+### Phase 6.4: SSE Tests
+
+- [X] T150 Create `apps/backend/test/unit/flag-change.publisher.spec.ts` testing: publish/subscribe works; multiple subscribers receive events; unsubscribe stops events; events are scoped by environmentId
+- [X] T151 Create `apps/backend/test/integration/sse-endpoint.spec.ts` testing: SSE connection established with valid SDK key; 401 for invalid key; flag mutation triggers event to connected client; flagKey filter works; concurrent connection limit enforced
+- [X] T152 Create `apps/backend/test/integration/flag-change-detection.spec.ts` testing: flag create/update/toggle/archived triggers correct event type; rule create/update/delete triggers correct event type; events include correct flagKey and timestamp
+
+**Checkpoint**: SSE endpoint live; flag mutations broadcast to connected SDK clients in real-time; SDK key auth enforced on SSE endpoint.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -288,6 +325,7 @@ description: "Task list for Backend-only implementation of Feature Flag Platform
 - **Phase 3 (Management APIs & Shared)**: Depends on Phase 2 — Provides CRUD endpoints for evaluation tests
 - **Phase 4 (Evaluation Engine)**: Depends on Phase 2 (schema) AND Phase 3 (seed data via API); Phase 4.1 (pure engine + unit tests) can be done in parallel with Phase 3 once Phase 2 is done
 - **Phase 5 (Polish)**: Depends on all prior phases
+- **Phase 6 (Backend SSE)**: Depends on Phase 5 — Adds real-time flag change notifications
 
 ### Within Each Phase
 

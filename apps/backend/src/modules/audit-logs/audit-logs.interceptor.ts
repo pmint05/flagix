@@ -3,13 +3,19 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Optional,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { AuditLogsService } from './audit-logs.service';
+import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
+import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 
 @Injectable()
 export class AuditLogsInterceptor implements NestInterceptor {
-  constructor(private readonly auditLogsService: AuditLogsService) {}
+  constructor(
+    private readonly auditLogsService: AuditLogsService,
+    @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();

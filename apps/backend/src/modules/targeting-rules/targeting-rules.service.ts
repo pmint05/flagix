@@ -4,12 +4,14 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { eq, and, isNull } from 'drizzle-orm';
-import { variations } from '@/db/schema';
+import { variations, featureFlags } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import { TargetingRulesRepository } from './targeting-rules.repository';
+import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import {
   generateInitialPriority,
   generatePriorityAfter,
@@ -24,6 +26,7 @@ export class TargetingRulesService {
   constructor(
     private readonly rulesRepo: TargetingRulesRepository,
     @Inject(DATABASE) private readonly db: Database,
+    @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
   ) {}
 
   async create(orgId: string, flagId: string, dto: CreateTargetingRuleDto) {
@@ -56,12 +59,16 @@ export class TargetingRulesService {
       ? generatePriorityAfter(lastRule.priority)
       : generateInitialPriority();
 
-    return this.rulesRepo.create({
+    const rule = await this.rulesRepo.create({
       ...dto,
       organizationId: orgId,
       featureFlagId: flagId,
       priority,
     });
+
+    await this.emitRuleChangeEvent('rule.created', rule, flagId);
+
+    return rule;
   }
 
   async findAllForFlag(orgId: string, flagId: string) {
@@ -87,6 +94,9 @@ export class TargetingRulesService {
 
     const updated = await this.rulesRepo.update(ruleId, dto);
     if (!updated) throw new NotFoundException('Targeting rule not found');
+
+    await this.emitRuleChangeEvent('rule.updated', updated, flagId);
+
     return updated;
   }
 
@@ -96,6 +106,36 @@ export class TargetingRulesService {
       throw new NotFoundException('Targeting rule not found');
 
     await this.rulesRepo.softDelete(ruleId);
+
+    await this.emitRuleChangeEvent('rule.deleted', rule, flagId);
+
     return { success: true };
+  }
+
+  private async emitRuleChangeEvent(
+    eventType: 'rule.created' | 'rule.updated' | 'rule.deleted',
+    rule: { id: string },
+    flagId: string,
+  ): Promise<void> {
+    if (!this.flagChangePublisher) return;
+
+    const [flag] = await this.db
+      .select({
+        key: featureFlags.key,
+        environmentId: featureFlags.environmentId,
+      })
+      .from(featureFlags)
+      .where(eq(featureFlags.id, flagId))
+      .limit(1);
+
+    if (!flag) return;
+
+    this.flagChangePublisher.publish(flag.environmentId, {
+      type: eventType,
+      flagKey: flag.key,
+      environmentId: flag.environmentId,
+      timestamp: new Date().toISOString(),
+      metadata: { ruleId: rule.id },
+    });
   }
 }

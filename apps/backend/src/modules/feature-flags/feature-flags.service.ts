@@ -3,8 +3,11 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { FeatureFlagsRepository } from './feature-flags.repository';
+import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
+import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import type {
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
@@ -18,7 +21,10 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 @Injectable()
 export class FeatureFlagsService {
-  constructor(private readonly flagRepo: FeatureFlagsRepository) {}
+  constructor(
+    private readonly flagRepo: FeatureFlagsRepository,
+    @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
+  ) {}
 
   async create(
     orgId: string,
@@ -69,6 +75,16 @@ export class FeatureFlagsService {
       variationData,
     );
 
+    if (this.flagChangePublisher) {
+      this.flagChangePublisher.publish(envId, {
+        type: 'flag.created',
+        flagKey: flag.key,
+        environmentId: envId,
+        timestamp: new Date().toISOString(),
+        metadata: { version: flag.version },
+      });
+    }
+
     const flagVariations = await this.flagRepo.findVariationsForFlag(flag.id);
     return { ...flag, variations: flagVariations };
   }
@@ -112,6 +128,9 @@ export class FeatureFlagsService {
       throw new ConflictException(
         'Version conflict (optimistic locking failure)',
       );
+
+    this.emitFlagChangeEvent(flag, updated);
+
     return updated;
   }
 
@@ -121,6 +140,55 @@ export class FeatureFlagsService {
       throw new NotFoundException('Feature flag not found');
 
     await this.flagRepo.softDelete(flagId);
+
+    if (this.flagChangePublisher) {
+      this.flagChangePublisher.publish(flag.environmentId, {
+        type: 'flag.deleted',
+        flagKey: flag.key,
+        environmentId: flag.environmentId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     return { success: true };
+  }
+
+  private emitFlagChangeEvent(
+    before: {
+      isEnabled: boolean;
+      status: string;
+      key: string;
+      environmentId: string;
+    },
+    after: {
+      isEnabled: boolean;
+      status: string;
+      key: string;
+      environmentId: string;
+      version: number;
+    },
+  ): void {
+    if (!this.flagChangePublisher) return;
+
+    let type: FlagChangeEventType = 'flag.updated';
+
+    if (before.isEnabled !== after.isEnabled) {
+      type = 'flag.toggled';
+    } else if (before.status !== after.status) {
+      if (after.status === 'archived') {
+        type = 'flag.archived';
+      }
+    }
+
+    this.flagChangePublisher.publish(after.environmentId, {
+      type,
+      flagKey: after.key,
+      environmentId: after.environmentId,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        version: after.version,
+        isEnabled: after.isEnabled,
+      },
+    });
   }
 }
