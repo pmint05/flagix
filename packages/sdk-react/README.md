@@ -60,8 +60,55 @@ function AdvancedComponent() {
 }
 ```
 
+### 4. Type-safe flag keys with TypeScript
+
+Create typed wrappers to get autocomplete and compile-time safety for your flag keys:
+
+```tsx
+import { useFlag } from '@flagix/sdk-react';
+
+// Define your flag types
+interface FlagMap {
+  'new-layout': boolean;
+  'checkout-version': 'v1' | 'v2' | 'v3';
+  'max-items': number;
+  'feature-gating': Record<string, boolean>;
+}
+
+// Type-safe wrapper
+function useTypedFlag<K extends keyof FlagMap>(
+  key: K,
+  defaultValue: FlagMap[K]
+): { value: FlagMap[K]; isLoading: boolean; error: Error | null } {
+  return useFlag<FlagMap[K]>(key, defaultValue);
+}
+
+// Usage with autocomplete
+function MyComponent() {
+  const { value: isNewLayout, isLoading } = useTypedFlag('new-layout', false);
+  const { value: version } = useTypedFlag('checkout-version', 'v1');
+  const { value: maxItems } = useTypedFlag('max-items', 10);
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {isNewLayout && <NewLayout />}
+      <p>Version: {version}</p>
+      <p>Max items: {maxItems}</p>
+    </div>
+  );
+}
+```
+
+This pattern provides:
+- **Autocomplete**: Your IDE will suggest valid flag keys
+- **Type Safety**: TypeScript will error if you pass an invalid key or wrong default value
+- **Refactoring**: Renaming a flag key will update all usages automatically
+
 ## Features
 
 - **Optimized**: Uses `useSyncExternalStore` for precise re-renders only when relevant flags change.
 - **Reactive**: Automatically re-renders when flags are updated via SSE.
 - **Fail-Safe**: Guarantees zero propagation of evaluation errors to your UI.
+- **Type-Safe**: Supports TypeScript generics for compile-time flag key validation.

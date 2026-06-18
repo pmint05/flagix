@@ -107,16 +107,16 @@
 
 **Goal**: Provide accurate loading states for the UI and testing tools for consumers.
 
-- [ ] T028 Update `FlagixProvider` to properly manage and distribute the `isInitializing` state.
-- [ ] T029 Update `useFlag` hook to dynamically return `isLoading: true` when the core SDK is not yet ready, avoiding UI flickering.
-- [ ] T030 Create `src/testing.tsx` in `sdk-react` and implement `MockFlagixProvider` for consumer component testing.
-- [ ] T031 Export testing utilities in `sdk-react`'s `index.ts`.
+- [X] T028 Update `FlagixProvider` to properly manage and distribute the `isInitializing` state.
+- [X] T029 Update `useFlag` hook to dynamically return `isLoading: true` when the core SDK is not yet ready, avoiding UI flickering.
+- [X] T030 Create `src/testing.tsx` in `sdk-react` and implement `MockFlagixProvider` for consumer component testing.
+- [X] T031 Export testing utilities in `sdk-react`'s `index.ts`.
 
 ## Phase 10: Advanced TypeScript Usage (Documentation)
 
 **Goal**: Guide developers on using type-safe flag keys.
 
-- [ ] T032 Update `packages/sdk-react/README.md` with an example of creating a type-safe wrapper around `useFlag`.
+- [X] T032 Update `packages/sdk-react/README.md` with an example of creating a type-safe wrapper around `useFlag`.
 
 ## Dependency Graph
 

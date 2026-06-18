@@ -1,4 +1,4 @@
-import { useContext, useSyncExternalStore } from 'react';
+import { useContext, useSyncExternalStore, useCallback } from 'react';
 import { FlagixContext } from './provider';
 import { FlagixClient, EvaluationResult } from '@flagix/sdk-core';
 
@@ -11,6 +11,18 @@ export function useFlagix(): FlagixClient {
     throw new Error('useFlagix must be used within a FlagixProvider');
   }
   return client;
+}
+
+/**
+ * Returns the current readiness state of the SDK.
+ */
+export function useFlagixReady(): boolean {
+  const client = useFlagix();
+  return useSyncExternalStore(
+    (callback) => client.onReady(callback),
+    () => client.getIsReady(),
+    () => false
+  );
 }
 
 /**
@@ -28,6 +40,7 @@ export function useFlags(): Record<string, EvaluationResult> {
 
 /**
  * Evaluates a single flag and subscribes to updates.
+ * Returns isLoading: true when the SDK is not yet ready.
  */
 export function useFlag<T>(key: string, defaultValue: T): {
   value: T;
@@ -35,11 +48,12 @@ export function useFlag<T>(key: string, defaultValue: T): {
   error: Error | null;
 } {
   const flags = useFlags();
-  
+  const isReady = useFlagixReady();
+
   const flag = flags[key];
   return {
     value: flag ? (flag.resolvedValue as T) : defaultValue,
-    isLoading: false,
+    isLoading: !isReady,
     error: null,
   };
 }

@@ -3,6 +3,14 @@ import { FlagixClient, EvaluationContext } from '@flagix/sdk-core';
 
 export const FlagixContext = createContext<FlagixClient | null>(null);
 
+export interface FlagixProviderState {
+  isInitializing: boolean;
+}
+
+export const FlagixProviderStateContext = createContext<FlagixProviderState>({
+  isInitializing: false,
+});
+
 interface FlagixProviderProps {
   client: FlagixClient;
   children: React.ReactNode;
@@ -14,23 +22,27 @@ export const FlagixProvider: React.FC<FlagixProviderProps> = ({
   children,
   initialContext,
 }) => {
-  const [isInitializing, setIsInitializing] = useState(!!initialContext);
+  const [isInitializing, setIsInitializing] = useState(() => {
+    return initialContext ? !client.getIsReady() : false;
+  });
 
   useEffect(() => {
-    let mounted = true;
-    if (initialContext) {
-      client.init(initialContext).finally(() => {
-        if (mounted) setIsInitializing(false);
-      });
-    }
-    return () => {
-      mounted = false;
-    };
+    if (!initialContext) return;
+
+    const unsubscribe = client.onReady((ready) => {
+      if (ready) setIsInitializing(false);
+    });
+
+    client.init(initialContext).catch(() => {});
+
+    return unsubscribe;
   }, [client, initialContext]);
 
   return (
     <FlagixContext.Provider value={client}>
-      {children}
+      <FlagixProviderStateContext.Provider value={{ isInitializing }}>
+        {children}
+      </FlagixProviderStateContext.Provider>
     </FlagixContext.Provider>
   );
 };

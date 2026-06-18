@@ -14,6 +14,11 @@ vi.mock('@flagix/sdk-core', async () => {
       subscribe: vi.fn().mockReturnValue(() => {}),
       getAllFlags: vi.fn().mockReturnValue({}),
       getFlagValue: vi.fn().mockReturnValue('mocked'),
+      getIsReady: vi.fn().mockReturnValue(true),
+      onReady: vi.fn().mockImplementation((cb: (ready: boolean) => void) => {
+        cb(true);
+        return () => {};
+      }),
     })),
   };
 });
