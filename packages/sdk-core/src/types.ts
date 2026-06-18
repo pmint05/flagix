@@ -8,7 +8,10 @@ export interface FlagixConfig {
   ttl?: number;
   persistent?: boolean;
   reconnectJitter?: number;
+  initialFlags?: Record<string, EvaluationResult>;
 }
+
+export type ReadinessCallback = (isReady: boolean) => void;
 
 export interface SdkCache {
   flags: Record<string, EvaluationResult>;

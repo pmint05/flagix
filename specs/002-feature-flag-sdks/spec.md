@@ -71,6 +71,9 @@ As a React developer, I need idiomatic hooks and providers so that I can easily 
 - **FR-010**: The React SDK MUST expose a hook to retrieve all evaluated flags for the current context.
 - **FR-011**: The React SDK MUST expose a hook providing direct access to the underlying core client instance.
 - **FR-012**: The React SDK hooks MUST trigger automatic and optimized component re-renders exclusively when the requested flag's value changes via the real-time stream.
+- **FR-013**: The Core SDK MUST support hydration by accepting pre-evaluated flags during initialization to support Server-Side Rendering (SSR).
+- **FR-014**: The Core SDK MUST track and expose its initialization state, and the React wrapper MUST accurately reflect this loading state in its hooks.
+- **FR-015**: The React SDK MUST provide a testing utility (`MockFlagixProvider`) to allow consumers to easily mock feature flags in their unit/component tests.
 
 ## Assumptions
 - The backend API (`/api/v1/evaluate` and `/api/v1/flags/stream`) is fully deployed and stable.

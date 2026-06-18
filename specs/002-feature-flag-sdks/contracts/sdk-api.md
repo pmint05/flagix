@@ -57,6 +57,16 @@ interface FlagixProviderProps {
 }
 
 const FlagixProvider: React.FC<FlagixProviderProps>;
+
+/**
+ * For unit/component testing.
+ */
+interface MockFlagixProviderProps {
+  flags: Record<string, EvaluationResult>;
+  children: React.ReactNode;
+}
+
+const MockFlagixProvider: React.FC<MockFlagixProviderProps>;
 ```
 
 ### Hooks

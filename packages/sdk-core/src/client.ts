@@ -1,4 +1,4 @@
-import { FlagixConfig, EvaluationContext, EvaluationResult, CacheUpdateCallback } from './types';
+import { FlagixConfig, EvaluationContext, EvaluationResult, CacheUpdateCallback, ReadinessCallback } from './types';
 import { EvaluationClient } from './api-client';
 import { CacheManager } from './cache';
 import { InMemoryStorage } from './storage/in-memory';
@@ -10,12 +10,16 @@ export class FlagixClient {
   private readonly evaluationClient: EvaluationClient;
   private readonly cacheManager: CacheManager;
   private readonly sseClient: SseClient;
+  private readonly config: FlagixConfig;
   private context: EvaluationContext | null = null;
   private contextHash: string = '';
   private subscribers = new Set<CacheUpdateCallback>();
+  private readinessSubscribers = new Set<ReadinessCallback>();
+  private isReady = false;
   private isInitialized = false;
 
   constructor(config: FlagixConfig) {
+    this.config = config;
     const storage = config.persistent ? new LocalStorageStorage() : new InMemoryStorage();
     const baseUrl = config.baseUrl || 'http://localhost:9000/api/v1';
     
@@ -30,6 +34,17 @@ export class FlagixClient {
     });
   }
 
+  private setReady(ready: boolean): void {
+    this.isReady = ready;
+    this.readinessSubscribers.forEach((cb) => {
+      try {
+        cb(ready);
+      } catch (e) {
+        console.error('Flagix: Error in readiness callback', e);
+      }
+    });
+  }
+
   /**
    * Initializes the SDK with a user context.
    * Loads cached flags from storage, starts real-time sync, and triggers an eager fetch.
@@ -38,15 +53,41 @@ export class FlagixClient {
     this.context = context;
     this.contextHash = hashContext(context);
     
-    // Load from storage first for immediate availability (even if stale)
+    if (this.config.initialFlags) {
+      await this.cacheManager.save(this.config.initialFlags, this.contextHash);
+      this.notifySubscribers(this.config.initialFlags);
+      this.isInitialized = true;
+      this.setReady(true);
+      this.sseClient.connect();
+      return;
+    }
+
     await this.cacheManager.load();
     this.isInitialized = true;
 
-    // Start real-time sync via SSE
+    const cachedFlags = this.cacheManager.getFlags(this.contextHash);
+    const cacheExpired = this.cacheManager.isExpired();
+
+    if (cachedFlags && !cacheExpired) {
+      this.notifySubscribers(cachedFlags);
+      this.setReady(true);
+      this.sseClient.connect();
+      return;
+    }
+
     this.sseClient.connect();
 
-    // Trigger eager fetch (Stale-While-Revalidate pattern)
-    await this.fetchFlags();
+    try {
+      await this.fetchFlags();
+      this.setReady(true);
+    } catch (e) {
+      if (cachedFlags) {
+        this.notifySubscribers(cachedFlags);
+        this.setReady(true);
+      } else {
+        console.error('Flagix: Failed to initialize and no cached flags available', e);
+      }
+    }
   }
 
   /**
@@ -138,6 +179,31 @@ export class FlagixClient {
   subscribe(callback: CacheUpdateCallback): () => void {
     this.subscribers.add(callback);
     return () => this.subscribers.delete(callback);
+  }
+
+  /**
+   * Subscribe to SDK readiness state changes.
+   */
+  onReady(callback: ReadinessCallback): () => void {
+    this.readinessSubscribers.add(callback);
+    if (this.isReady) {
+      callback(true);
+    }
+    return () => this.readinessSubscribers.delete(callback);
+  }
+
+  /**
+   * Unsubscribe from readiness state changes.
+   */
+  offReady(callback: ReadinessCallback): void {
+    this.readinessSubscribers.delete(callback);
+  }
+
+  /**
+   * Returns whether the SDK has completed initialization.
+   */
+  getIsReady(): boolean {
+    return this.isReady;
   }
 
   /**

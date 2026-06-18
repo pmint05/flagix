@@ -94,6 +94,30 @@
 - [X] T022 [P] Verify bundle size and universal compatibility (Node.js 20+ and modern Browsers).
 - [X] T023 Update `packages/sdk-core/README.md` and `packages/sdk-react/README.md` with usage examples from `quickstart.md`.
 
+## Phase 8: Core SDK Enhancements (Consistency, TTL, SSR)
+
+**Goal**: Optimize core client, align configurations, and support hydration.
+
+- [X] T024 Fix hardcoded port inconsistencies between `api-client.ts` (3000) and `client.ts` (9000). Use a unified default or require `baseUrl`.
+- [X] T025 Update `FlagixConfig` to accept `initialFlags` for SSR hydration.
+- [X] T026 Update `FlagixClient.init()` to bypass network fetch if `initialFlags` are provided or if `cacheManager.isExpired()` returns false.
+- [X] T027 Add internal readiness tracking (`isReady`) to `FlagixClient` and emit an event/update when initialization completes.
+
+## Phase 9: React SDK Enhancements (Loading State & Testing Utilities)
+
+**Goal**: Provide accurate loading states for the UI and testing tools for consumers.
+
+- [ ] T028 Update `FlagixProvider` to properly manage and distribute the `isInitializing` state.
+- [ ] T029 Update `useFlag` hook to dynamically return `isLoading: true` when the core SDK is not yet ready, avoiding UI flickering.
+- [ ] T030 Create `src/testing.tsx` in `sdk-react` and implement `MockFlagixProvider` for consumer component testing.
+- [ ] T031 Export testing utilities in `sdk-react`'s `index.ts`.
+
+## Phase 10: Advanced TypeScript Usage (Documentation)
+
+**Goal**: Guide developers on using type-safe flag keys.
+
+- [ ] T032 Update `packages/sdk-react/README.md` with an example of creating a type-safe wrapper around `useFlag`.
+
 ## Dependency Graph
 
 - Phase 1 → Phase 2

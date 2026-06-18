@@ -56,3 +56,11 @@ interface FlagixStorage {
 | `CONNECTED` | Active stream receiving updates. |
 | `DISCONNECTED` | Stream closed or failed. |
 | `RECONNECTING` | Waiting for backoff timer to retry connection. |
+
+## SDK Readiness State
+
+| State | Description |
+|-------|-------------|
+| `PENDING` | SDK is initializing and fetching initial flags. |
+| `READY` | SDK is initialized and flags are available. |
+| `ERROR` | SDK failed to initialize (will use fallback values). |

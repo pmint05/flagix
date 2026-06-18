@@ -4,7 +4,7 @@ export class EvaluationClient {
   private readonly baseUrl: string;
   private readonly sdkKey: string;
 
-  constructor(sdkKey: string, baseUrl: string = 'http://localhost:3000/api/v1') {
+  constructor(sdkKey: string, baseUrl: string) {
     this.sdkKey = sdkKey;
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
