@@ -391,9 +391,12 @@ As a platform user, I need clear feedback when operations succeed or fail so tha
 2. Authentication service integration (login, logout, session management).
 3. Shared validation schemas between frontend and backend for form validation consistency.
 4. Frontend Technology Stack (based on `apps/frontend` configuration):
+   - **Version Accuracy & Research**: CRITICAL REQUIREMENT - The project uses bleeding-edge versions (e.g., React 19, TailwindCSS v4, HeroUI v3, TanStack Start). You MUST actively search and read the official documentation to ensure the code uses correct, modern APIs. Do not guess or apply legacy code patterns. For HeroUI, you can automatically read the LLM-friendly documentation at:
+     - `https://heroui.com/react/llms.txt` (General Docs)
+     - `https://heroui.com/react/llms-components.txt` (Components)
    - **Framework & Routing**: React, TanStack Start, TanStack Router.
    - **Data Fetching & State**: TanStack Query, Zustand.
-   - **UI & Styling**: TailwindCSS, HeroUI, Lucide React, Phosphor Icons, Motion.
+   - **UI & Styling**: TailwindCSS, HeroUI, Lucide React, Phosphor Icons, Motion. (CRITICAL REQUIREMENT: Must use native HeroUI components like Skeleton, Toast, Modal, Dropdown, Table, Switch, etc. whenever available. Only implement custom components if HeroUI does not provide them, e.g., EmptyState, Sidebar.)
    - **Forms & Validation**: React Hook Form, Zod.
    - **Testing**: Vitest, React Testing Library.
 5. Role-based access control definitions (Admin, Editor, Viewer permissions matrix).

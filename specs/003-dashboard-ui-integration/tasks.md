@@ -13,10 +13,10 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Define directory structure for features, components, routes, and lib in `apps/frontend/`
-- [ ] T002 Configure TanStack Router, Query, and Zustand providers in `apps/frontend/src/main.tsx`
-- [ ] T003 [P] Configure TailwindCSS, HeroUI, and Phosphor Icons in `apps/frontend/tailwind.config.js` and `index.css`
-- [ ] T004 [P] Implement base API client with `ky` integrating error formatting in `apps/frontend/src/lib/api.ts`
+- [X] T001 Define directory structure for features, components, routes, and lib in `apps/frontend/`
+- [X] T002 Configure Zustand providers in `apps/frontend/src/routes/__root.tsx` (TanStack Router and Query are already configured)
+- [X] T003 [P] Configure TailwindCSS v4, HeroUI, and Phosphor Icons in `apps/frontend/src/styles.css`
+- [X] T004 [P] Implement base API client with `ky` integrating error formatting in `apps/frontend/src/lib/api.ts`
 
 ---
 
@@ -26,8 +26,8 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create generic `EmptyState` and `Skeleton` loader components (for page loading states instead of spinners) in `apps/frontend/src/components/ui/`
-- [ ] T006 [P] Setup global toast notification system (stacked, top-right desktop, top-center mobile) in `apps/frontend/src/components/ui/Toaster.tsx`
+- [ ] T005 Create generic `EmptyState` component for empty lists/pages in `apps/frontend/src/components/ui/` (Note: Use HeroUI's native `Skeleton` for loading states instead of creating a custom one)
+- [ ] T006 [P] Configure HeroUI's native `ToastProvider` (stacked, top-right desktop, top-center mobile) in `apps/frontend/src/routes/__root.tsx` for global notifications
 - [ ] T007 Define shared base Zod validation schemas and types in `apps/frontend/src/types/schemas.ts`
 - [ ] T008 Setup TanStack Query global error handler for intercepting 401s and network errors in `apps/frontend/src/lib/queryClient.ts`
 
@@ -63,7 +63,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 - [ ] T014 [P] [US2] Implement Zustand store for tracking selected Organization, Project, and Environment in `apps/frontend/src/hooks/useContextStore.ts`
 - [ ] T015 [US2] Create Left Sidebar component (collapsible to icon) with navigation links in `apps/frontend/src/components/Sidebar.tsx`
-- [ ] T016 [US2] Create Header component (Sidebar Toggle, Organization Switcher, Dynamic/Efficient BreadCrumbs, User Dropdown with Theme Toggle) in `apps/frontend/src/components/Header.tsx`
+- [ ] T016 [US2] Create Header component (Sidebar Toggle, Organization Switcher, Theme Toggle) in `apps/frontend/src/components/Header.tsx` using HeroUI's native `Breadcrumbs` and `Dropdown`
 - [ ] T017 [US2] Create Context Switchers (Project/Env dropdowns) in `apps/frontend/src/components/ContextSwitchers.tsx`
 - [ ] T018 [US2] Implement Dashboard Layout (Left Sidebar, Header, and responsive Main Content with padding) in `apps/frontend/src/routes/_authenticated.tsx`
 
@@ -96,7 +96,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 - [ ] T025 [P] [US4] Create Flags API methods in `apps/frontend/src/features/flags/api.ts`
 - [ ] T026 [US4] Create Flags list page with status filter and search in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/index.tsx`
-- [ ] T027 [US4] Implement Flag fast toggle component in `apps/frontend/src/features/flags/FlagToggle.tsx`
+- [ ] T027 [US4] Implement Flag fast toggle component in `apps/frontend/src/features/flags/FlagToggle.tsx` using HeroUI's native `Switch`
 - [ ] T028 [US4] Implement Create Flag modal (restricts type changes, max 10 variations) in `apps/frontend/src/features/flags/FlagModal.tsx`
 - [ ] T029 [US4] Create Flag Detail page showing Draft/Active/Archived badges in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/$flagId.tsx`
 

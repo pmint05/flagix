@@ -36,6 +36,10 @@ Build a complete admin interface for the Flagix platform that allows administrat
 
 - **Monorepo**: Uses pnpm workspace packages.
 - **Tech Stack**: Strict adherence to React, Vite, TanStack Query, TanStack Router, shadcn/ui, HeroUI, Zod, and React Hook Form. Better Auth for authentication.
+- **Version Accuracy & Research**: CRITICAL REQUIREMENT - The project uses bleeding-edge versions (e.g., React 19, TailwindCSS v4, HeroUI v3, TanStack Start). You MUST research and search the latest official documentation to ensure the code uses the correct, modern APIs. Do not hallucinate or use legacy patterns. For HeroUI, you can automatically read the LLM-friendly documentation at:
+  - https://heroui.com/react/llms.txt (General Docs)
+  - https://heroui.com/react/llms-components.txt (Components)
+- **UI Components**: CRITICAL REQUIREMENT - Must use native HeroUI components (e.g., Skeleton, Toast, Modal, Dropdown, Table, Switch, etc.) whenever available. Custom components should only be implemented if HeroUI does not provide the functionality (e.g., EmptyState, Sidebar).
 - **Separation of Concerns**: UI contains no evaluation logic.
 - **Fail-Safe**: Forms retain data on error. Network errors display graceful, user-friendly messages.
 - **Validation**: Zod schemas used for all forms.

@@ -7,6 +7,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import { useHydrateStores } from '../stores'
 
 import appCss from '../styles.css?url'
 
@@ -27,7 +28,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Flagix Dashboard',
       },
     ],
     links: [
@@ -41,8 +42,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  // Zustand is providerless; persisted stores (auth, context) rehydrate once
+  // on the client to avoid SSR/CSR markup mismatches. See `src/stores/ssr.ts`.
+  useHydrateStores()
+
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
