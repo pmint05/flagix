@@ -26,10 +26,10 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create generic `EmptyState` component for empty lists/pages in `apps/frontend/src/components/ui/` (Note: Use HeroUI's native `Skeleton` for loading states instead of creating a custom one)
-- [ ] T006 [P] Configure HeroUI's native `ToastProvider` (stacked, top-right desktop, top-center mobile) in `apps/frontend/src/routes/__root.tsx` for global notifications
-- [ ] T007 Define shared base Zod validation schemas and types in `apps/frontend/src/types/schemas.ts`
-- [ ] T008 Setup TanStack Query global error handler for intercepting 401s and network errors in `apps/frontend/src/lib/queryClient.ts`
+- [X] T005 Create generic `EmptyState` component for empty lists/pages in `apps/frontend/src/components/ui/EmptyState.tsx` (Note: Use HeroUI's native `Skeleton` for loading states instead of creating a custom one)
+- [X] T006 [P] Configure HeroUI's native `Toast.Provider` (stacked, top-right desktop, top-center mobile) in `apps/frontend/src/routes/__root.tsx` for global notifications
+- [X] T007 Define shared base Zod validation schemas and types in `apps/frontend/src/types/schemas.ts`
+- [X] T008 Setup TanStack Query global error handler for intercepting 401s and network errors in `apps/frontend/src/lib/queryClient.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
