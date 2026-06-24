@@ -43,11 +43,11 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 1
 
-- [ ] T009 [P] [US1] Create Auth API methods matching API contracts in `apps/frontend/src/features/auth/api.ts`
-- [ ] T010 [P] [US1] Implement `useAuth` hook (Zustand/Query) for session state in `apps/frontend/src/hooks/useAuth.ts`
-- [ ] T011 [US1] Create Login page with RHF and Zod validation in `apps/frontend/src/routes/login.tsx`
-- [ ] T012 [US1] Create Sign up page with RHF and Zod validation in `apps/frontend/src/routes/signup.tsx`
-- [ ] T013 [US1] Implement route guards / middleware in TanStack Router to redirect unauthenticated users to `/login` in `apps/frontend/src/routes/__root.tsx`
+- [X] T009 [P] [US1] Initialize `better-auth` React client and export session hooks in `apps/frontend/src/lib/auth-client.ts`
+- [X] T010 [P] [US1] Create Auth Layout to share UI for authentication pages in `apps/frontend/src/routes/(auth)/_layout.tsx`
+- [X] T011 [US1] Create Login page using HeroUI `Form`, React Hook Form and Zod validation in `apps/frontend/src/routes/(auth)/login.tsx`
+- [X] T012 [US1] Create Sign up page using HeroUI `Form`, React Hook Form and Zod validation in `apps/frontend/src/routes/(auth)/signup.tsx`
+- [X] T013 [US1] Configure TanStack Router context in `__root.tsx` and implement route guard using `beforeLoad` in `apps/frontend/src/routes/_authenticated.tsx` to redirect unauthenticated users to `/login`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
@@ -61,11 +61,11 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 2
 
-- [ ] T014 [P] [US2] Implement Zustand store for tracking selected Organization, Project, and Environment in `apps/frontend/src/hooks/useContextStore.ts`
-- [ ] T015 [US2] Create Left Sidebar component (collapsible to icon) with navigation links in `apps/frontend/src/components/Sidebar.tsx`
-- [ ] T016 [US2] Create Header component (Sidebar Toggle, Organization Switcher, Theme Toggle) in `apps/frontend/src/components/Header.tsx` using HeroUI's native `Breadcrumbs` and `Dropdown`
-- [ ] T017 [US2] Create Context Switchers (Project/Env dropdowns) in `apps/frontend/src/components/ContextSwitchers.tsx`
-- [ ] T018 [US2] Implement Dashboard Layout (Left Sidebar, Header, and responsive Main Content with padding) in `apps/frontend/src/routes/_authenticated.tsx`
+- [X] T014 [P] [US2] Implement Zustand store for tracking selected Organization, Project, and Environment in `apps/frontend/src/hooks/useContextStore.ts`
+- [X] T015 [US2] Create Left Sidebar component (collapsible to icon) with navigation links in `apps/frontend/src/components/Sidebar.tsx`
+- [X] T016 [US2] Create Header component (Sidebar Toggle, Organization Switcher, Theme Toggle) in `apps/frontend/src/components/Header.tsx` using HeroUI's native `Breadcrumbs` and `Dropdown`
+- [X] T017 [US2] Create Context Switchers (Project/Env dropdowns) in `apps/frontend/src/components/ContextSwitchers.tsx`
+- [X] T018 [US2] Implement Dashboard Layout (Left Sidebar, Header, and responsive Main Content with padding) in `apps/frontend/src/routes/_authenticated.tsx`
 
 ---
 
@@ -80,9 +80,9 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 - [ ] T019 [P] [US3] Create Projects API methods in `apps/frontend/src/features/projects/api.ts`
 - [ ] T020 [P] [US3] Create Environments API methods in `apps/frontend/src/features/environments/api.ts`
 - [ ] T021 [US3] Create Projects list page with pagination in `apps/frontend/src/routes/_authenticated/projects/index.tsx`
-- [ ] T022 [US3] Implement Create/Edit Project modal with RHF/Zod in `apps/frontend/src/features/projects/ProjectModal.tsx`
+- [ ] T022 [US3] Implement Create/Edit Project modal using HeroUI `Form`, RHF and Zod in `apps/frontend/src/features/projects/ProjectModal.tsx`
 - [ ] T023 [US3] Create Environments list page with soft-delete/restore in `apps/frontend/src/routes/_authenticated/projects/$projectId/environments.tsx`
-- [ ] T024 [US3] Implement Create/Edit Environment modal in `apps/frontend/src/features/environments/EnvironmentModal.tsx`
+- [ ] T024 [US3] Implement Create/Edit Environment modal using HeroUI `Form`, RHF and Zod in `apps/frontend/src/features/environments/EnvironmentModal.tsx`
 
 ---
 
@@ -97,7 +97,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 - [ ] T025 [P] [US4] Create Flags API methods in `apps/frontend/src/features/flags/api.ts`
 - [ ] T026 [US4] Create Flags list page with status filter and search in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/index.tsx`
 - [ ] T027 [US4] Implement Flag fast toggle component in `apps/frontend/src/features/flags/FlagToggle.tsx` using HeroUI's native `Switch`
-- [ ] T028 [US4] Implement Create Flag modal (restricts type changes, max 10 variations) in `apps/frontend/src/features/flags/FlagModal.tsx`
+- [ ] T028 [US4] Implement Create Flag modal (restricts type changes, max 10 variations) using HeroUI `Form`, RHF and Zod in `apps/frontend/src/features/flags/FlagModal.tsx`
 - [ ] T029 [US4] Create Flag Detail page showing Draft/Active/Archived badges in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/$flagId.tsx`
 
 ---
@@ -112,7 +112,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 - [ ] T030 [P] [US5] Create Rules API methods in `apps/frontend/src/features/rules/api.ts`
 - [ ] T031 [US5] Create Rules section for the flag detail page in `apps/frontend/src/features/rules/TargetingRules.tsx`
-- [ ] T032 [US5] Implement Rule editor (KillSwitch, User, Role, Percentage) in `apps/frontend/src/features/rules/RuleEditor.tsx`
+- [ ] T032 [US5] Implement Rule editor (KillSwitch, User, Role, Percentage) using HeroUI `Form` in `apps/frontend/src/features/rules/RuleEditor.tsx`
 - [ ] T033 [US5] Add custom Zod validation to ensure Percentage Rollout sums to exactly 100% in `apps/frontend/src/features/rules/schema.ts`
 - [ ] T034 [US5] Implement drag-and-drop rule reordering in `apps/frontend/src/features/rules/RulesList.tsx`
 
@@ -128,7 +128,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 - [ ] T035 [P] [US6] Create SDK Keys API methods in `apps/frontend/src/features/keys/api.ts`
 - [ ] T036 [US6] Create SDK Keys list grouped by environment in `apps/frontend/src/features/keys/SdkKeysList.tsx`
-- [ ] T037 [US6] Implement Generate Key modal with 5-key limit enforcement in `apps/frontend/src/features/keys/KeyModal.tsx`
+- [ ] T037 [US6] Implement Generate Key modal with 5-key limit enforcement using HeroUI `Form` in `apps/frontend/src/features/keys/KeyModal.tsx`
 - [ ] T038 [US6] Implement one-time raw key display dialog and masked format view in `apps/frontend/src/features/keys/KeyDisplay.tsx`
 
 ---

@@ -1,74 +1,82 @@
 import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
-import { Toast } from '@heroui/react'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+	HeadContent,
+	Link,
+	Scripts,
+	createRootRouteWithContext,
+} from "@tanstack/react-router";
+import { Toast } from "@heroui/react";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-import { useHydrateStores } from '../stores'
+import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import { useHydrateStores } from "../stores";
 
-import appCss from '../styles.css?url'
+import appCss from "../styles.css?url";
 
-import type { QueryClient } from '@tanstack/react-query'
+import type { QueryClient } from "@tanstack/react-query";
+import { ErrorPage } from "@/components/feedback/error-page";
+import { NotFoundPage } from "@/components/feedback/not-found-page";
 
 interface MyRouterContext {
-  queryClient: QueryClient
+	queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Flagix Dashboard',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootDocument,
-})
+	head: () => ({
+		meta: [
+			{
+				charSet: "utf-8",
+			},
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1",
+			},
+			{
+				title: "Flagix Dashboard",
+			},
+		],
+		links: [
+			{
+				rel: "stylesheet",
+				href: appCss,
+			},
+		],
+	}),
+	errorComponent: ({ error, reset }) => {
+		return <ErrorPage error={error} reset={reset} />;
+	},
+
+	notFoundComponent: () => {
+		return <NotFoundPage />;
+	},
+	shellComponent: RootDocument,
+});
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  // Zustand is providerless; persisted stores (auth, context) rehydrate once
-  // on the client to avoid SSR/CSR markup mismatches. See `src/stores/ssr.ts`.
-  useHydrateStores()
+	useHydrateStores();
 
-  return (
-    <html lang="en" className="dark">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <Toast.Provider placement="top end" />
-        {children}
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
-        <Scripts />
-      </body>
-    </html>
-  )
+	return (
+		<html lang="en" className="dark">
+			<head>
+				<HeadContent />
+			</head>
+			<body>
+				<Toast.Provider placement="bottom" />
+				{children}
+				<TanStackDevtools
+					config={{
+						position: "bottom-right",
+					}}
+					plugins={[
+						{
+							name: "Tanstack Router",
+							render: <TanStackRouterDevtoolsPanel />,
+						},
+						TanStackQueryDevtools,
+					]}
+				/>
+				<Scripts />
+			</body>
+		</html>
+	);
 }
