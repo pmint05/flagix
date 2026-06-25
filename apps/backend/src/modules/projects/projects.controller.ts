@@ -5,7 +5,6 @@ import {
   Patch,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,6 +12,10 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -29,47 +32,40 @@ export class ProjectsController {
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create project' })
   async create(
-    @Param('organizationId') orgId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: CreateProjectDto,
   ) {
-    return this.projectsService.create(orgId, dto);
+    return this.projectsService.create(ctx.organizationId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List projects' })
-  async findAll(@Param('organizationId') orgId: string) {
-    const projects = await this.projectsService.findAll(orgId);
+  async findAll(@CurrentContext() ctx: OrgContext) {
+    const projects = await this.projectsService.findAll(ctx.organizationId);
     return { projects, total: projects.length };
   }
 
   @Get(':projectId')
   @ApiOperation({ summary: 'Get project' })
-  async findOne(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-  ) {
-    return this.projectsService.findOne(orgId, projectId);
+  async findOne(@CurrentContext() ctx: OrgContext) {
+    return this.projectsService.findOne(ctx.organizationId, ctx.projectId!);
   }
 
   @Patch(':projectId')
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Update project' })
   async update(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: UpdateProjectDto,
   ) {
-    return this.projectsService.update(orgId, projectId, dto);
+    return this.projectsService.update(ctx.organizationId, ctx.projectId!, dto);
   }
 
   @Delete(':projectId')
   @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete project' })
-  async remove(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-  ) {
-    return this.projectsService.remove(orgId, projectId);
+  async remove(@CurrentContext() ctx: OrgContext) {
+    return this.projectsService.remove(ctx.organizationId, ctx.projectId!);
   }
 }

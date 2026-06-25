@@ -30,7 +30,10 @@ export class ProjectsService {
       );
 
     const actorId = getActorId();
-    const project = await this.projectRepo.create({ ...dto, slug, organizationId: orgId }, actorId);
+    const project = await this.projectRepo.create(
+      { ...dto, slug, organizationId: orgId },
+      actorId,
+    );
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({

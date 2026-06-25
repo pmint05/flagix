@@ -6,11 +6,15 @@ import {
   Optional,
 } from '@nestjs/common';
 import { FeatureFlagsRepository } from './feature-flags.repository';
+import { EnvironmentsRepository } from '../environments/environments.repository';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
-import { resolveFlagAction } from '@/common/audit/resolve-action';
+import {
+  resolveFlagAction,
+  resolveFlagStateAction,
+} from '@/common/audit/resolve-action';
 import { sanitizeFlag } from '@/common/audit/sanitize';
 import type {
   CreateFeatureFlagDto,
@@ -27,6 +31,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export class FeatureFlagsService {
   constructor(
     private readonly flagRepo: FeatureFlagsRepository,
+    private readonly envRepo: EnvironmentsRepository,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
     @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
@@ -37,9 +42,9 @@ export class FeatureFlagsService {
     envId: string,
     dto: CreateFeatureFlagDto,
   ) {
-    const existing = await this.flagRepo.findByKey(envId, dto.key);
+    const existing = await this.flagRepo.findByKey(projectId, dto.key);
     if (existing)
-      throw new ConflictException('Flag key already exists within environment');
+      throw new ConflictException('Flag key already exists within project');
 
     let variationData: Array<{
       key: string;
@@ -76,11 +81,24 @@ export class FeatureFlagsService {
     }
 
     const actorId = getActorId();
-    const { flag, variations: createdVariations } = await this.flagRepo.createWithVariations(
-      { ...dto, organizationId: orgId, environmentId: envId },
-      variationData,
-      actorId,
-    );
+    const { flag, variations: createdVariations } =
+      await this.flagRepo.createWithVariations(
+        { ...dto, organizationId: orgId, projectId },
+        variationData,
+        actorId,
+      );
+
+    // Create flag states for all environments in the project
+    const environments = await this.envRepo.findAllForProject(projectId);
+    for (const env of environments) {
+      await this.flagRepo.upsertFlagState({
+        organizationId: orgId,
+        featureFlagId: flag.id,
+        environmentId: env.id,
+        isEnabled: false,
+        status: 'draft',
+      });
+    }
 
     if (this.flagChangePublisher) {
       this.flagChangePublisher.publish(envId, {
@@ -95,7 +113,7 @@ export class FeatureFlagsService {
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
-        projectId: projectId,
+        projectId,
         environmentId: envId,
         entityType: 'feature_flag',
         entityId: flag.id,
@@ -119,46 +137,39 @@ export class FeatureFlagsService {
       throw new NotFoundException('Feature flag not found');
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flagId);
-    return { ...flag, variations: flagVariations };
+    const flagStates = await this.flagRepo.findFlagStatesForFlag(flagId);
+    return { ...flag, variations: flagVariations, states: flagStates };
   }
 
   async update(orgId: string, flagId: string, dto: UpdateFeatureFlagDto) {
     const result = await this.flagRepo.findByIdWithProject(flagId);
-    if (!result || result.flag.organizationId !== orgId)
+    if (!result || result.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
-    const { flag, projectId } = result;
+    const flag = result;
 
-    if (dto.status && dto.status !== flag.status) {
-      const allowed = VALID_TRANSITIONS[flag.status] ?? [];
-      if (!allowed.includes(dto.status)) {
-        throw new BadRequestException(
-          `Invalid status transition from "${flag.status}" to "${dto.status}"`,
-        );
-      }
-    }
-
-    const version = dto.version ?? flag.version;
-    if (version !== flag.version) {
+    if (dto.version && dto.version !== flag.version) {
       throw new ConflictException(
         'Version conflict (optimistic locking failure)',
       );
     }
 
     const actorId = getActorId();
-    const updated = await this.flagRepo.update(flagId, dto, flag.version, actorId);
+    const updated = await this.flagRepo.update(
+      flagId,
+      dto,
+      flag.version,
+      actorId,
+    );
     if (!updated)
       throw new ConflictException(
         'Version conflict (optimistic locking failure)',
       );
 
-    this.emitFlagChangeEvent(flag, updated);
-
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
-        projectId,
-        environmentId: flag.environmentId,
+        projectId: flag.projectId,
         entityType: 'feature_flag',
         entityId: flagId,
         before: flag,
@@ -171,30 +182,96 @@ export class FeatureFlagsService {
     return updated;
   }
 
-  async remove(orgId: string, flagId: string) {
-    const result = await this.flagRepo.findByIdWithProject(flagId);
-    if (!result || result.flag.organizationId !== orgId)
+  async updateFlagState(
+    orgId: string,
+    flagId: string,
+    envId: string,
+    dto: { isEnabled?: boolean; status?: string },
+  ) {
+    const flag = await this.flagRepo.findById(flagId);
+    if (!flag || flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
-    const { flag, projectId } = result;
+    const currentState = await this.flagRepo.findFlagState(flagId, envId);
+    if (!currentState)
+      throw new NotFoundException('Flag state not found for this environment');
+
+    if (dto.status && dto.status !== currentState.status) {
+      const allowed = VALID_TRANSITIONS[currentState.status] ?? [];
+      if (!allowed.includes(dto.status)) {
+        throw new BadRequestException(
+          `Invalid status transition from "${currentState.status}" to "${dto.status}"`,
+        );
+      }
+    }
 
     const actorId = getActorId();
-    const deleted = await this.flagRepo.softDelete(flagId, actorId);
+    const updated = await this.flagRepo.upsertFlagState({
+      organizationId: orgId,
+      featureFlagId: flagId,
+      environmentId: envId,
+      isEnabled: dto.isEnabled ?? currentState.isEnabled,
+      status: dto.status ?? currentState.status,
+    });
 
+    // Publish flag change event
     if (this.flagChangePublisher) {
-      this.flagChangePublisher.publish(flag.environmentId, {
-        type: 'flag.deleted',
+      let type: FlagChangeEventType = 'flag.updated';
+
+      if (
+        dto.isEnabled !== undefined &&
+        dto.isEnabled !== currentState.isEnabled
+      ) {
+        type = 'flag.toggled';
+      } else if (dto.status && dto.status !== currentState.status) {
+        if (dto.status === 'archived') {
+          type = 'flag.archived';
+        }
+      }
+
+      this.flagChangePublisher.publish(envId, {
+        type,
         flagKey: flag.key,
-        environmentId: flag.environmentId,
+        environmentId: envId,
         timestamp: new Date().toISOString(),
+        metadata: {
+          version: updated.version,
+          isEnabled: updated.isEnabled,
+        },
       });
     }
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
-        projectId,
-        environmentId: flag.environmentId,
+        projectId: flag.projectId,
+        environmentId: envId,
+        entityType: 'flag_state',
+        entityId: flagId,
+        before: currentState,
+        after: updated,
+        resolveAction: resolveFlagStateAction,
+        sanitize: sanitizeFlag,
+      });
+    }
+
+    return updated;
+  }
+
+  async remove(orgId: string, flagId: string) {
+    const result = await this.flagRepo.findByIdWithProject(flagId);
+    if (!result || result.organizationId !== orgId)
+      throw new NotFoundException('Feature flag not found');
+
+    const flag = result;
+
+    const actorId = getActorId();
+    const deleted = await this.flagRepo.softDelete(flagId, actorId);
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId: flag.projectId,
         entityType: 'feature_flag',
         entityId: flagId,
         before: flag,
@@ -205,44 +282,5 @@ export class FeatureFlagsService {
     }
 
     return { success: true };
-  }
-
-  private emitFlagChangeEvent(
-    before: {
-      isEnabled: boolean;
-      status: string;
-      key: string;
-      environmentId: string;
-    },
-    after: {
-      isEnabled: boolean;
-      status: string;
-      key: string;
-      environmentId: string;
-      version: number;
-    },
-  ): void {
-    if (!this.flagChangePublisher) return;
-
-    let type: FlagChangeEventType = 'flag.updated';
-
-    if (before.isEnabled !== after.isEnabled) {
-      type = 'flag.toggled';
-    } else if (before.status !== after.status) {
-      if (after.status === 'archived') {
-        type = 'flag.archived';
-      }
-    }
-
-    this.flagChangePublisher.publish(after.environmentId, {
-      type,
-      flagKey: after.key,
-      environmentId: after.environmentId,
-      timestamp: new Date().toISOString(),
-      metadata: {
-        version: after.version,
-        isEnabled: after.isEnabled,
-      },
-    });
   }
 }

@@ -4,7 +4,6 @@ import {
   Patch,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -12,6 +11,10 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { FeatureFlagsService } from './feature-flags.service';
 import { UpdateFeatureFlagDto } from './dto/create-feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
@@ -25,32 +28,40 @@ export class FeatureFlagItemController {
 
   @Get()
   @ApiOperation({ summary: 'Get feature flag' })
-  async findOne(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-  ) {
-    return this.flagsService.findOne(orgId, flagId);
+  async findOne(@CurrentContext() ctx: OrgContext) {
+    return this.flagsService.findOne(ctx.organizationId, ctx.flagId!);
   }
 
   @Patch()
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Update feature flag' })
   async update(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: UpdateFeatureFlagDto,
   ) {
-    return this.flagsService.update(orgId, flagId, dto);
+    return this.flagsService.update(ctx.organizationId, ctx.flagId!, dto);
+  }
+
+  @Patch('environments/:envId/state')
+  @PlatformOrgRoles(['admin', 'editor'])
+  @ApiOperation({ summary: 'Update flag state for environment' })
+  async updateFlagState(
+    @CurrentContext() ctx: OrgContext,
+    @Body() dto: { isEnabled?: boolean; status?: string },
+  ) {
+    return this.flagsService.updateFlagState(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.envId!,
+      dto,
+    );
   }
 
   @Delete()
   @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete feature flag' })
-  async remove(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-  ) {
-    return this.flagsService.remove(orgId, flagId);
+  async remove(@CurrentContext() ctx: OrgContext) {
+    return this.flagsService.remove(ctx.organizationId, ctx.flagId!);
   }
 }

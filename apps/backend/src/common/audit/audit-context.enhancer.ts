@@ -24,9 +24,10 @@ interface RequestWithUser extends Request {
  * services see the correct actorId/actorEmail/actorType.
  */
 @Injectable()
-export class AuditContextEnhancerInterceptor
-  implements NestInterceptor<any, any>
-{
+export class AuditContextEnhancerInterceptor implements NestInterceptor<
+  any,
+  any
+> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;

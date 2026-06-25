@@ -4,14 +4,14 @@ import {
   uuid,
   varchar,
   text,
-  boolean,
   integer,
   timestamp,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
-import { environments } from './environments';
+import { projects } from './projects';
+import { flagStates } from './flag-states';
 import { variations } from './variations';
 import { targetingRules } from './targeting-rules';
 import { user } from './auth-schema';
@@ -23,19 +23,15 @@ export const featureFlags = pgTable(
     organizationId: uuid('organization_id')
       .notNull()
       .references(() => organizations.id),
-    environmentId: uuid('environment_id')
+    projectId: uuid('project_id')
       .notNull()
-      .references(() => environments.id, { onDelete: 'cascade' }),
+      .references(() => projects.id, { onDelete: 'cascade' }),
     key: varchar('key', { length: 255 }).notNull(),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
     flagType: text('flag_type', { enum: ['boolean', 'multivariate'] })
       .notNull()
       .default('boolean'),
-    status: text('status', { enum: ['draft', 'active', 'archived'] })
-      .notNull()
-      .default('draft'),
-    isEnabled: boolean('is_enabled').notNull().default(false),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').references(() => user.id),
     updatedBy: text('updated_by').references(() => user.id),
@@ -48,10 +44,9 @@ export const featureFlags = pgTable(
     deletedAt: timestamp('deleted_at'),
   },
   (table) => [
-    uniqueIndex('idx_flags_env_key').on(table.environmentId, table.key),
-    index('idx_flags_org_env').on(table.organizationId, table.environmentId),
-    index('idx_flags_environment').on(table.environmentId),
-    index('idx_flags_status').on(table.status),
+    uniqueIndex('idx_flags_project_key').on(table.projectId, table.key),
+    index('idx_flags_org').on(table.organizationId),
+    index('idx_flags_project').on(table.projectId),
   ],
 );
 
@@ -62,10 +57,11 @@ export const featureFlagRelations = relations(
       fields: [featureFlags.organizationId],
       references: [organizations.id],
     }),
-    environment: one(environments, {
-      fields: [featureFlags.environmentId],
-      references: [environments.id],
+    project: one(projects, {
+      fields: [featureFlags.projectId],
+      references: [projects.id],
     }),
+    flagStates: many(flagStates),
     variations: many(variations),
     targetingRules: many(targetingRules),
   }),

@@ -1,5 +1,6 @@
 import {
   resolveFlagAction,
+  resolveFlagStateAction,
   resolveRuleAction,
   resolveSdkKeyAction,
   resolveProjectAction,
@@ -13,78 +14,120 @@ describe('resolve-action', () => {
       const after = {
         id: '1',
         organizationId: 'org-1',
-        environmentId: 'env-1',
+        projectId: 'proj-1',
         key: 'test-flag',
-        status: 'draft',
-        isEnabled: false,
         version: 1,
       };
 
       expect(resolveFlagAction(null, after)).toBe('FLAG_CREATE');
     });
 
-    it('should return FLAG_ARCHIVE when status changes to archived', () => {
+    it('should return FLAG_DELETE when after is null', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
-        environmentId: 'env-1',
+        projectId: 'proj-1',
         key: 'test-flag',
-        status: 'active',
-        isEnabled: true,
         version: 1,
       };
 
-      const after = { ...before, status: 'archived', version: 2 };
-
-      expect(resolveFlagAction(before, after)).toBe('FLAG_ARCHIVE');
-    });
-
-    it('should return FLAG_ACTIVATE when status changes from draft to active', () => {
-      const before = {
-        id: '1',
-        organizationId: 'org-1',
-        environmentId: 'env-1',
-        key: 'test-flag',
-        status: 'draft',
-        isEnabled: false,
-        version: 1,
-      };
-
-      const after = { ...before, status: 'active', isEnabled: true, version: 2 };
-
-      expect(resolveFlagAction(before, after)).toBe('FLAG_ACTIVATE');
-    });
-
-    it('should return FLAG_TOGGLE when isEnabled changes', () => {
-      const before = {
-        id: '1',
-        organizationId: 'org-1',
-        environmentId: 'env-1',
-        key: 'test-flag',
-        status: 'active',
-        isEnabled: false,
-        version: 1,
-      };
-
-      const after = { ...before, isEnabled: true, version: 2 };
-
-      expect(resolveFlagAction(before, after)).toBe('FLAG_TOGGLE');
+      expect(resolveFlagAction(before, null)).toBe('FLAG_DELETE');
     });
 
     it('should return FLAG_UPDATE for other changes', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
-        environmentId: 'env-1',
+        projectId: 'proj-1',
         key: 'test-flag',
-        status: 'active',
-        isEnabled: true,
         version: 1,
       };
 
       const after = { ...before, name: 'New Name', version: 2 };
 
       expect(resolveFlagAction(before, after)).toBe('FLAG_UPDATE');
+    });
+  });
+
+  describe('resolveFlagStateAction', () => {
+    it('should return FLAG_STATE_CREATE when before is null', () => {
+      const after = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        isEnabled: false,
+        status: 'draft',
+      };
+
+      expect(resolveFlagStateAction(null, after)).toBe('FLAG_STATE_CREATE');
+    });
+
+    it('should return FLAG_STATE_DELETE when after is null', () => {
+      const before = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        isEnabled: false,
+        status: 'draft',
+      };
+
+      expect(resolveFlagStateAction(before, null)).toBe('FLAG_STATE_DELETE');
+    });
+
+    it('should return FLAG_ARCHIVE when status changes to archived', () => {
+      const before = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        status: 'active',
+        isEnabled: true,
+      };
+
+      const after = { ...before, status: 'archived' };
+
+      expect(resolveFlagStateAction(before, after)).toBe('FLAG_ARCHIVE');
+    });
+
+    it('should return FLAG_ACTIVATE when status changes from draft to active', () => {
+      const before = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        status: 'draft',
+        isEnabled: false,
+      };
+
+      const after = { ...before, status: 'active', isEnabled: true };
+
+      expect(resolveFlagStateAction(before, after)).toBe('FLAG_ACTIVATE');
+    });
+
+    it('should return FLAG_TOGGLE when isEnabled changes', () => {
+      const before = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        status: 'active',
+        isEnabled: false,
+      };
+
+      const after = { ...before, isEnabled: true };
+
+      expect(resolveFlagStateAction(before, after)).toBe('FLAG_TOGGLE');
+    });
+
+    it('should return FLAG_STATE_UPDATE for other changes', () => {
+      const before = {
+        id: '1',
+        featureFlagId: 'flag-1',
+        environmentId: 'env-1',
+        status: 'active',
+        isEnabled: true,
+      };
+
+      const after = { ...before, someOtherField: 'new' };
+
+      expect(resolveFlagStateAction(before, after)).toBe('FLAG_STATE_UPDATE');
     });
   });
 

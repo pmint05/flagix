@@ -5,7 +5,6 @@ import {
   Patch,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,6 +12,10 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { TargetingRulesService } from './targeting-rules.service';
 import {
   CreateTargetingRuleDto,
@@ -31,54 +34,56 @@ export class TargetingRulesController {
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create targeting rule' })
   async create(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: CreateTargetingRuleDto,
   ) {
-    return this.rulesService.create(orgId, flagId, dto);
+    return this.rulesService.create(ctx.organizationId, ctx.flagId!, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List targeting rules' })
-  async findAll(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-  ) {
-    const rules = await this.rulesService.findAllForFlag(orgId, flagId);
+  async findAll(@CurrentContext() ctx: OrgContext) {
+    const rules = await this.rulesService.findAllForFlag(
+      ctx.organizationId,
+      ctx.flagId!,
+    );
     return { rules, total: rules.length };
   }
 
   @Get(':ruleId')
   @ApiOperation({ summary: 'Get targeting rule' })
-  async findOne(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-    @Param('ruleId') ruleId: string,
-  ) {
-    return this.rulesService.findOne(orgId, flagId, ruleId);
+  async findOne(@CurrentContext() ctx: OrgContext) {
+    return this.rulesService.findOne(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.ruleId!,
+    );
   }
 
   @Patch(':ruleId')
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Update targeting rule' })
   async update(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-    @Param('ruleId') ruleId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: UpdateTargetingRuleDto,
   ) {
-    return this.rulesService.update(orgId, flagId, ruleId, dto);
+    return this.rulesService.update(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.ruleId!,
+      dto,
+    );
   }
 
   @Delete(':ruleId')
   @PlatformOrgRoles(['admin', 'editor'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete targeting rule' })
-  async remove(
-    @Param('organizationId') orgId: string,
-    @Param('flagId') flagId: string,
-    @Param('ruleId') ruleId: string,
-  ) {
-    return this.rulesService.remove(orgId, flagId, ruleId);
+  async remove(@CurrentContext() ctx: OrgContext) {
+    return this.rulesService.remove(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.ruleId!,
+    );
   }
 }

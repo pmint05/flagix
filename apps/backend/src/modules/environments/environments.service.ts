@@ -30,7 +30,10 @@ export class EnvironmentsService {
       );
 
     const actorId = getActorId();
-    const env = await this.envRepo.create({ ...dto, slug, projectId }, actorId);
+    const env = await this.envRepo.create(
+      { ...dto, slug, projectId, organizationId: orgId },
+      actorId,
+    );
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({

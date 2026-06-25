@@ -7,7 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { featureFlags, environments } from '@/db/schema';
+import { featureFlags } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import { TargetingRulesRepository } from './targeting-rules.repository';
@@ -43,7 +43,10 @@ export class TargetingRulesService {
         );
     }
 
-    const variation = await this.rulesRepo.findVariationForFlag(flagId, dto.variationId);
+    const variation = await this.rulesRepo.findVariationForFlag(
+      flagId,
+      dto.variationId,
+    );
     if (!variation) {
       throw new BadRequestException('Variation does not belong to this flag');
     }
@@ -54,22 +57,26 @@ export class TargetingRulesService {
       : generateInitialPriority();
 
     const actorId = getActorId();
-    const rule = await this.rulesRepo.create({
-      ...dto,
-      organizationId: orgId,
-      featureFlagId: flagId,
-      priority,
-    }, actorId);
+    const rule = await this.rulesRepo.create(
+      {
+        ...dto,
+        organizationId: orgId,
+        featureFlagId: flagId,
+        environmentId: dto.environmentId,
+        priority,
+      },
+      actorId,
+    );
 
     const flag = await this.getFlagWithProject(flagId);
 
-    this.emitRuleChangeEvent('rule.created', rule, flag);
+    this.emitRuleChangeEvent('rule.created', rule, flag, rule.environmentId);
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: flag?.projectId,
-        environmentId: flag?.environmentId,
+        environmentId: rule.environmentId,
         entityType: 'targeting_rule',
         entityId: rule.id,
         before: null,
@@ -109,13 +116,18 @@ export class TargetingRulesService {
 
     const flag = await this.getFlagWithProject(flagId);
 
-    this.emitRuleChangeEvent('rule.updated', updated, flag);
+    this.emitRuleChangeEvent(
+      'rule.updated',
+      updated,
+      flag,
+      updated.environmentId,
+    );
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: flag?.projectId,
-        environmentId: flag?.environmentId,
+        environmentId: updated.environmentId,
         entityType: 'targeting_rule',
         entityId: ruleId,
         before: rule,
@@ -138,13 +150,13 @@ export class TargetingRulesService {
 
     const flag = await this.getFlagWithProject(flagId);
 
-    this.emitRuleChangeEvent('rule.deleted', rule, flag);
+    this.emitRuleChangeEvent('rule.deleted', rule, flag, rule.environmentId);
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: flag?.projectId,
-        environmentId: flag?.environmentId,
+        environmentId: rule.environmentId,
         entityType: 'targeting_rule',
         entityId: ruleId,
         before: rule,
@@ -161,11 +173,9 @@ export class TargetingRulesService {
     const [flag] = await this.db
       .select({
         key: featureFlags.key,
-        environmentId: featureFlags.environmentId,
-        projectId: environments.projectId,
+        projectId: featureFlags.projectId,
       })
       .from(featureFlags)
-      .innerJoin(environments, eq(featureFlags.environmentId, environments.id))
       .where(eq(featureFlags.id, flagId))
       .limit(1);
     return flag;
@@ -174,14 +184,15 @@ export class TargetingRulesService {
   private emitRuleChangeEvent(
     eventType: 'rule.created' | 'rule.updated' | 'rule.deleted',
     rule: { id: string },
-    flag: { key: string; environmentId: string } | null,
+    flag: { key: string } | null,
+    environmentId: string,
   ): void {
     if (!this.flagChangePublisher || !flag) return;
 
-    this.flagChangePublisher.publish(flag.environmentId, {
+    this.flagChangePublisher.publish(environmentId, {
       type: eventType,
       flagKey: flag.key,
-      environmentId: flag.environmentId,
+      environmentId,
       timestamp: new Date().toISOString(),
       metadata: { ruleId: rule.id },
     });

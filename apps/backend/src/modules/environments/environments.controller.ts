@@ -5,7 +5,6 @@ import {
   Patch,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,6 +12,10 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { EnvironmentsService } from './environments.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
@@ -29,57 +32,56 @@ export class EnvironmentsController {
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create environment' })
   async create(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: CreateEnvironmentDto,
   ) {
-    return this.envService.create(orgId, projectId, dto);
+    return this.envService.create(ctx.organizationId, ctx.projectId!, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List environments for project' })
-  async findAll(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-  ) {
+  async findAll(@CurrentContext() ctx: OrgContext) {
     const environments = await this.envService.findAllForProject(
-      orgId,
-      projectId,
+      ctx.organizationId,
+      ctx.projectId!,
     );
     return { environments, total: environments.length };
   }
 
   @Get(':envId')
   @ApiOperation({ summary: 'Get environment' })
-  async findOne(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-    @Param('envId') envId: string,
-  ) {
-    return this.envService.findOne(orgId, projectId, envId);
+  async findOne(@CurrentContext() ctx: OrgContext) {
+    return this.envService.findOne(
+      ctx.organizationId,
+      ctx.projectId!,
+      ctx.envId!,
+    );
   }
 
   @Patch(':envId')
   @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Update environment' })
   async update(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-    @Param('envId') envId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: UpdateEnvironmentDto,
   ) {
-    return this.envService.update(orgId, projectId, envId, dto);
+    return this.envService.update(
+      ctx.organizationId,
+      ctx.projectId!,
+      ctx.envId!,
+      dto,
+    );
   }
 
   @Delete(':envId')
   @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete environment' })
-  async remove(
-    @Param('organizationId') orgId: string,
-    @Param('projectId') projectId: string,
-    @Param('envId') envId: string,
-  ) {
-    return this.envService.remove(orgId, projectId, envId);
+  async remove(@CurrentContext() ctx: OrgContext) {
+    return this.envService.remove(
+      ctx.organizationId,
+      ctx.projectId!,
+      ctx.envId!,
+    );
   }
 }

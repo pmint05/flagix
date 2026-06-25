@@ -15,6 +15,13 @@
       "when": 1781593591579,
       "tag": "0001_perpetual_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782404999728,
+      "tag": "0002_mute_microbe",
+      "breakpoints": true
     }
   ]
 }

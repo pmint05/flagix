@@ -46,10 +46,14 @@ export class EnvironmentsRepository {
     return env ?? null;
   }
 
-  async create(input: CreateEnvironmentDto & { projectId: string }, actorId?: string) {
+  async create(
+    input: CreateEnvironmentDto & { projectId: string; organizationId: string },
+    actorId?: string,
+  ) {
     const [env] = await this.db
       .insert(environments)
       .values({
+        organizationId: input.organizationId,
         projectId: input.projectId,
         name: input.name,
         slug: input.slug!,

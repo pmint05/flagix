@@ -20,7 +20,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "lint": "eslint src"
+    "lint": "eslint src --fix"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
@@ -31,14 +31,17 @@
     "use-sync-external-store": "^1.2.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.10",
     "@types/use-sync-external-store": "^0.0.6",
-    "react": "^19.0.0",
-    "tsup": "^8.4.0",
-    "vitest": "^3.0.7",
+    "eslint": "^9.39.4",
     "happy-dom": "^17.1.8",
     "msw": "^2.7.3",
-    "typescript": "^6.0.3"
+    "react": "^19.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
+    "vitest": "^3.0.7"
   }
 }

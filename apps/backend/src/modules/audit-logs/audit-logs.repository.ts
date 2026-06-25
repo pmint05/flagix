@@ -107,7 +107,7 @@ export class AuditLogsRepository {
         requestId: entry.requestId ? entry.requestId : null,
         requestMethod: entry.requestMethod ?? null,
         requestPath: entry.requestPath ?? null,
-        source: entry.source as any ?? null,
+        source: (entry.source as any) ?? null,
         description: entry.description ?? null,
         changes: entry.changes,
       })

@@ -43,7 +43,10 @@ export class ProjectsRepository {
     return project ?? null;
   }
 
-  async create(input: CreateProjectDto & { organizationId: string }, actorId?: string) {
+  async create(
+    input: CreateProjectDto & { organizationId: string },
+    actorId?: string,
+  ) {
     const [project] = await this.db
       .insert(projects)
       .values({

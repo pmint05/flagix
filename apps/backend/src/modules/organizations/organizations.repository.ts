@@ -88,7 +88,11 @@ export class OrganizationsRepository {
     return org ?? null;
   }
 
-  async addMember(orgId: string, userId: string, role: 'admin' | 'editor' | 'viewer' = 'admin') {
+  async addMember(
+    orgId: string,
+    userId: string,
+    role: 'admin' | 'editor' | 'viewer' = 'admin',
+  ) {
     const [member] = await this.db
       .insert(organizationMembers)
       .values({

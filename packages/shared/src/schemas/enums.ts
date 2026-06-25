@@ -54,3 +54,12 @@ export type MemberRole = z.infer<typeof memberRoleEnum>;
 export type ActionType = z.infer<typeof actionTypeEnum>;
 export type EntityType = z.infer<typeof entityTypeEnum>;
 export type ActorType = z.infer<typeof actorTypeEnum>;
+
+export const flagStateSchema = z.object({
+  featureFlagId: z.string().uuid(),
+  environmentId: z.string().uuid(),
+  isEnabled: z.boolean(),
+  status: flagStatusEnum,
+  version: z.number().int().positive(),
+});
+export type FlagState = z.infer<typeof flagStateSchema>;

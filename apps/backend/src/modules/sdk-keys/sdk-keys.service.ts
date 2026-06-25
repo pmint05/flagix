@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { SdkKeysRepository } from './sdk-keys.repository';
 import { hashSdkKey, generateRawKey } from '@/common/utils/crypto';
@@ -25,14 +30,17 @@ export class SdkKeysService {
     const keyHint = rawKey.slice(0, 8);
 
     const actorId = getActorId();
-    const sdkKey = await this.sdkKeysRepo.create({
-      organizationId: orgId,
-      environmentId: envId,
-      name: input.name,
-      keyHash,
-      keyHint,
-      type: input.type,
-    }, actorId);
+    const sdkKey = await this.sdkKeysRepo.create(
+      {
+        organizationId: orgId,
+        environmentId: envId,
+        name: input.name,
+        keyHash,
+        keyHint,
+        type: input.type,
+      },
+      actorId,
+    );
 
     if (this.auditLogsService) {
       const [env] = await this.db

@@ -33,14 +33,17 @@ export class SdkKeysRepository {
       .where(and(eq(sdkKeys.environmentId, envId), isNull(sdkKeys.deletedAt)));
   }
 
-  async create(input: {
-    organizationId: string;
-    environmentId: string;
-    name: string;
-    keyHash: string;
-    keyHint: string;
-    type: string;
-  }, actorId?: string) {
+  async create(
+    input: {
+      organizationId: string;
+      environmentId: string;
+      name: string;
+      keyHash: string;
+      keyHint: string;
+      type: string;
+    },
+    actorId?: string,
+  ) {
     const [key] = await this.db
       .insert(sdkKeys)
       .values({

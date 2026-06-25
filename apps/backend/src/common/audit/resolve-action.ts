@@ -4,11 +4,16 @@ interface BaseEntity {
 
 interface FeatureFlagEntity extends BaseEntity {
   organizationId: string;
-  environmentId: string;
+  projectId: string;
   key: string;
-  status: string;
-  isEnabled: boolean;
   version: number;
+}
+
+interface FlagStateEntity extends BaseEntity {
+  featureFlagId: string;
+  environmentId: string;
+  isEnabled: boolean;
+  status: string;
 }
 
 interface TargetingRuleEntity extends BaseEntity {
@@ -51,16 +56,26 @@ export function resolveFlagAction(
 ): string {
   if (!before && after) return 'FLAG_CREATE';
   if (before && !after) return 'FLAG_DELETE';
-  if (!before || !after) return 'FLAG_UPDATE';
+  return 'FLAG_UPDATE';
+}
+
+export function resolveFlagStateAction(
+  before: FlagStateEntity | null,
+  after: FlagStateEntity | null,
+): string {
+  if (!before && after) return 'FLAG_STATE_CREATE';
+  if (before && !after) return 'FLAG_STATE_DELETE';
+  if (!before || !after) return 'FLAG_STATE_UPDATE';
 
   if (before.status !== after.status) {
     if (after.status === 'archived') return 'FLAG_ARCHIVE';
-    if (after.status === 'active' && before.status === 'draft') return 'FLAG_ACTIVATE';
+    if (after.status === 'active' && before.status === 'draft')
+      return 'FLAG_ACTIVATE';
   }
 
   if (before.isEnabled !== after.isEnabled) return 'FLAG_TOGGLE';
 
-  return 'FLAG_UPDATE';
+  return 'FLAG_STATE_UPDATE';
 }
 
 export function resolveRuleAction(
