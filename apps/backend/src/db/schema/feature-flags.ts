@@ -4,7 +4,6 @@ import {
   uuid,
   varchar,
   text,
-  boolean,
   integer,
   timestamp,
   index,
@@ -12,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { projects } from './projects';
+import { flagStates } from './flag-states';
 import { variations } from './variations';
 import { targetingRules } from './targeting-rules';
 import { user } from './auth-schema';
@@ -61,6 +61,7 @@ export const featureFlagRelations = relations(
       fields: [featureFlags.projectId],
       references: [projects.id],
     }),
+    flagStates: many(flagStates),
     variations: many(variations),
     targetingRules: many(targetingRules),
   }),
