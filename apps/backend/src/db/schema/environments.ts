@@ -8,6 +8,7 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { organizations } from './organizations';
 import { projects } from './projects';
 import { featureFlags } from './feature-flags';
 import { sdkKeys } from './sdk-keys';
@@ -17,6 +18,9 @@ export const environments = pgTable(
   'environments',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     projectId: uuid('project_id')
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
@@ -39,12 +43,17 @@ export const environments = pgTable(
       table.slug,
     ),
     index('idx_environments_project').on(table.projectId),
+    index('idx_environments_org').on(table.organizationId),
   ],
 );
 
 export const environmentRelations = relations(
   environments,
   ({ one, many }) => ({
+    organization: one(organizations, {
+      fields: [environments.organizationId],
+      references: [organizations.id],
+    }),
     project: one(projects, {
       fields: [environments.projectId],
       references: [projects.id],
