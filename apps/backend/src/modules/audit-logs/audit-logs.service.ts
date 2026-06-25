@@ -69,7 +69,8 @@ export class AuditLogsService {
       actorEmail: entry.actorEmail ?? ctx?.actorEmail,
       actorIp: entry.actorIp ?? ctx?.ip,
       userAgent: entry.userAgent ?? ctx?.userAgent,
-      requestId: entry.requestId ?? ctx?.requestId ? ctx?.requestId : undefined,
+      requestId:
+        (entry.requestId ?? ctx?.requestId) ? ctx?.requestId : undefined,
       requestMethod: entry.requestMethod ?? ctx?.method,
       requestPath: entry.requestPath ?? ctx?.path,
       source: entry.source ?? ctx?.source,
@@ -80,10 +81,7 @@ export class AuditLogsService {
     try {
       return await this.auditRepo.insert(fullEntry);
     } catch (err) {
-      this.logger.error(
-        { err, entry: fullEntry },
-        'Failed to write audit log',
-      );
+      this.logger.error({ err, entry: fullEntry }, 'Failed to write audit log');
       return null;
     }
   }

@@ -5,7 +5,6 @@ import {
   Patch,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,6 +12,10 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
 import { OrganizationsService } from './organizations.service';
 import {
@@ -44,8 +47,8 @@ export class OrganizationsController {
   @Get(':organizationId')
   @UseGuards(OrgRolesGuard)
   @ApiOperation({ summary: 'Get organization by ID' })
-  async findOne(@Param('organizationId') id: string, @CurrentUser() user: any) {
-    return this.orgService.findOneForUser(id, user.id);
+  async findOne(@CurrentContext() ctx: OrgContext, @CurrentUser() user: any) {
+    return this.orgService.findOneForUser(ctx.organizationId, user.id);
   }
 
   @Patch(':organizationId')
@@ -53,10 +56,10 @@ export class OrganizationsController {
   @PlatformOrgRoles(['admin'])
   @ApiOperation({ summary: 'Update organization' })
   async update(
-    @Param('organizationId') id: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() dto: UpdateOrganizationDto,
   ) {
-    return this.orgService.update(id, dto);
+    return this.orgService.update(ctx.organizationId, dto);
   }
 
   @Delete(':organizationId')
@@ -64,7 +67,7 @@ export class OrganizationsController {
   @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete organization' })
-  async remove(@Param('organizationId') id: string) {
-    return this.orgService.remove(id);
+  async remove(@CurrentContext() ctx: OrgContext) {
+    return this.orgService.remove(ctx.organizationId);
   }
 }

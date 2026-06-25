@@ -11,7 +11,9 @@ function sanitizeEntity<T>(
 
   const result: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(entity as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(
+    entity as Record<string, unknown>,
+  )) {
     if (pickKeys && !pickKeys.includes(key)) continue;
     if (excludeKeys.includes(key)) continue;
 

@@ -14,6 +14,10 @@ export class CreateTargetingRuleDto {
 
   @ApiProperty()
   @IsString()
+  environmentId!: string;
+
+  @ApiProperty()
+  @IsString()
   variationId!: string;
 
   @ApiProperty()

@@ -55,6 +55,7 @@ describe('SSE Endpoint (e2e)', () => {
     const [env] = await db
       .insert(environments)
       .values({
+        organizationId: org.id,
         projectId: project.id,
         name: 'Production',
         slug: 'production',

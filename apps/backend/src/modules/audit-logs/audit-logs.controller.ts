@@ -2,6 +2,10 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { AuditLogsService } from './audit-logs.service';
 import { Auth } from '@/common/decorators/auth.decorator';
 
@@ -16,7 +20,7 @@ export class AuditLogsController {
   @Get()
   @ApiOperation({ summary: 'List audit logs' })
   async findAll(
-    @Param('organizationId') orgId: string,
+    @CurrentContext() ctx: OrgContext,
     @Query('projectId') projectId?: string,
     @Query('environmentId') environmentId?: string,
     @Query('entityType') entityType?: string,
@@ -27,7 +31,7 @@ export class AuditLogsController {
     @Query('offset') offset?: string,
   ) {
     return this.auditLogsService.list({
-      orgId,
+      orgId: ctx.organizationId,
       projectId,
       environmentId,
       entityType,
@@ -41,11 +45,11 @@ export class AuditLogsController {
 
   @Get(':logId')
   @ApiOperation({ summary: 'Get audit log entry' })
-  async findOne(
-    @Param('organizationId') orgId: string,
-    @Param('logId') logId: string,
-  ) {
-    const log = await this.auditLogsService.findOne(orgId, logId);
+  async findOne(@CurrentContext() ctx: OrgContext) {
+    const log = await this.auditLogsService.findOne(
+      ctx.organizationId,
+      ctx.logId!,
+    );
     return log;
   }
 }

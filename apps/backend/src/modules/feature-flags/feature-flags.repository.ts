@@ -10,9 +10,7 @@ import type {
 
 @Injectable()
 export class FeatureFlagsRepository {
-  constructor(
-    @Inject(DATABASE) private readonly db: Database,
-  ) {}
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async findById(id: string) {
     const [flag] = await this.db
@@ -55,10 +53,7 @@ export class FeatureFlagsRepository {
 
     if (statusFilter) {
       conditions.push(
-        eq(
-          featureFlags.flagType,
-          statusFilter as 'boolean' | 'multivariate',
-        ),
+        eq(featureFlags.flagType, statusFilter as 'boolean' | 'multivariate'),
       );
     }
 
@@ -66,6 +61,44 @@ export class FeatureFlagsRepository {
       .select()
       .from(featureFlags)
       .where(and(...conditions));
+  }
+
+  async findVariationsForFlag(flagId: string) {
+    return this.db
+      .select()
+      .from(variations)
+      .where(
+        and(eq(variations.featureFlagId, flagId), isNull(variations.deletedAt)),
+      );
+  }
+
+  async findAllForEnv(envId: string, statusFilter?: string) {
+    const conditions = [
+      eq(flagStates.environmentId, envId),
+      isNull(flagStates.deletedAt),
+    ];
+
+    if (statusFilter) {
+      conditions.push(eq(flagStates.status, statusFilter));
+    }
+
+    const states = await this.db
+      .select({
+        flag: featureFlags,
+        state: flagStates,
+      })
+      .from(flagStates)
+      .innerJoin(featureFlags, eq(flagStates.featureFlagId, featureFlags.id))
+      .where(and(...conditions));
+
+    return states.map(({ flag, state }) => ({
+      ...flag,
+      isEnabled: state.isEnabled,
+      status: state.status,
+      environmentId: state.environmentId,
+      stateId: state.id,
+      stateVersion: state.version,
+    }));
   }
 
   async findFlagState(flagId: string, envId: string) {
@@ -80,6 +113,15 @@ export class FeatureFlagsRepository {
       )
       .limit(1);
     return state ?? null;
+  }
+
+  async findFlagStatesForFlag(flagId: string) {
+    return this.db
+      .select()
+      .from(flagStates)
+      .where(
+        and(eq(flagStates.featureFlagId, flagId), isNull(flagStates.deletedAt)),
+      );
   }
 
   async upsertFlagState(input: {
@@ -144,7 +186,10 @@ export class FeatureFlagsRepository {
         .select()
         .from(variations)
         .where(
-          and(eq(variations.featureFlagId, flag.id), isNull(variations.deletedAt)),
+          and(
+            eq(variations.featureFlagId, flag.id),
+            isNull(variations.deletedAt),
+          ),
         );
 
       return { flag, variations: createdVariations };

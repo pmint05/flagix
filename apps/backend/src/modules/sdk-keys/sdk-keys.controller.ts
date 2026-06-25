@@ -4,7 +4,6 @@ import {
   Post,
   Delete,
   Body,
-  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -12,6 +11,10 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
+import {
+  CurrentContext,
+  OrgContext,
+} from '@/common/decorators/current-context.decorator';
 import { SdkKeysService } from './sdk-keys.service';
 import { CreateSdkKeyDto } from './dto/create-sdk-key.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
@@ -27,20 +30,19 @@ export class SdkKeysController {
   @PlatformOrgRoles(['admin'])
   @ApiOperation({ summary: 'Create SDK key' })
   async create(
-    @Param('organizationId') orgId: string,
-    @Param('envId') envId: string,
+    @CurrentContext() ctx: OrgContext,
     @Body() body: CreateSdkKeyDto,
   ) {
-    return this.sdkKeysService.create(orgId, envId, body);
+    return this.sdkKeysService.create(ctx.organizationId, ctx.envId!, body);
   }
 
   @Get()
   @ApiOperation({ summary: 'List SDK keys' })
-  async findAll(
-    @Param('organizationId') orgId: string,
-    @Param('envId') envId: string,
-  ) {
-    const sdkKeys = await this.sdkKeysService.findAllForEnv(orgId, envId);
+  async findAll(@CurrentContext() ctx: OrgContext) {
+    const sdkKeys = await this.sdkKeysService.findAllForEnv(
+      ctx.organizationId,
+      ctx.envId!,
+    );
     return { sdkKeys };
   }
 
@@ -48,11 +50,11 @@ export class SdkKeysController {
   @PlatformOrgRoles(['admin'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke SDK key' })
-  async revoke(
-    @Param('organizationId') orgId: string,
-    @Param('envId') envId: string,
-    @Param('keyId') keyId: string,
-  ) {
-    return this.sdkKeysService.revoke(orgId, envId, keyId);
+  async revoke(@CurrentContext() ctx: OrgContext) {
+    return this.sdkKeysService.revoke(
+      ctx.organizationId,
+      ctx.envId!,
+      ctx.keyId!,
+    );
   }
 }

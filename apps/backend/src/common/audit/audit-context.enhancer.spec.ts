@@ -14,7 +14,7 @@ describe('AuditContextEnhancerInterceptor', () => {
   }
 
   function createHandler(): CallHandler {
-    return { handle: jest.fn(() => ({ subscribe: jest.fn() } as any)) };
+    return { handle: jest.fn(() => ({ subscribe: jest.fn() }) as any) };
   }
 
   it('should update audit context with authenticated user', () => {

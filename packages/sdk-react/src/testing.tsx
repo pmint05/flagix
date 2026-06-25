@@ -17,7 +17,7 @@ interface MockFlagixClient {
 }
 
 function createMockClient(initialFlags?: Record<string, EvaluationResult>): MockFlagixClient {
-  let flags: Record<string, EvaluationResult> = initialFlags || {};
+  const flags: Record<string, EvaluationResult> = initialFlags || {};
   let isReady = !!initialFlags;
   const subscribers = new Set<() => void>();
   const readinessSubscribers = new Set<(ready: boolean) => void>();

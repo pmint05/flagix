@@ -8,6 +8,6 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
   imports: [AuditLogsModule],
   controllers: [EnvironmentsController],
   providers: [EnvironmentsService, EnvironmentsRepository],
-  exports: [EnvironmentsService],
+  exports: [EnvironmentsService, EnvironmentsRepository],
 })
 export class EnvironmentsModule {}

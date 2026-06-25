@@ -67,6 +67,8 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 		}
 	}, [isOpen, project, reset]);
 
+	console.log(errors);
+
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
 			if (isEditing) {
@@ -121,7 +123,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 									)}
 								</TextField>
 
-								<TextField>
+								<TextField name="slug" isInvalid={!!errors.slug}>
 									<Label>Slug</Label>
 									<Input
 										variant="secondary"

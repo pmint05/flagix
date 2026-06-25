@@ -26,20 +26,22 @@ export class SdkKeyGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<any>();
-    
+
     let rawKey = request.headers['x-sdk-key'] as string | undefined;
 
     // Special case: Allow query param for SSE stream endpoint (browser EventSource support)
-    const isSseStream = request.path?.endsWith('/flags/stream') || request.url?.includes('/flags/stream');
+    const isSseStream =
+      request.path?.endsWith('/flags/stream') ||
+      request.url?.includes('/flags/stream');
     if (!rawKey && isSseStream) {
       rawKey = request.query?.sdkKey as string | undefined;
     }
 
     if (!rawKey) {
       throw new UnauthorizedException(
-        isSseStream 
-          ? 'Missing X-SDK-Key header or sdkKey query parameter' 
-          : 'Missing X-SDK-Key header'
+        isSseStream
+          ? 'Missing X-SDK-Key header or sdkKey query parameter'
+          : 'Missing X-SDK-Key header',
       );
     }
 

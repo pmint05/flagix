@@ -81,7 +81,6 @@ export class FlagLoader {
       ),
       with: {
         featureFlag: {
-          where: isNull(featureFlags.deletedAt),
           with: {
             variations: {
               where: isNull(variations.deletedAt),
@@ -99,9 +98,14 @@ export class FlagLoader {
     });
 
     return states
-      .filter((s) => s.featureFlag)
+      .filter(
+        (
+          s,
+        ): s is typeof s & { featureFlag: NonNullable<typeof s.featureFlag> } =>
+          s.featureFlag != null && s.featureFlag.deletedAt == null,
+      )
       .map((s) => {
-        const flag = s.featureFlag!;
+        const flag = s.featureFlag;
         return {
           id: flag.id,
           key: flag.key,
