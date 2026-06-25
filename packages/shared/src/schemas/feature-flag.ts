@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { flagTypeEnum } from './enums';
+import { flagTypeEnum, flagStatusEnum } from './enums';
 import { variationInputSchema } from './variation';
 
 export const createFeatureFlagSchema = z.object({
@@ -15,9 +15,14 @@ export const updateFeatureFlagSchema = createFeatureFlagSchema
   .partial()
   .extend({
     version: z.number().int().positive().optional(),
-    isEnabled: z.boolean().optional(),
-    status: z.enum(['draft', 'active', 'archived']).optional(),
   });
+
+export const updateFlagStateSchema = z.object({
+  isEnabled: z.boolean().optional(),
+  status: flagStatusEnum.optional(),
+  version: z.number().int().positive(),
+});
 
 export type CreateFeatureFlag = z.infer<typeof createFeatureFlagSchema>;
 export type UpdateFeatureFlag = z.infer<typeof updateFeatureFlagSchema>;
+export type UpdateFlagState = z.infer<typeof updateFlagStateSchema>;
