@@ -4,11 +4,26 @@ import { useAuthStore } from "@/stores";
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeaders } from "@tanstack/react-start/server";
+
+const getAuthSession = createServerFn({ method: "GET" })
+	.handler(async () => {
+		const headers = getRequestHeaders();
+		
+		const session = await authClient.getSession({
+			fetchOptions: {
+				headers: headers as any,
+			},
+		});
+
+		return session;
+	});
 
 export const Route = createFileRoute("/_authenticated")({
 	component: AuthenticatedLayout,
 	beforeLoad: async () => {
-		const session = await authClient.getSession();
+		const session = await getAuthSession();
 
 		if (!session.data?.session) {
 			throw redirect({ to: "/login" });

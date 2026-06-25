@@ -1,6 +1,5 @@
 import {
 	HeadContent,
-	Link,
 	Scripts,
 	createRootRouteWithContext,
 } from "@tanstack/react-router";
@@ -45,9 +44,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	errorComponent: ({ error, reset }) => {
 		return <ErrorPage error={error} reset={reset} />;
 	},
-
 	notFoundComponent: () => {
 		return <NotFoundPage />;
+	},
+	pendingComponent: () => {
+		return (
+			<div className="flex min-h-screen w-full items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
+				<div className="text-foreground">Loading...</div>
+			</div>
+		);
 	},
 	shellComponent: RootDocument,
 });

@@ -7,6 +7,7 @@ export const organizationSchema = z.object({
 	slug: slugSchema,
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
+	role: z.enum(["admin", "editor", "viewer"]),
 });
 
 export type Organization = z.infer<typeof organizationSchema>;

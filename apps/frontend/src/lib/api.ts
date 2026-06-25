@@ -65,10 +65,10 @@ const refreshTokenOnRetry: BeforeRetryHook = ({ request }) => {
 const normalizeError = async ({ error }: { error: unknown }) => {
 	throw await toApiError(error);
 };
-
 const base = ky.create({
-	baseUrl: API_BASE_URL,
+	prefix: API_BASE_URL,
 	timeout: DEFAULT_TIMEOUT,
+	credentials: "include",
 	retry: {
 		limit: MAX_RETRY,
 		// Only retry idempotent methods. POST/PATCH/PUT/DELETE never auto-retry to avoid duplicate writes.
@@ -108,6 +108,7 @@ function withSchema<T>(schema: ZodType<T> | undefined, value: unknown): T {
 		return schema.parse(value);
 	} catch (error) {
 		if (error instanceof ZodError) {
+			console.error("Zod Validation Error:", error.issues, "\nPayload:", value);
 			throw new ApiError({
 				code: "validation",
 				message:
@@ -131,7 +132,10 @@ export const api = {
 		return base
 			.get(url, options)
 			.json()
-			.then((v) => withSchema<T>(options.schema, v));
+			.then((v: any) => {
+				const data = v && typeof v === "object" && "data" in v ? v.data : v;
+				return withSchema<T>(options.schema, data);
+			});
 	},
 	async post<T = unknown>(
 		url: string,
@@ -140,7 +144,10 @@ export const api = {
 		return base
 			.post(url, options)
 			.json()
-			.then((v) => withSchema<T>(options.schema, v));
+			.then((v: any) => {
+				const data = v && typeof v === "object" && "data" in v ? v.data : v;
+				return withSchema<T>(options.schema, data);
+			});
 	},
 	async put<T = unknown>(
 		url: string,
@@ -149,14 +156,22 @@ export const api = {
 		return base
 			.put(url, options)
 			.json()
-			.then((v) => withSchema<T>(options.schema, v));
+			.then((v: any) => {
+				const data = v && typeof v === "object" && "data" in v ? v.data : v;
+				return withSchema<T>(options.schema, data);
+			});
 	},
 	async patch<T = unknown>(
 		url: string,
 		options: ApiRequestOptions<T> = {},
 	): Promise<T> {
-		const v = await base.patch(url, options).json();
-		return withSchema<T>(options.schema, v);
+		return base
+			.patch(url, options)
+			.json()
+			.then((v: any) => {
+				const data = v && typeof v === "object" && "data" in v ? v.data : v;
+				return withSchema<T>(options.schema, data);
+			});
 	},
 	async delete<T = unknown>(
 		url: string,
@@ -165,7 +180,10 @@ export const api = {
 		return base
 			.delete(url, options)
 			.json()
-			.then((v) => withSchema<T>(options.schema, v));
+			.then((v: any) => {
+				const data = v && typeof v === "object" && "data" in v ? v.data : v;
+				return withSchema<T>(options.schema, data);
+			});
 	},
 };
 

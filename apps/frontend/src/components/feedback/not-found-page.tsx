@@ -7,8 +7,8 @@ export function NotFoundPage() {
 		<div className="flex min-h-screen w-full items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
 			<Card className="w-full max-w-md p-8 shadow-large border-none">
 				<div className="flex flex-col items-center text-center">
-					<div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
-						<LinkBreakIcon weight="duotone" className="size-12 text-accent" />
+					<div className="mb-6 flex size-20 items-center justify-center rounded-full bg-accent/10">
+						<LinkBreakIcon weight="duotone" className="size-10 text-accent" />
 					</div>
 
 					<h1 className="mb-2 text-4xl font-extrabold tracking-tight text-foreground">

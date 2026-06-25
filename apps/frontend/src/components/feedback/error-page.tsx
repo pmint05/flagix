@@ -37,13 +37,13 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
 						Something went wrong
 					</h1>
 
-					<p className="mb-6 text-sm text-default-500">
+					<p className="mb-6 text-default-500">
 						We apologize for the inconvenience. An unexpected error has
 						occurred.
 					</p>
 
 					<div className="mb-8 w-full rounded-lg bg-danger-50/50 p-4 text-left dark:bg-danger/10">
-						<p className="font-mono text-sm text-danger-600 dark:text-danger-400 wrap-break-word">
+						<p className="text-sm font-mono text-danger wrap-break-word">
 							{error.message || "Unknown error occurred"}
 						</p>
 					</div>

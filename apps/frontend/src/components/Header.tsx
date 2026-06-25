@@ -20,13 +20,14 @@ export function Header() {
 			</div>
 			<div className="flex items-center gap-3">
 				<Dropdown>
-					<DropdownTrigger>
-						<Button variant="ghost" size="sm" className="gap-2">
-							<UserIcon size={16} />
-							<span className="text-sm">{authStore.user?.email}</span>
-							<CaretDownIcon size={14} />
-						</Button>
-					</DropdownTrigger>
+					<DropdownTrigger
+						render={() => (
+							<Button variant="ghost" size="sm" className="gap-2">
+								<UserIcon size={16} />
+								<span className="text-sm">{authStore.user?.email}</span>
+								<CaretDownIcon size={14} />
+							</Button>
+						)}></DropdownTrigger>
 					<DropdownMenu>
 						<DropdownItem
 							key="signout"
@@ -34,8 +35,7 @@ export function Header() {
 							onAction={() => {
 								authStore.clearSession();
 								authClient.signOut();
-							}}
-						>
+							}}>
 							Sign out
 						</DropdownItem>
 					</DropdownMenu>

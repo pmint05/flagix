@@ -5,7 +5,7 @@ export const timestampSchema = z.iso.datetime();
 export const nonEmptyString = z.string().min(1).max(255);
 export const slugSchema = z
 	.string()
-	.regex(/^[a-z0-9-]+$/)
+	.regex(/^[a-zA-Z0-9-_]+$/)
 	.min(1)
 	.max(100);
 
