@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, isNull } from 'drizzle-orm';
-import { featureFlags, variations, environments } from '@/db/schema';
+import { eq, and, isNull, count } from 'drizzle-orm';
+import { featureFlags, flagStates, variations } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type {
@@ -24,25 +24,21 @@ export class FeatureFlagsRepository {
   }
 
   async findByIdWithProject(id: string) {
-    const [result] = await this.db
-      .select({
-        flag: featureFlags,
-        projectId: environments.projectId,
-      })
+    const [flag] = await this.db
+      .select()
       .from(featureFlags)
-      .innerJoin(environments, eq(featureFlags.environmentId, environments.id))
       .where(and(eq(featureFlags.id, id), isNull(featureFlags.deletedAt)))
       .limit(1);
-    return result ?? null;
+    return flag ?? null;
   }
 
-  async findByKey(envId: string, key: string) {
+  async findByKey(projectId: string, key: string) {
     const [flag] = await this.db
       .select()
       .from(featureFlags)
       .where(
         and(
-          eq(featureFlags.environmentId, envId),
+          eq(featureFlags.projectId, projectId),
           eq(featureFlags.key, key),
           isNull(featureFlags.deletedAt),
         ),
@@ -51,17 +47,17 @@ export class FeatureFlagsRepository {
     return flag ?? null;
   }
 
-  async findAllForEnv(envId: string, statusFilter?: string) {
+  async findAllForProject(projectId: string, statusFilter?: string) {
     const conditions = [
-      eq(featureFlags.environmentId, envId),
+      eq(featureFlags.projectId, projectId),
       isNull(featureFlags.deletedAt),
     ];
 
     if (statusFilter) {
       conditions.push(
         eq(
-          featureFlags.status,
-          statusFilter as 'draft' | 'active' | 'archived',
+          featureFlags.flagType,
+          statusFilter as 'boolean' | 'multivariate',
         ),
       );
     }
@@ -72,19 +68,42 @@ export class FeatureFlagsRepository {
       .where(and(...conditions));
   }
 
-  async findVariationsForFlag(flagId: string) {
-    return this.db
+  async findFlagState(flagId: string, envId: string) {
+    const [state] = await this.db
       .select()
-      .from(variations)
+      .from(flagStates)
       .where(
-        and(eq(variations.featureFlagId, flagId), isNull(variations.deletedAt)),
-      );
+        and(
+          eq(flagStates.featureFlagId, flagId),
+          eq(flagStates.environmentId, envId),
+        ),
+      )
+      .limit(1);
+    return state ?? null;
+  }
+
+  async upsertFlagState(input: {
+    organizationId: string;
+    featureFlagId: string;
+    environmentId: string;
+    isEnabled: boolean;
+    status: string;
+  }) {
+    const [state] = await this.db
+      .insert(flagStates)
+      .values(input)
+      .onConflictDoUpdate({
+        target: [flagStates.featureFlagId, flagStates.environmentId],
+        set: { isEnabled: input.isEnabled, status: input.status },
+      })
+      .returning();
+    return state;
   }
 
   async createWithVariations(
     input: CreateFeatureFlagDto & {
       organizationId: string;
-      environmentId: string;
+      projectId: string;
     },
     variationData: Array<{
       key: string;
@@ -99,7 +118,7 @@ export class FeatureFlagsRepository {
         .insert(featureFlags)
         .values({
           organizationId: input.organizationId,
-          environmentId: input.environmentId,
+          projectId: input.projectId,
           key: input.key,
           name: input.name,
           description: input.description ?? null,
@@ -145,8 +164,6 @@ export class FeatureFlagsRepository {
         ...(input.description !== undefined && {
           description: input.description,
         }),
-        ...(input.isEnabled !== undefined && { isEnabled: input.isEnabled }),
-        ...(input.status !== undefined && { status: input.status }),
         version: currentVersion + 1,
         updatedBy: actorId ?? null,
       })
