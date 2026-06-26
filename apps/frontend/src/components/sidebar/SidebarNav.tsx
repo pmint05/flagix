@@ -49,7 +49,7 @@ export function SidebarNav() {
 					})
 				) : (
 					<div
-						className={`px-3 py-2 text-sm text-default-400 transition-all ${
+						className={`px-3 py-2 text-sm transition-all ${
 							isCollapsed ? 'hidden' : 'block'
 						}`}
 					>

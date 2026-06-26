@@ -113,7 +113,7 @@ export function EntityList({
 					</div>
 					<CaretRightIcon
 						size={14}
-						className={`shrink-0 text-default-400 transition-transform duration-150 ${menuOpen ? "translate-x-0.5" : ""}`}
+						className={`shrink-0 transition-transform duration-150 ${menuOpen ? "translate-x-0.5" : ""}`}
 					/>
 				</Button>
 
@@ -141,7 +141,7 @@ export function EntityList({
 							<div className="px-2 pt-2 pb-1">
 								<InputGroup className="w-full" variant="secondary">
 									<InputGroup.Prefix>
-										<MagnifyingGlassIcon size={14} className="text-default-400" />
+										<MagnifyingGlassIcon size={14} />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										ref={searchRef}
@@ -161,7 +161,7 @@ export function EntityList({
 										<Skeleton className="h-9 w-full rounded-md" />
 									</>
 								) : filteredItems.length === 0 ? (
-									<div className="px-2 py-3 text-center text-sm text-default-400">
+									<div className="px-2 py-3 text-center text-sm">
 										{searchValue ? "No results found." : `No ${label.toLowerCase()}s found.`}
 									</div>
 								) : (
@@ -195,7 +195,7 @@ export function EntityList({
 													)}
 												</div>
 												{showDescription && item.description && (
-													<span className="truncate text-xs text-default-400 mt-1">
+													<span className="truncate text-xs mt-1">
 														{item.description.length > 45
 															? `${item.description.slice(0, 45)}…`
 															: item.description}
@@ -208,11 +208,11 @@ export function EntityList({
 							</div>
 
 							{/* Create new */}
-							<div className="border-t border-default-200 p-2">
+							<div className="border-t p-2">
 								<Button
 									variant="ghost"
 									size="sm"
-									className="w-full justify-start text-default-500">
+									className="w-full justify-start">
 									<PlusIcon size={14} />
 									{createLabel}
 								</Button>

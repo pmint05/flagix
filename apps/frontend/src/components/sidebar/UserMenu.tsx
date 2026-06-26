@@ -116,7 +116,7 @@ export function UserMenu({ children }: UserMenuProps) {
 							<span className="truncate text-sm font-semibold">
 								{user?.name}
 							</span>
-							<span className="truncate text-xs text-default-400">
+							<span className="truncate text-xs">
 								{user?.email}
 							</span>
 						</div>
@@ -193,7 +193,7 @@ export function UserMenu({ children }: UserMenuProps) {
 													className={cn(
 														"flex cursor-pointer items-center justify-between rounded-3xl px-2 py-1.5 transition-colors",
 														{
-															"bg-default-100": isSelected,
+															"bg-default-soft": isSelected,
 														},
 													)}
 													fullWidth

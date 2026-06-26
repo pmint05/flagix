@@ -1,12 +1,12 @@
-import { Link, useMatches } from '@tanstack/react-router';
-import { CaretRightIcon } from '@phosphor-icons/react';
-import { useContextStore } from '#/stores';
-import { useFlag } from '#/features/flags/api';
+import { Link, useMatches } from "@tanstack/react-router";
+import { CaretRightIcon } from "@phosphor-icons/react";
+import { useContextStore } from "#/stores";
+import { useFlag } from "#/features/flags/api";
 import {
 	BREADCRUMB_CONFIG,
 	resolveLabel,
 	resolveHref,
-} from './breadcrumb-config';
+} from "./breadcrumb-config";
 
 export function Breadcrumbs() {
 	const matches = useMatches();
@@ -41,7 +41,7 @@ export function Breadcrumbs() {
 				let isLoading = false;
 
 				// Resolve project name synchronously from store
-				if (segment.resolveParam === 'projectId') {
+				if (segment.resolveParam === "projectId") {
 					if (selectedProject) {
 						displayLabel = selectedProject.name;
 					} else {
@@ -52,9 +52,9 @@ export function Breadcrumbs() {
 				return (
 					<div key={index} className="flex items-center gap-1">
 						{index > 0 && (
-							<CaretRightIcon size={14} className="text-default-400" />
+							<CaretRightIcon size={14} className="text-default" />
 						)}
-						{segment.resolveParam === 'flagId' ? (
+						{segment.resolveParam === "flagId" ? (
 							<FlagNameResolver
 								flagId={params.flagId}
 								fallback={rawLabel}
@@ -64,16 +64,14 @@ export function Breadcrumbs() {
 						) : isLast ? (
 							<span
 								className={`font-medium text-foreground ${
-									isLoading ? 'opacity-60' : ''
-								}`}
-							>
+									isLoading ? "opacity-60" : ""
+								}`}>
 								{displayLabel}
 							</span>
 						) : (
 							<Link
 								to={href as string}
-								className="transition-colors hover:text-foreground"
-							>
+								className="transition-colors hover:text-foreground">
 								{displayLabel}
 							</Link>
 						)}
@@ -106,9 +104,8 @@ function FlagNameResolver({
 		return (
 			<span
 				className={`font-medium text-foreground ${
-					isLoading ? 'opacity-60' : ''
-				}`}
-			>
+					isLoading ? "opacity-60" : ""
+				}`}>
 				{displayLabel}
 			</span>
 		);
@@ -117,8 +114,7 @@ function FlagNameResolver({
 	return (
 		<Link
 			to={href as string}
-			className="transition-colors hover:text-foreground"
-		>
+			className="transition-colors hover:text-foreground">
 			{displayLabel}
 		</Link>
 	);

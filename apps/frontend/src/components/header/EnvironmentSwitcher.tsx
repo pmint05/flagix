@@ -29,7 +29,7 @@ export function EnvironmentSwitcher() {
 
 	if (!environments || environments.length === 0) {
 		return (
-			<Button>
+			<Button variant="secondary" size="sm">
 				Create Environment
 				<PlusIcon size={16} />
 			</Button>

@@ -253,7 +253,7 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 								fullWidth
 								variant="ghost"
 								size="sm"
-								className="justify-start text-default-500 h-8">
+								className="justify-start h-8">
 								<GearIcon size={16} />
 								Settings
 							</Button>
@@ -261,7 +261,7 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 								fullWidth
 								variant="ghost"
 								size="sm"
-								className="justify-start text-default-500 h-8">
+								className="justify-start h-8">
 								<UserPlusIcon size={16} />
 								Invite members
 							</Button>
@@ -297,7 +297,7 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 								fullWidth
 								variant="ghost"
 								size="sm"
-								className="justify-start text-default-500 h-8">
+								className="justify-start h-8">
 								<GearIcon size={16} />
 								Settings
 							</Button>
