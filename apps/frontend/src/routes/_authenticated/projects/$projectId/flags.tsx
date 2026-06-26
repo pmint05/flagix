@@ -2,6 +2,8 @@ import { createFileRoute, Link, useMatch } from "@tanstack/react-router";
 import {
 	Badge,
 	Button,
+	Input,
+	Label,
 	Skeleton,
 	Table,
 	TableBody,
@@ -9,6 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 	TableCell,
+	TextField,
 	Tooltip,
 } from "@heroui/react";
 import {
@@ -44,6 +47,7 @@ function FlagsIndex() {
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
 
+	const [search, setSearch] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const handleCreate = () => {
@@ -62,6 +66,13 @@ function FlagsIndex() {
 	};
 
 	const flagList = flags ?? [];
+	const filteredFlags = search
+		? flagList.filter(
+				(f) =>
+					f.key.toLowerCase().includes(search.toLowerCase()) ||
+					f.name.toLowerCase().includes(search.toLowerCase()),
+			)
+		: flagList;
 
 	return (
 		<div className="space-y-6">
@@ -114,6 +125,15 @@ function FlagsIndex() {
 				</Button>
 			</div>
 
+			<TextField>
+				<Label>Search flags</Label>
+				<Input
+					placeholder="Search by key or name"
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+				/>
+			</TextField>
+
 			{isLoading ? (
 				<div className="space-y-3">
 					{Array.from({ length: 3 }).map((_, i) => (
@@ -124,7 +144,7 @@ function FlagsIndex() {
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load flags. Please try again.
 				</div>
-			) : flagList.length === 0 ? (
+			) : filteredFlags.length === 0 ? (
 				<EmptyState
 					title="No feature flags yet"
 					description="Create your first feature flag to start controlling feature rollouts."
@@ -141,7 +161,7 @@ function FlagsIndex() {
 						<TableColumn>Enabled</TableColumn>
 						<TableColumn>Actions</TableColumn>
 					</TableHeader>
-					<TableBody items={flagList}>
+					<TableBody items={filteredFlags}>
 						{(flag) => (
 							<TableRow key={flag.id}>
 								<TableCell>

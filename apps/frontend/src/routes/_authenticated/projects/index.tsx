@@ -3,11 +3,6 @@ import {
 	Button,
 	Skeleton,
 	Table,
-	TableBody,
-	TableColumn,
-	TableHeader,
-	TableRow,
-	TableCell,
 	Tooltip,
 } from "@heroui/react";
 import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";

@@ -1,37 +1,13 @@
-import { useState, useMemo } from "react";
-import {
-	Button,
-	Badge,
-	Table,
-	TableBody,
-	TableColumn,
-	TableHeader,
-	TableRow,
-	TableCell,
-	toast,
-	Tooltip,
-	Switch,
-} from "@heroui/react";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { useRules, useUpdateRule, useDeleteRule } from "./api";
+import { useState, useMemo, useCallback } from "react";
+import { Button, toast } from "@heroui/react";
+import { PlusIcon } from "@phosphor-icons/react";
+import { useRules, useUpdateRule } from "./api";
 import { useEnvironments } from "@/features/environments/api";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { RuleModal } from "./RuleModal";
+import { RuleEditor } from "./RuleEditor";
+import { RulesList } from "./RulesList";
 import type { Variation } from "@/types/feature-flag";
-
-const RULE_TYPE_LABELS: Record<string, string> = {
-	kill_switch: "Kill Switch",
-	user: "User Targeting",
-	role: "Role Targeting",
-	percentage: "Percentage Rollout",
-};
-
-const RULE_TYPE_BADGE_COLOR: Record<string, "danger" | "warning" | "accent" | "success"> = {
-	kill_switch: "danger",
-	user: "accent",
-	role: "warning",
-	percentage: "success",
-};
+import type { TargetingRule } from "@/types/targeting-rule";
 
 interface TargetingRulesProps {
 	flagId: string;
@@ -42,8 +18,8 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 	const { data: rules, isLoading } = useRules(flagId);
 	const { data: environments } = useEnvironments();
 	const updateRule = useUpdateRule();
-	const deleteRule = useDeleteRule();
 	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [editingRule, setEditingRule] = useState<TargetingRule | null>(null);
 
 	const sortedRules = useMemo(() => {
 		if (!rules) return [];
@@ -54,37 +30,29 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 		});
 	}, [rules]);
 
-	const getVariationLabel = (variationId: string): string => {
-		const v = variations.find((v) => v.id === variationId);
-		return v?.key ?? variationId.slice(0, 8);
-	};
+	const handleEdit = useCallback((rule: TargetingRule) => {
+		setEditingRule(rule);
+	}, []);
 
-	const getEnvironmentLabel = (environmentId: string): string => {
-		const env = environments?.find((e) => e.id === environmentId);
-		return env?.name ?? environmentId.slice(0, 8);
-	};
-
-	const handleToggle = async (ruleId: string, currentEnabled: boolean) => {
-		try {
-			await updateRule.mutateAsync({
-				flagId,
-				ruleId,
-				isEnabled: !currentEnabled,
-			});
-			toast.success(`Rule ${currentEnabled ? "disabled" : "enabled"}`);
-		} catch {
-			toast.danger("Failed to toggle rule");
-		}
-	};
-
-	const handleDelete = async (ruleId: string) => {
-		try {
-			await deleteRule.mutateAsync({ flagId, ruleId });
-			toast.success("Rule deleted");
-		} catch {
-			toast.danger("Failed to delete rule");
-		}
-	};
+	const handleReorder = useCallback(
+		async (reorderedRules: TargetingRule[]) => {
+			try {
+				await Promise.all(
+					reorderedRules.map((rule) =>
+						updateRule.mutateAsync({
+							flagId,
+							ruleId: rule.id,
+							priority: rule.priority,
+						}),
+					),
+				);
+				toast.success("Rules reordered");
+			} catch {
+				toast.danger("Failed to reorder rules");
+			}
+		},
+		[flagId, updateRule],
+	);
 
 	if (isLoading) {
 		return (
@@ -120,77 +88,32 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 					onAction={() => setCreateModalOpen(true)}
 				/>
 			) : (
-				<Table aria-label="Targeting rules">
-					<TableHeader>
-						<TableColumn>Priority</TableColumn>
-						<TableColumn>Type</TableColumn>
-						<TableColumn>Variation</TableColumn>
-						<TableColumn>Environment</TableColumn>
-						<TableColumn>Enabled</TableColumn>
-						<TableColumn className="w-12" />
-					</TableHeader>
-					<TableBody items={sortedRules}>
-						{(rule) => (
-							<TableRow key={rule.id}>
-								<TableCell>
-									<span className="text-sm font-medium text-default-700">
-										{rule.priority}
-									</span>
-								</TableCell>
-								<TableCell>
-									<Badge
-										color={RULE_TYPE_BADGE_COLOR[rule.ruleType] ?? "default"}
-										variant="soft"
-									>
-										{RULE_TYPE_LABELS[rule.ruleType] ?? rule.ruleType}
-									</Badge>
-								</TableCell>
-								<TableCell>
-									<span className="text-sm text-default-700">
-										{getVariationLabel(rule.variationId)}
-									</span>
-								</TableCell>
-								<TableCell>
-									<span className="text-sm text-default-500">
-										{getEnvironmentLabel(rule.environmentId)}
-									</span>
-								</TableCell>
-								<TableCell>
-									<Switch
-										size="sm"
-										isSelected={rule.isEnabled}
-										onChange={() => handleToggle(rule.id, rule.isEnabled)}
-									/>
-								</TableCell>
-								<TableCell>
-									<Tooltip>
-										<Tooltip.Trigger>
-											<Button
-												isIconOnly
-												variant="ghost"
-												size="sm"
-												className="text-danger"
-												onPress={() => handleDelete(rule.id)}
-											>
-												<TrashIcon className="h-4 w-4" />
-											</Button>
-										</Tooltip.Trigger>
-										<Tooltip.Content>Delete rule</Tooltip.Content>
-									</Tooltip>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
+				<RulesList
+					rules={sortedRules}
+					variations={variations}
+					environments={environments ?? []}
+					onEdit={handleEdit}
+					onReorder={handleReorder}
+				/>
 			)}
 
-			<RuleModal
+			<RuleEditor
 				isOpen={createModalOpen}
 				onClose={() => setCreateModalOpen(false)}
 				flagId={flagId}
 				variations={variations}
 				environments={environments ?? []}
 				defaultEnvironmentId={environments?.[0]?.id}
+			/>
+
+			<RuleEditor
+				isOpen={!!editingRule}
+				onClose={() => setEditingRule(null)}
+				flagId={flagId}
+				variations={variations}
+				environments={environments ?? []}
+				defaultEnvironmentId={environments?.[0]?.id}
+				rule={editingRule ?? undefined}
 			/>
 		</div>
 	);

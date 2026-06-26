@@ -10,7 +10,7 @@ import { useContextStore } from "@/stores";
 export interface CreateRuleInput {
 	ruleType: "kill_switch" | "user" | "role" | "percentage";
 	environmentId: string;
-	variationId: string;
+	variationId?: string;
 	conditions: Record<string, unknown>;
 	isEnabled?: boolean;
 }
