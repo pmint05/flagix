@@ -10,7 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { projects } from './projects';
-import { featureFlags } from './feature-flags';
+import { flagStates } from './flag-states';
 import { sdkKeys } from './sdk-keys';
 import { user } from './auth-schema';
 
@@ -58,7 +58,7 @@ export const environmentRelations = relations(
       fields: [environments.projectId],
       references: [projects.id],
     }),
-    featureFlags: many(featureFlags),
+    flagStates: many(flagStates),
     sdkKeys: many(sdkKeys),
   }),
 );

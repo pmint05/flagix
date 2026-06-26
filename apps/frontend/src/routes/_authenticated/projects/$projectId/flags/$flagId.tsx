@@ -115,7 +115,7 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 					</Button>
 					<div className="flex-1">
 						<h1 className="text-2xl font-bold text-foreground">Flag Not Found</h1>
-						<p className="mt-1 text-sm text-default-500">
+						<p className="mt-1 text-sm">
 							The feature flag you're looking for doesn't exist or has been deleted.
 						</p>
 					</div>
@@ -139,7 +139,7 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 						<Badge variant="soft">{flag.flagType}</Badge>
 					</div>
 					<div className="mt-1 flex items-center gap-2">
-						<code className="text-sm text-default-500">{flag.key}</code>
+						<code className="text-sm">{flag.key}</code>
 						<Tooltip>
 							<Tooltip.Trigger>
 								<Button
@@ -179,15 +179,15 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 			{/* Info Grid */}
 			<div className="grid grid-cols-3 gap-4">
 				<div className="rounded-lg border border-default-200 p-4">
-					<p className="text-xs font-medium text-default-500">Version</p>
+					<p className="text-xs font-medium">Version</p>
 					<p className="mt-1 text-lg font-semibold text-foreground">v{flag.version}</p>
 				</div>
 				<div className="rounded-lg border border-default-200 p-4">
-					<p className="text-xs font-medium text-default-500">Type</p>
+					<p className="text-xs font-medium">Type</p>
 					<p className="mt-1 text-lg font-semibold text-foreground">{flag.flagType}</p>
 				</div>
 				<div className="rounded-lg border border-default-200 p-4">
-					<p className="text-xs font-medium text-default-500">Variations</p>
+					<p className="text-xs font-medium">Variations</p>
 					<p className="mt-1 text-lg font-semibold text-foreground">{flag.variations?.length ?? 0}</p>
 				</div>
 			</div>
@@ -212,14 +212,14 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 										<Badge variant="soft">{getVariationValue(variation)}</Badge>
 									</TableCell>
 									<TableCell>
-										<span className="text-sm text-default-500">{variation.description || "—"}</span>
+										<span className="text-sm">{variation.description || "—"}</span>
 									</TableCell>
 								</TableRow>
 							)}
 						</TableBody>
 					</Table>
 				) : (
-					<div className="rounded-lg border border-default-200 p-4 text-center text-default-500">
+					<div className="rounded-lg border border-default-200 p-4 text-center">
 						No variations defined
 					</div>
 				)}
@@ -258,7 +258,7 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 						))}
 					</div>
 				) : (
-					<div className="rounded-lg border border-default-200 p-4 text-center text-default-500">
+					<div className="rounded-lg border border-default-200 p-4 text-center">
 						No environments configured
 					</div>
 				)}
@@ -275,7 +275,7 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 			</div>
 
 			{/* Metadata */}
-			<div className="text-xs text-default-500">
+			<div className="text-xs">
 				<p>Created: {new Date(flag.createdAt).toLocaleString()}</p>
 				<p>Updated: {new Date(flag.updatedAt).toLocaleString()}</p>
 			</div>

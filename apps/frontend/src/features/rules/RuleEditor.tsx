@@ -342,7 +342,7 @@ function UserRuleEditor({ control, errors, variations, userIdInput, setUserIdInp
 			/>
 			<div className="space-y-2">
 				<Label>User Identifiers</Label>
-				<p className="text-xs text-default-500">Add user IDs or email addresses to target</p>
+				<p className="text-xs">Add user IDs or email addresses to target</p>
 				<div className="flex gap-2">
 					<Input
 						placeholder="Enter user ID or email"
@@ -402,7 +402,7 @@ function RoleRuleEditor({ control, errors, variations, roleInput, setRoleInput }
 			/>
 			<div className="space-y-2">
 				<Label>Role Names</Label>
-				<p className="text-xs text-default-500">Add role names to target</p>
+				<p className="text-xs">Add role names to target</p>
 				<div className="flex gap-2">
 					<Input
 						placeholder="Enter role name"

@@ -71,7 +71,7 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 										onClick={() => setSelectedType("client")}
 									>
 										<div className="font-medium">Client</div>
-										<div className="mt-1 text-xs text-default-500">
+										<div className="mt-1 text-xs">
 											Public, safe for browser/mobile
 										</div>
 									</button>
@@ -85,7 +85,7 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 										onClick={() => setSelectedType("server")}
 									>
 										<div className="font-medium">Server</div>
-										<div className="mt-1 text-xs text-default-500">
+										<div className="mt-1 text-xs">
 											Secret, backend only
 										</div>
 									</button>

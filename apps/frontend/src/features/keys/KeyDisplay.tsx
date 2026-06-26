@@ -55,17 +55,17 @@ export function KeyDisplay({ isOpen, onClose, createdKey }: KeyDisplayProps) {
 
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-default-500">Key name</span>
+								<span className="text-sm">Key name</span>
 								<span className="font-medium">{createdKey.name}</span>
 							</div>
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-default-500">Type</span>
+								<span className="text-sm">Type</span>
 								<span className="rounded-full bg-default-100 px-3 py-1 text-xs font-medium">
 									{createdKey.type}
 								</span>
 							</div>
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-default-500">Key ID</span>
+								<span className="text-sm">Key ID</span>
 								<code className="rounded bg-default-100 px-2 py-1 text-xs">
 									{createdKey.id}
 								</code>
@@ -74,7 +74,7 @@ export function KeyDisplay({ isOpen, onClose, createdKey }: KeyDisplayProps) {
 
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-default-500">Raw key</span>
+								<span className="text-sm">Raw key</span>
 								<div className="flex gap-1">
 									<Button
 										isIconOnly

@@ -37,7 +37,7 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
 						Something went wrong
 					</h1>
 
-					<p className="mb-6 text-default-500">
+					<p className="mb-6">
 						We apologize for the inconvenience. An unexpected error has
 						occurred.
 					</p>

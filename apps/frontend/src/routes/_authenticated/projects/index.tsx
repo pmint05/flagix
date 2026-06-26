@@ -45,7 +45,7 @@ function ProjectsIndex() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-foreground">Projects</h1>
-					<p className="mt-1 text-sm text-default-500">
+					<p className="mt-1 text-sm">
 						Manage your feature flag projects
 					</p>
 				</div>
@@ -147,7 +147,7 @@ function ProjectsIndex() {
 								onPress={() => setPage(page - 1)}>
 								Previous
 							</Button>
-							<span className="text-sm text-default-500">
+							<span className="text-sm">
 								Page {page} of {totalPages}
 							</span>
 							<Button

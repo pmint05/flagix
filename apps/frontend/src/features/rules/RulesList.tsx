@@ -83,7 +83,7 @@ function SortableRow({
 				</Badge>
 			</div>
 			<span className="flex-1 text-sm text-default-700">{getVariationLabel(rule.variationId)}</span>
-			<span className="w-32 text-sm text-default-500">{getEnvironmentLabel(rule.environmentId)}</span>
+			<span className="w-32 text-sm">{getEnvironmentLabel(rule.environmentId)}</span>
 			<div className="w-20">
 				<Switch size="sm" isSelected={rule.isEnabled} onChange={() => onToggle(rule.id, rule.isEnabled)} />
 			</div>

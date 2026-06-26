@@ -80,7 +80,7 @@ function EnvironmentsIndex() {
 				</Button>
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">Environments</h1>
-					<p className="mt-1 text-sm text-default-500">
+					<p className="mt-1 text-sm">
 						Manage deployment environments for this project
 					</p>
 				</div>

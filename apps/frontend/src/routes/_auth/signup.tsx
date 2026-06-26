@@ -91,7 +91,7 @@ function SignupPage() {
 	};
 
 	return (
-		<Card className="p-6">
+		<Card className="p-6 rounded-[1.5rem]">
 			<Card.Header>
 				<Card.Title>Create Account</Card.Title>
 				<Card.Description>
@@ -223,7 +223,7 @@ function SignupPage() {
 								)}
 							</Button>
 
-							<div className="mt-4 text-center text-sm text-default-500">
+							<div className="mt-4 text-center text-sm">
 								Already have an account?{" "}
 								<Link
 									to="/login"

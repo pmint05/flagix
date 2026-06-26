@@ -84,7 +84,7 @@ function SdkKeysPage() {
 				</Button>
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">SDK Keys</h1>
-					<p className="mt-1 text-sm text-default-500">
+					<p className="mt-1 text-sm">
 						Manage authentication keys for your SDKs. Client keys are public;
 						server keys must be kept secret.
 					</p>
@@ -138,7 +138,7 @@ function SdkKeysPage() {
 								</TableCell>
 								<TableCell>
 									<div className="flex items-center gap-2">
-										<code className="text-sm text-default-500">
+										<code className="text-sm">
 											{key.maskedKey}
 										</code>
 										<Tooltip>
@@ -170,7 +170,7 @@ function SdkKeysPage() {
 										{key.isActive ? "Active" : "Revoked"}
 									</Badge>
 								</TableCell>
-								<TableCell className="text-sm text-default-500">
+								<TableCell className="text-sm">
 									{new Date(key.createdAt).toLocaleDateString()}
 								</TableCell>
 								<TableCell>

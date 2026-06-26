@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
+import { Route as AuthenticatedProjectsProjectIdSdkKeysRouteImport } from './routes/_authenticated/projects/$projectId/sdk-keys'
 import { Route as AuthenticatedProjectsProjectIdFlagsRouteImport } from './routes/_authenticated/projects/$projectId/flags'
 import { Route as AuthenticatedProjectsProjectIdEnvironmentsRouteImport } from './routes/_authenticated/projects/$projectId/environments'
 import { Route as AuthenticatedProjectsProjectIdFlagsFlagIdRouteImport } from './routes/_authenticated/projects/$projectId/flags/$flagId'
@@ -48,6 +49,12 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsProjectIdSdkKeysRoute =
+  AuthenticatedProjectsProjectIdSdkKeysRouteImport.update({
+    id: '/projects/$projectId/sdk-keys',
+    path: '/projects/$projectId/sdk-keys',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdFlagsRoute =
   AuthenticatedProjectsProjectIdFlagsRouteImport.update({
     id: '/projects/$projectId/flags',
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectId/environments': typeof AuthenticatedProjectsProjectIdEnvironmentsRoute
   '/projects/$projectId/flags': typeof AuthenticatedProjectsProjectIdFlagsRouteWithChildren
+  '/projects/$projectId/sdk-keys': typeof AuthenticatedProjectsProjectIdSdkKeysRoute
   '/projects/$projectId/flags/$flagId': typeof AuthenticatedProjectsProjectIdFlagsFlagIdRoute
 }
 export interface FileRoutesByTo {
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectId/environments': typeof AuthenticatedProjectsProjectIdEnvironmentsRoute
   '/projects/$projectId/flags': typeof AuthenticatedProjectsProjectIdFlagsRouteWithChildren
+  '/projects/$projectId/sdk-keys': typeof AuthenticatedProjectsProjectIdSdkKeysRoute
   '/projects/$projectId/flags/$flagId': typeof AuthenticatedProjectsProjectIdFlagsFlagIdRoute
 }
 export interface FileRoutesById {
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/projects/$projectId/environments': typeof AuthenticatedProjectsProjectIdEnvironmentsRoute
   '/_authenticated/projects/$projectId/flags': typeof AuthenticatedProjectsProjectIdFlagsRouteWithChildren
+  '/_authenticated/projects/$projectId/sdk-keys': typeof AuthenticatedProjectsProjectIdSdkKeysRoute
   '/_authenticated/projects/$projectId/flags/$flagId': typeof AuthenticatedProjectsProjectIdFlagsFlagIdRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/projects/'
     | '/projects/$projectId/environments'
     | '/projects/$projectId/flags'
+    | '/projects/$projectId/sdk-keys'
     | '/projects/$projectId/flags/$flagId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/projects/$projectId/environments'
     | '/projects/$projectId/flags'
+    | '/projects/$projectId/sdk-keys'
     | '/projects/$projectId/flags/$flagId'
   id:
     | '__root__'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/'
     | '/_authenticated/projects/$projectId/environments'
     | '/_authenticated/projects/$projectId/flags'
+    | '/_authenticated/projects/$projectId/sdk-keys'
     | '/_authenticated/projects/$projectId/flags/$flagId'
   fileRoutesById: FileRoutesById
 }
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects/'
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/sdk-keys': {
+      id: '/_authenticated/projects/$projectId/sdk-keys'
+      path: '/projects/$projectId/sdk-keys'
+      fullPath: '/projects/$projectId/sdk-keys'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdSdkKeysRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects/$projectId/flags': {
@@ -234,6 +254,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedProjectsProjectIdEnvironmentsRoute: typeof AuthenticatedProjectsProjectIdEnvironmentsRoute
   AuthenticatedProjectsProjectIdFlagsRoute: typeof AuthenticatedProjectsProjectIdFlagsRouteWithChildren
+  AuthenticatedProjectsProjectIdSdkKeysRoute: typeof AuthenticatedProjectsProjectIdSdkKeysRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -243,6 +264,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedProjectsProjectIdEnvironmentsRoute,
   AuthenticatedProjectsProjectIdFlagsRoute:
     AuthenticatedProjectsProjectIdFlagsRouteWithChildren,
+  AuthenticatedProjectsProjectIdSdkKeysRoute:
+    AuthenticatedProjectsProjectIdSdkKeysRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
