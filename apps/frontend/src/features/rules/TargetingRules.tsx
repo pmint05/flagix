@@ -58,10 +58,10 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 		return (
 			<div className="space-y-3">
 				<div className="flex items-center justify-between">
-					<div className="h-6 w-32 rounded bg-default-200" />
-					<div className="h-9 w-28 rounded-lg bg-default-200" />
+					<div className="h-6 w-32 rounded" />
+					<div className="h-9 w-28 rounded-lg" />
 				</div>
-				<div className="h-32 w-full rounded-lg bg-default-200" />
+				<div className="h-32 w-full rounded-lg" />
 			</div>
 		);
 	}
@@ -69,12 +69,13 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 	return (
 		<div>
 			<div className="flex items-center justify-between mb-3">
-				<h2 className="text-lg font-semibold text-foreground">Targeting Rules</h2>
+				<h2 className="text-lg font-semibold text-foreground">
+					Targeting Rules
+				</h2>
 				<Button
 					variant="primary"
 					className="gap-2"
-					onPress={() => setCreateModalOpen(true)}
-				>
+					onPress={() => setCreateModalOpen(true)}>
 					<PlusIcon className="h-4 w-4" />
 					Add Rule
 				</Button>

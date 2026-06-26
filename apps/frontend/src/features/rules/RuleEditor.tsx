@@ -232,7 +232,7 @@ export function RuleEditor({
 											type="checkbox"
 											checked={field.value}
 											onChange={(e) => field.onChange(e.target.checked)}
-											className="h-4 w-4 rounded border-default-300"
+											className="h-4 w-4 rounded-xl"
 										/>
 										<Label>Enabled</Label>
 									</div>
@@ -452,7 +452,7 @@ function PercentageRuleEditor({ control, variations, percentageDist }: Omit<Rule
 			<div className="space-y-3">
 				{variations.map((variation, index) => (
 					<div key={variation.id} className="flex items-center gap-3">
-						<span className="w-24 text-sm font-medium text-default-700">{variation.key}</span>
+						<span className="w-24 text-sm font-medium">{variation.key}</span>
 						<Controller
 							name={`percentageDistribution.${index}.percentage` as any}
 							control={control}
@@ -479,7 +479,7 @@ function PercentageRuleEditor({ control, variations, percentageDist }: Omit<Rule
 								<input type="hidden" {...variationField} value={variation.id} />
 							)}
 						/>
-						<span className="w-12 text-right text-sm text-default-700">
+						<span className="w-12 text-right text-sm">
 							{percentageDist?.[index]?.percentage ?? 0}%
 						</span>
 					</div>

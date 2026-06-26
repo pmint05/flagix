@@ -49,7 +49,7 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 								<label className="text-sm font-medium">Key Name</label>
 								<input
 									type="text"
-									className="w-full rounded-lg border border-default-300 bg-transparent px-3 py-2 text-sm"
+									className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm"
 									placeholder="e.g. production-web-sdk"
 									{...register("name")}
 								/>
@@ -66,7 +66,7 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 										className={`flex-1 rounded-lg border p-3 text-left transition ${
 											selectedType === "client"
 												? "border-primary bg-primary-50"
-												: "border-default-300 hover:border-default-400"
+												: "hover:border-default"
 										}`}
 										onClick={() => setSelectedType("client")}
 									>
@@ -80,7 +80,7 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 										className={`flex-1 rounded-lg border p-3 text-left transition ${
 											selectedType === "server"
 												? "border-primary bg-primary-50"
-												: "border-default-300 hover:border-default-400"
+												: "hover:border-default"
 										}`}
 										onClick={() => setSelectedType("server")}
 									>

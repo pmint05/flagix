@@ -60,13 +60,13 @@ export function KeyDisplay({ isOpen, onClose, createdKey }: KeyDisplayProps) {
 							</div>
 							<div className="flex items-center justify-between">
 								<span className="text-sm">Type</span>
-								<span className="rounded-full bg-default-100 px-3 py-1 text-xs font-medium">
+								<span className="rounded-full px-3 py-1 text-xs font-medium">
 									{createdKey.type}
 								</span>
 							</div>
 							<div className="flex items-center justify-between">
 								<span className="text-sm">Key ID</span>
-								<code className="rounded bg-default-100 px-2 py-1 text-xs">
+								<code className="rounded px-2 py-1 text-xs">
 									{createdKey.id}
 								</code>
 							</div>
@@ -100,7 +100,7 @@ export function KeyDisplay({ isOpen, onClose, createdKey }: KeyDisplayProps) {
 									</Button>
 								</div>
 							</div>
-							<div className="rounded-lg bg-default-100 p-3 font-mono text-sm">
+							<div className="rounded-lg p-3 font-mono text-sm">
 								{revealed
 									? createdKey.rawKey
 									: "••••••••••••••••••••••••••••••••"}

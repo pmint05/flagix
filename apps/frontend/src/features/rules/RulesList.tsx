@@ -74,15 +74,15 @@ function SortableRow({
 				className="mr-3 cursor-grab touch-none active:cursor-grabbing"
 				onPointerDown={(e) => controls.start(e)}
 			>
-				<DotsSixVerticalIcon className="h-4 w-4 text-default-400" />
+				<DotsSixVerticalIcon className="h-4 w-4" />
 			</button>
-			<span className="w-12 text-sm font-medium text-default-700">{rule.priority}</span>
+			<span className="w-12 text-sm font-medium">{rule.priority}</span>
 			<div className="w-32">
 				<Badge color={RULE_TYPE_BADGE_COLOR[rule.ruleType] ?? "default"} variant="soft">
 					{RULE_TYPE_LABELS[rule.ruleType] ?? rule.ruleType}
 				</Badge>
 			</div>
-			<span className="flex-1 text-sm text-default-700">{getVariationLabel(rule.variationId)}</span>
+			<span className="flex-1 text-sm">{getVariationLabel(rule.variationId)}</span>
 			<span className="w-32 text-sm">{getEnvironmentLabel(rule.environmentId)}</span>
 			<div className="w-20">
 				<Switch size="sm" isSelected={rule.isEnabled} onChange={() => onToggle(rule.id, rule.isEnabled)} />
