@@ -92,12 +92,12 @@ function ProjectsIndex() {
 												</span>
 											</Table.Cell>
 											<Table.Cell>
-												<span className="text-default-500">
+												<span>
 													{project.description || "—"}
 												</span>
 											</Table.Cell>
 											<Table.Cell>
-												<span className="text-default-700">
+												<span>
 													{project.flagCount ?? 0}
 												</span>
 											</Table.Cell>

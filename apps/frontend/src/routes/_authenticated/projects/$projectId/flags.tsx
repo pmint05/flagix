@@ -20,7 +20,11 @@ import {
 	TrashIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
-import { useFlags, useDeleteFlag, useUpdateFlagState } from "@/features/flags/api";
+import {
+	useFlags,
+	useDeleteFlag,
+	useUpdateFlagState,
+} from "@/features/flags/api";
 import { FlagToggle } from "@/features/flags/FlagToggle";
 import { FlagModal } from "@/features/flags/FlagModal";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -33,7 +37,10 @@ export const Route = createFileRoute(
 	component: FlagsIndex,
 });
 
-const STATUS_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "default"> = {
+const STATUS_BADGE_COLOR: Record<
+	string,
+	"success" | "warning" | "danger" | "default"
+> = {
 	draft: "default",
 	active: "success",
 	archived: "danger",
@@ -42,7 +49,9 @@ const STATUS_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "def
 function FlagsIndex() {
 	const match = useMatch({ from: "/_authenticated/projects/$projectId/flags" });
 	const { projectId } = match.params;
-	const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+	const [statusFilter, setStatusFilter] = useState<string | undefined>(
+		undefined,
+	);
 	const { data: flags, isLoading, isError } = useFlags(statusFilter);
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
@@ -58,7 +67,10 @@ function FlagsIndex() {
 		deleteFlag.mutate(flag.id);
 	};
 
-	const handleStatusChange = (flag: FeatureFlagListItem, newStatus: "draft" | "active" | "archived") => {
+	const handleStatusChange = (
+		flag: FeatureFlagListItem,
+		newStatus: "draft" | "active" | "archived",
+	) => {
 		updateFlagState.mutate({
 			flagId: flag.id,
 			status: newStatus,
@@ -78,7 +90,10 @@ function FlagsIndex() {
 		<div className="space-y-6">
 			<div className="flex items-center gap-3">
 				<Button isIconOnly variant="ghost">
-					<Link to="/projects/$projectId/environments" params={{ projectId }} className="flex items-center justify-center">
+					<Link
+						to="/projects/$projectId/environments"
+						params={{ projectId }}
+						className="flex items-center justify-center">
 						<ArrowLeftIcon className="h-4 w-4" />
 					</Link>
 				</Button>
@@ -98,29 +113,25 @@ function FlagsIndex() {
 				<Button
 					size="sm"
 					variant={statusFilter === undefined ? "primary" : "ghost"}
-					onPress={() => setStatusFilter(undefined)}
-				>
+					onPress={() => setStatusFilter(undefined)}>
 					All
 				</Button>
 				<Button
 					size="sm"
 					variant={statusFilter === "draft" ? "primary" : "ghost"}
-					onPress={() => setStatusFilter("draft")}
-				>
+					onPress={() => setStatusFilter("draft")}>
 					Draft
 				</Button>
 				<Button
 					size="sm"
 					variant={statusFilter === "active" ? "primary" : "ghost"}
-					onPress={() => setStatusFilter("active")}
-				>
+					onPress={() => setStatusFilter("active")}>
 					Active
 				</Button>
 				<Button
 					size="sm"
 					variant={statusFilter === "archived" ? "primary" : "ghost"}
-					onPress={() => setStatusFilter("archived")}
-				>
+					onPress={() => setStatusFilter("archived")}>
 					Archived
 				</Button>
 			</div>
@@ -165,18 +176,20 @@ function FlagsIndex() {
 						{(flag) => (
 							<TableRow key={flag.id}>
 								<TableCell>
-									<code className="text-sm text-default-700">{flag.key}</code>
+									<code className="text-sm ">{flag.key}</code>
 								</TableCell>
 								<TableCell>
-									<span className="font-medium text-foreground">{flag.name}</span>
+									<span className="font-medium text-foreground">
+										{flag.name}
+									</span>
 								</TableCell>
 								<TableCell>
-									<Badge variant="soft">
-										{flag.flagType}
-									</Badge>
+									<Badge variant="soft">{flag.flagType}</Badge>
 								</TableCell>
 								<TableCell>
-									<Badge color={STATUS_BADGE_COLOR[flag.status] ?? "default"} variant="soft">
+									<Badge
+										color={STATUS_BADGE_COLOR[flag.status] ?? "default"}
+										variant="soft">
 										{flag.status}
 									</Badge>
 								</TableCell>
@@ -192,8 +205,7 @@ function FlagsIndex() {
 														isIconOnly
 														variant="ghost"
 														size="sm"
-														onPress={() => handleStatusChange(flag, "active")}
-													>
+														onPress={() => handleStatusChange(flag, "active")}>
 														<WarningIcon className="h-4 w-4" />
 													</Button>
 												</Tooltip.Trigger>
@@ -207,8 +219,7 @@ function FlagsIndex() {
 													variant="ghost"
 													size="sm"
 													className="text-danger"
-													onPress={() => handleDelete(flag)}
-												>
+													onPress={() => handleDelete(flag)}>
 													<TrashIcon className="h-4 w-4" />
 												</Button>
 											</Tooltip.Trigger>
@@ -222,10 +233,7 @@ function FlagsIndex() {
 				</Table>
 			)}
 
-			<FlagModal
-				isOpen={modalOpen}
-				onClose={() => setModalOpen(false)}
-			/>
+			<FlagModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);
 }

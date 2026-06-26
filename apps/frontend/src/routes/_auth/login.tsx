@@ -99,10 +99,7 @@ function LoginPage() {
 								<Label className="font-medium">Email address</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<EnvelopeSimpleIcon
-											className="text-default-400 size-5"
-											weight="bold"
-										/>
+										<EnvelopeSimpleIcon className="size-5" weight="bold" />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("email")}
@@ -125,10 +122,7 @@ function LoginPage() {
 								</div>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<LockKeyIcon
-											className="text-default-400 size-5"
-											weight="bold"
-										/>
+										<LockKeyIcon className="size-5" weight="bold" />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("password")}
@@ -144,7 +138,7 @@ function LoginPage() {
 											variant="ghost"
 											onClick={toggleVisibility}
 											aria-label="Toggle password visibility"
-											className="text-default-400 hover:text-default-600">
+											className="">
 											{isVisible ? <EyeSlashIcon /> : <EyeIcon />}
 										</Button>
 									</InputGroup.Suffix>

@@ -65,7 +65,7 @@ function AuthenticatedLayout() {
 	if (!isHydrated) {
 		return (
 			<div className="h-screen w-full bg-background overflow-hidden flex">
-				<div className="shrink-0 border-r border-default-200 h-full w-62.5 p-4 flex flex-col gap-4">
+				<div className="shrink-0 border-r h-full w-62.5 p-4 flex flex-col gap-4">
 					<Skeleton className="h-14 w-full rounded-md" />
 					<div className="mt-4 flex flex-col gap-3">
 						<Skeleton className="h-8 w-3/4 rounded-md" />
@@ -77,7 +77,7 @@ function AuthenticatedLayout() {
 					</div>
 				</div>
 				<div className="flex-1 flex flex-col">
-					<div className="h-14 border-b border-default-200 flex items-center px-4 gap-4">
+					<div className="h-14 border-b flex items-center px-4 gap-4">
 						<Skeleton className="h-8 w-8 rounded-md" />
 						<Skeleton className="h-6 w-32 rounded-md" />
 						<Skeleton className="h-8 w-48 rounded-md ml-auto" />

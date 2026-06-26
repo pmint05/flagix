@@ -22,7 +22,6 @@ import {
 import {
 	useEnvironments,
 	useDeleteEnvironment,
-	
 } from "@/features/environments/api";
 import { EnvironmentModal } from "@/features/environments/EnvironmentModal";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -35,7 +34,10 @@ export const Route = createFileRoute(
 	component: EnvironmentsIndex,
 });
 
-const TYPE_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "default"> = {
+const TYPE_BADGE_COLOR: Record<
+	string,
+	"success" | "warning" | "danger" | "default"
+> = {
 	development: "success",
 	staging: "warning",
 	production: "danger",
@@ -45,7 +47,6 @@ const TYPE_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "defau
 function EnvironmentsIndex() {
 	const { data: environments, isLoading, isError } = useEnvironments();
 	const deleteEnvironment = useDeleteEnvironment();
-	
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingEnv, setEditingEnv] = useState<Environment | undefined>();
@@ -120,15 +121,19 @@ function EnvironmentsIndex() {
 						{(env) => (
 							<TableRow key={env.id}>
 								<TableCell>
-									<span className="font-medium text-foreground">{env.name}</span>
+									<span className="font-medium text-foreground">
+										{env.name}
+									</span>
 								</TableCell>
 								<TableCell>
-									<Badge color={TYPE_BADGE_COLOR[env.type] ?? "default"} variant="soft">
+									<Badge
+										color={TYPE_BADGE_COLOR[env.type] ?? "default"}
+										variant="soft">
 										{env.type}
 									</Badge>
 								</TableCell>
 								<TableCell>
-									<span className="text-default-500">{env.description || "—"}</span>
+									<span>{env.description || "—"}</span>
 								</TableCell>
 								<TableCell>
 									<Switch
@@ -145,8 +150,7 @@ function EnvironmentsIndex() {
 													isIconOnly
 													variant="ghost"
 													size="sm"
-													onPress={() => handleEdit(env)}
-												>
+													onPress={() => handleEdit(env)}>
 													<Pencil className="h-4 w-4" />
 												</Button>
 											</Tooltip.Trigger>
@@ -159,8 +163,7 @@ function EnvironmentsIndex() {
 													variant="ghost"
 													size="sm"
 													className="text-danger"
-													onPress={() => handleToggleActive(env)}
-												>
+													onPress={() => handleToggleActive(env)}>
 													{env.isActive ? (
 														<Trash className="h-4 w-4" />
 													) : (

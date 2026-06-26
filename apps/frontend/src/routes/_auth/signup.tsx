@@ -109,11 +109,7 @@ function SignupPage() {
 								<Label>Full Name</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<UserIcon
-											className="text-default-400"
-											weight="bold"
-											size={18}
-										/>
+										<UserIcon weight="bold" size={18} />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("name")}
@@ -128,11 +124,7 @@ function SignupPage() {
 								<Label>Email address</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<EnvelopeSimpleIcon
-											className="text-default-400"
-											weight="bold"
-											size={18}
-										/>
+										<EnvelopeSimpleIcon weight="bold" size={18} />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("email")}
@@ -148,11 +140,7 @@ function SignupPage() {
 								<Label>Password</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<LockKeyIcon
-											className="text-default-400"
-											weight="bold"
-											size={18}
-										/>
+										<LockKeyIcon weight="bold" size={18} />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("password")}
@@ -182,7 +170,6 @@ function SignupPage() {
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
 										<LockKeyIcon
-											className="text-default-400"
 											weight="bold"
 											size={18}
 										/>
