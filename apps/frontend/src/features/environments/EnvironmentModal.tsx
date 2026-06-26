@@ -17,13 +17,10 @@ import {
 	SelectIndicator,
 	ListBox,
 	ListBoxItem,
-	Modal,
+	Drawer,
 	toast,
 } from "@heroui/react";
-import {
-	useCreateEnvironment,
-	useUpdateEnvironment,
-} from "./api";
+import { useCreateEnvironment, useUpdateEnvironment } from "./api";
 import { useContextStore } from "@/stores";
 import type { Environment } from "@/types/environment";
 
@@ -102,92 +99,90 @@ export function EnvironmentModal({
 			onClose();
 		} catch {
 			toast.danger(
-				isEditing ? "Failed to update environment" : "Failed to create environment",
+				isEditing
+					? "Failed to update environment"
+					: "Failed to create environment",
 			);
 		}
 	};
 
 	return (
-		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Modal.Backdrop />
-			<Modal.Container>
-				<Modal.Dialog>
-					<Modal.Header>
-						<Modal.Heading>
-							{isEditing ? "Edit Environment" : "Create Environment"}
-						</Modal.Heading>
-					</Modal.Header>
-					<Modal.Body>
-						<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-							<TextField>
-								<Label>Name</Label>
-								<Input
-									{...register("name")}
-									placeholder="e.g. Production"
+		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Drawer.Backdrop>
+				<Drawer.Content placement="right">
+					<Drawer.Dialog>
+						<Drawer.Header>
+							<Drawer.Heading>
+								{isEditing ? "Edit Environment" : "Create Environment"}
+							</Drawer.Heading>
+						</Drawer.Header>
+						<Drawer.Body>
+							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+								<TextField>
+									<Label>Name</Label>
+									<Input {...register("name")} placeholder="e.g. Production" />
+									{errors.name && (
+										<FieldError>{errors.name.message}</FieldError>
+									)}
+								</TextField>
+
+								<Controller
+									name="type"
+									control={control}
+									render={({ field }) => (
+										<Select
+											selectedKey={field.value as string}
+											onSelectionChange={(key) => {
+												if (key) field.onChange(key);
+											}}>
+											<Label>Type</Label>
+											<SelectTrigger>
+												<SelectValue />
+												<SelectIndicator />
+											</SelectTrigger>
+											<SelectPopover>
+												<ListBox>
+													{ENV_TYPES.map((t) => (
+														<ListBoxItem id={t.key} key={t.key}>
+															{t.label}
+														</ListBoxItem>
+													))}
+												</ListBox>
+											</SelectPopover>
+											{errors.type && (
+												<FieldError>{errors.type.message}</FieldError>
+											)}
+										</Select>
+									)}
 								/>
-								{errors.name && (
-									<FieldError>{errors.name.message}</FieldError>
-								)}
-							</TextField>
 
-							<Controller
-								name="type"
-								control={control}
-								render={({ field }) => (
-								<Select
-									selectedKey={field.value as string}
-									onSelectionChange={(key) => {
-										if (key) field.onChange(key);
-									}}
-								>
-										<Label>Type</Label>
-										<SelectTrigger>
-											<SelectValue />
-											<SelectIndicator />
-										</SelectTrigger>
-										<SelectPopover>
-											<ListBox>
-												{ENV_TYPES.map((t) => (
-													<ListBoxItem id={t.key} key={t.key}>
-														{t.label}
-													</ListBoxItem>
-												))}
-											</ListBox>
-										</SelectPopover>
-										{errors.type && (
-											<FieldError>{errors.type.message}</FieldError>
-										)}
-									</Select>
-								)}
-							/>
+								<TextField>
+									<Label>Description</Label>
+									<TextArea
+										{...register("description")}
+										placeholder="Optional description"
+										rows={3}
+									/>
+								</TextField>
 
-							<TextField>
-								<Label>Description</Label>
-								<TextArea
-									{...register("description")}
-									placeholder="Optional description"
-									rows={3}
-								/>
-							</TextField>
-
-							<Modal.Footer>
-								<Button variant="ghost" onPress={onClose}>
-									Cancel
-								</Button>
-								<Button
-									type="submit"
-									variant="primary"
-									isDisabled={
-										createEnvironment.isPending || updateEnvironment.isPending
-									}
-								>
-									{isEditing ? "Update" : "Create"}
-								</Button>
-							</Modal.Footer>
-						</Form>
-					</Modal.Body>
-				</Modal.Dialog>
-			</Modal.Container>
-		</Modal.Root>
+								<Drawer.Footer>
+									<Button variant="ghost" onPress={onClose}>
+										Cancel
+									</Button>
+									<Button
+										type="submit"
+										variant="primary"
+										isDisabled={
+											createEnvironment.isPending || updateEnvironment.isPending
+										}>
+										{isEditing ? "Update" : "Create"}
+									</Button>
+								</Drawer.Footer>
+							</Form>
+						</Drawer.Body>
+					</Drawer.Dialog>
+				</Drawer.Content>
+			</Drawer.Backdrop>
+		</Drawer>
 	);
 }

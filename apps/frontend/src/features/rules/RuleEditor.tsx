@@ -13,7 +13,7 @@ import {
 	SelectIndicator,
 	ListBox,
 	ListBoxItem,
-	Modal,
+	Drawer,
 	Input,
 	toast,
 	Slider,
@@ -28,10 +28,22 @@ import type { Environment } from "@/types";
 import type { TargetingRule } from "@/types/targeting-rule";
 
 const RULE_TYPES = [
-	{ key: "kill_switch", label: "Kill Switch", description: "Disable the flag across all users" },
-	{ key: "user", label: "User Targeting", description: "Target specific users by ID or attribute" },
+	{
+		key: "kill_switch",
+		label: "Kill Switch",
+		description: "Disable the flag across all users",
+	},
+	{
+		key: "user",
+		label: "User Targeting",
+		description: "Target specific users by ID or attribute",
+	},
 	{ key: "role", label: "Role Targeting", description: "Target users by role" },
-	{ key: "percentage", label: "Percentage Rollout", description: "Roll out to a percentage of users" },
+	{
+		key: "percentage",
+		label: "Percentage Rollout",
+		description: "Roll out to a percentage of users",
+	},
 ] as const;
 
 interface RuleEditorProps {
@@ -75,7 +87,10 @@ export function RuleEditor({
 			variationId: rule?.variationId ?? "",
 			conditions: rule?.conditions ?? {},
 			isEnabled: rule?.isEnabled ?? true,
-			percentageDistribution: rule?.ruleType === "percentage" ? getDefaultPercentageDist(variations) : undefined,
+			percentageDistribution:
+				rule?.ruleType === "percentage"
+					? getDefaultPercentageDist(variations)
+					: undefined,
 		},
 	});
 
@@ -89,7 +104,10 @@ export function RuleEditor({
 				variationId: rule?.variationId ?? "",
 				conditions: rule?.conditions ?? {},
 				isEnabled: rule?.isEnabled ?? true,
-				percentageDistribution: rule?.ruleType === "percentage" ? getDefaultPercentageDist(variations) : undefined,
+				percentageDistribution:
+					rule?.ruleType === "percentage"
+						? getDefaultPercentageDist(variations)
+						: undefined,
 			});
 			setUserIdInput("");
 			setRoleInput("");
@@ -114,23 +132,60 @@ export function RuleEditor({
 			}
 			onClose();
 		} catch {
-			toast.danger(isEditing ? "Failed to update rule" : "Failed to create rule");
+			toast.danger(
+				isEditing ? "Failed to update rule" : "Failed to create rule",
+			);
 		}
 	};
 
 	return (
-		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Modal.Backdrop />
-			<Modal.Container>
-				<Modal.Dialog>
-					<Modal.Header>
-						<Modal.Heading>{isEditing ? "Edit Targeting Rule" : "Create Targeting Rule"}</Modal.Heading>
-					</Modal.Header>
-					<Modal.Body>
-						<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-							{!isEditing && (
+		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Drawer.Backdrop>
+				<Drawer.Content placement="right">
+					<Drawer.Dialog>
+						<Drawer.Header>
+							<Drawer.Heading>
+								{isEditing ? "Edit Targeting Rule" : "Create Targeting Rule"}
+							</Drawer.Heading>
+						</Drawer.Header>
+						<Drawer.Body>
+							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+								{!isEditing && (
+									<Controller
+										name="ruleType"
+										control={control}
+										render={({ field }) => (
+											<Select
+												selectedKey={field.value as string}
+												onSelectionChange={(key) => {
+													if (key) field.onChange(key);
+												}}>
+												<Label>Rule Type</Label>
+												<SelectTrigger>
+													<SelectValue />
+													<SelectIndicator />
+												</SelectTrigger>
+												<SelectPopover>
+													<ListBox>
+														{RULE_TYPES.map((t) => (
+															<ListBoxItem id={t.key} key={t.key}>
+																{t.label}
+															</ListBoxItem>
+														))}
+													</ListBox>
+												</SelectPopover>
+												{errors.ruleType && (
+													<FieldError>
+														{(errors.ruleType as any).message}
+													</FieldError>
+												)}
+											</Select>
+										)}
+									/>
+								)}
+
 								<Controller
-									name="ruleType"
+									name="environmentId"
 									control={control}
 									render={({ field }) => (
 										<Select
@@ -138,124 +193,93 @@ export function RuleEditor({
 											onSelectionChange={(key) => {
 												if (key) field.onChange(key);
 											}}
-										>
-											<Label>Rule Type</Label>
+											isDisabled={isEditing}>
+											<Label>Environment</Label>
 											<SelectTrigger>
 												<SelectValue />
 												<SelectIndicator />
 											</SelectTrigger>
 											<SelectPopover>
 												<ListBox>
-													{RULE_TYPES.map((t) => (
-														<ListBoxItem id={t.key} key={t.key}>
-															{t.label}
+													{environments.map((env) => (
+														<ListBoxItem id={env.id} key={env.id}>
+															{env.name}
 														</ListBoxItem>
 													))}
 												</ListBox>
 											</SelectPopover>
-											{errors.ruleType && (
-												<FieldError>{(errors.ruleType as any).message}</FieldError>
+											{errors.environmentId && (
+												<FieldError>
+													{(errors.environmentId as any).message}
+												</FieldError>
 											)}
 										</Select>
 									)}
 								/>
-							)}
 
-							<Controller
-								name="environmentId"
-								control={control}
-								render={({ field }) => (
-									<Select
-										selectedKey={field.value as string}
-										onSelectionChange={(key) => {
-											if (key) field.onChange(key);
-										}}
-										isDisabled={isEditing}
-									>
-										<Label>Environment</Label>
-										<SelectTrigger>
-											<SelectValue />
-											<SelectIndicator />
-										</SelectTrigger>
-										<SelectPopover>
-											<ListBox>
-												{environments.map((env) => (
-													<ListBoxItem id={env.id} key={env.id}>
-														{env.name}
-													</ListBoxItem>
-												))}
-											</ListBox>
-										</SelectPopover>
-										{errors.environmentId && (
-											<FieldError>{(errors.environmentId as any).message}</FieldError>
-										)}
-									</Select>
+								{ruleType === "percentage" ? (
+									<PercentageRuleEditor
+										control={control}
+										variations={variations}
+										percentageDist={watch("percentageDistribution")}
+									/>
+								) : ruleType === "user" ? (
+									<UserRuleEditor
+										control={control}
+										errors={errors}
+										variations={variations}
+										userIdInput={userIdInput}
+										setUserIdInput={setUserIdInput}
+									/>
+								) : ruleType === "role" ? (
+									<RoleRuleEditor
+										control={control}
+										errors={errors}
+										variations={variations}
+										roleInput={roleInput}
+										setRoleInput={setRoleInput}
+									/>
+								) : (
+									<KillSwitchRuleEditor
+										control={control}
+										errors={errors}
+										variations={variations}
+									/>
 								)}
-							/>
 
-							{ruleType === "percentage" ? (
-								<PercentageRuleEditor
+								<Controller
+									name="isEnabled"
 									control={control}
-									variations={variations}
-									percentageDist={watch("percentageDistribution")}
+									render={({ field }) => (
+										<div className="flex items-center gap-2">
+											<input
+												type="checkbox"
+												checked={field.value}
+												onChange={(e) => field.onChange(e.target.checked)}
+												className="h-4 w-4 rounded-xl"
+											/>
+											<Label>Enabled</Label>
+										</div>
+									)}
 								/>
-							) : ruleType === "user" ? (
-								<UserRuleEditor
-									control={control}
-									errors={errors}
-									variations={variations}
-									userIdInput={userIdInput}
-									setUserIdInput={setUserIdInput}
-								/>
-							) : ruleType === "role" ? (
-								<RoleRuleEditor
-									control={control}
-									errors={errors}
-									variations={variations}
-									roleInput={roleInput}
-									setRoleInput={setRoleInput}
-								/>
-							) : (
-								<KillSwitchRuleEditor
-									control={control}
-									errors={errors}
-									variations={variations}
-								/>
-							)}
 
-							<Controller
-								name="isEnabled"
-								control={control}
-								render={({ field }) => (
-									<div className="flex items-center gap-2">
-										<input
-											type="checkbox"
-											checked={field.value}
-											onChange={(e) => field.onChange(e.target.checked)}
-											className="h-4 w-4 rounded-xl"
-										/>
-										<Label>Enabled</Label>
-									</div>
-								)}
-							/>
-
-							<Modal.Footer>
-								<Button variant="ghost" onPress={onClose}>
-									Cancel
-								</Button>
-								<Button
-									type="submit"
-									variant="primary"
-									isDisabled={isPending}
-								>
-									{isEditing ? "Update Rule" : "Create Rule"}
-								</Button>
-							</Modal.Footer>
-						</Form>
-					</Modal.Body>
-				</Modal.Dialog>
-			</Modal.Container>
-		</Modal.Root>
+								<Drawer.Footer>
+									<Button variant="ghost" onPress={onClose}>
+										Cancel
+									</Button>
+									<Button
+										type="submit"
+										variant="primary"
+										isDisabled={isPending}>
+										{isEditing ? "Update Rule" : "Create Rule"}
+									</Button>
+								</Drawer.Footer>
+							</Form>
+						</Drawer.Body>
+					</Drawer.Dialog>
+				</Drawer.Content>
+			</Drawer.Backdrop>
+		</Drawer>
 	);
 }
 
@@ -272,7 +296,11 @@ interface RuleEditorFieldProps {
 	variations: Variation[];
 }
 
-function KillSwitchRuleEditor({ control, errors, variations }: RuleEditorFieldProps) {
+function KillSwitchRuleEditor({
+	control,
+	errors,
+	variations,
+}: RuleEditorFieldProps) {
 	return (
 		<Controller
 			name="variationId"
@@ -282,8 +310,7 @@ function KillSwitchRuleEditor({ control, errors, variations }: RuleEditorFieldPr
 					selectedKey={field.value as string}
 					onSelectionChange={(key) => {
 						if (key) field.onChange(key);
-					}}
-				>
+					}}>
 					<Label>Target Variation</Label>
 					<SelectTrigger>
 						<SelectValue />
@@ -307,7 +334,16 @@ function KillSwitchRuleEditor({ control, errors, variations }: RuleEditorFieldPr
 	);
 }
 
-function UserRuleEditor({ control, errors, variations, userIdInput, setUserIdInput }: RuleEditorFieldProps & { userIdInput: string; setUserIdInput: (v: string) => void }) {
+function UserRuleEditor({
+	control,
+	errors,
+	variations,
+	userIdInput,
+	setUserIdInput,
+}: RuleEditorFieldProps & {
+	userIdInput: string;
+	setUserIdInput: (v: string) => void;
+}) {
 	return (
 		<>
 			<Controller
@@ -318,8 +354,7 @@ function UserRuleEditor({ control, errors, variations, userIdInput, setUserIdInp
 						selectedKey={field.value as string}
 						onSelectionChange={(key) => {
 							if (key) field.onChange(key);
-						}}
-					>
+						}}>
 						<Label>Target Variation</Label>
 						<SelectTrigger>
 							<SelectValue />
@@ -357,8 +392,7 @@ function UserRuleEditor({ control, errors, variations, userIdInput, setUserIdInp
 							if (userIdInput.trim()) {
 								setUserIdInput("");
 							}
-						}}
-					>
+						}}>
 						<PlusIcon className="h-4 w-4" />
 					</Button>
 				</div>
@@ -367,7 +401,16 @@ function UserRuleEditor({ control, errors, variations, userIdInput, setUserIdInp
 	);
 }
 
-function RoleRuleEditor({ control, errors, variations, roleInput, setRoleInput }: RuleEditorFieldProps & { roleInput: string; setRoleInput: (v: string) => void }) {
+function RoleRuleEditor({
+	control,
+	errors,
+	variations,
+	roleInput,
+	setRoleInput,
+}: RuleEditorFieldProps & {
+	roleInput: string;
+	setRoleInput: (v: string) => void;
+}) {
 	return (
 		<>
 			<Controller
@@ -378,8 +421,7 @@ function RoleRuleEditor({ control, errors, variations, roleInput, setRoleInput }
 						selectedKey={field.value as string}
 						onSelectionChange={(key) => {
 							if (key) field.onChange(key);
-						}}
-					>
+						}}>
 						<Label>Target Variation</Label>
 						<SelectTrigger>
 							<SelectValue />
@@ -417,8 +459,7 @@ function RoleRuleEditor({ control, errors, variations, roleInput, setRoleInput }
 							if (roleInput.trim()) {
 								setRoleInput("");
 							}
-						}}
-					>
+						}}>
 						<PlusIcon className="h-4 w-4" />
 					</Button>
 				</div>
@@ -427,13 +468,21 @@ function RoleRuleEditor({ control, errors, variations, roleInput, setRoleInput }
 	);
 }
 
-function PercentageRuleEditor({ control, variations, percentageDist }: Omit<RuleEditorFieldProps, "errors"> & { percentageDist: any }) {
+function PercentageRuleEditor({
+	control,
+	variations,
+	percentageDist,
+}: Omit<RuleEditorFieldProps, "errors"> & { percentageDist: any }) {
 	useFieldArray({
 		control,
 		name: "percentageDistribution" as any,
 	});
 
-	const totalPercentage = percentageDist?.reduce((acc: number, p: any) => acc + (p.percentage ?? 0), 0) ?? 0;
+	const totalPercentage =
+		percentageDist?.reduce(
+			(acc: number, p: any) => acc + (p.percentage ?? 0),
+			0,
+		) ?? 0;
 
 	return (
 		<div className="space-y-4">
@@ -441,13 +490,14 @@ function PercentageRuleEditor({ control, variations, percentageDist }: Omit<Rule
 				<Label>Percentage Distribution</Label>
 				<Chip
 					color={Math.abs(totalPercentage - 100) < 0.01 ? "success" : "danger"}
-					variant="soft"
-				>
+					variant="soft">
 					{totalPercentage.toFixed(1)}%
 				</Chip>
 			</div>
 			{Math.abs(totalPercentage - 100) >= 0.01 && (
-				<p className="text-xs text-danger">Percentages must sum to exactly 100%</p>
+				<p className="text-xs text-danger">
+					Percentages must sum to exactly 100%
+				</p>
 			)}
 			<div className="space-y-3">
 				{variations.map((variation, index) => (

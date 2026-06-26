@@ -2,7 +2,11 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 import { useAuthStore, useSidebarStore, useIsHydrated } from "@/stores";
 import { Skeleton } from "@heroui/react";
-import { Sidebar, SidebarResizeHandle } from "@/components/sidebar";
+import {
+	Sidebar,
+	SidebarResizeHandle,
+	MobileSidebarDrawer,
+} from "@/components/sidebar";
 import { Header } from "@/components/header";
 import {
 	SIDEBAR_WIDTH_DEFAULT,
@@ -15,7 +19,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { Panel, Group as PanelGroup } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	const headers = getRequestHeaders();
@@ -44,6 +49,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
 	const isHydrated = useIsHydrated();
+	const isMobile = useIsMobile();
 	const { isCollapsed, size, setCollapsed, setSize } = useSidebarStore();
 	const panelRef = useRef<PanelImperativeHandle>(null);
 
@@ -61,6 +67,14 @@ function AuthenticatedLayout() {
 			panel.resize(size || SIDEBAR_WIDTH_DEFAULT);
 		}
 	}, [isCollapsed, size]);
+
+	const [windowWidth, setWindowWidth] = useState(0);
+
+	useEffect(() => {
+		const handleResize = () => setWindowWidth(window.innerWidth);
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
 
 	if (!isHydrated) {
 		return (
@@ -91,9 +105,25 @@ function AuthenticatedLayout() {
 		);
 	}
 
+	// Mobile layout: no PanelGroup, sidebar in Drawer
+	if (isMobile) {
+		return (
+			<div className="h-screen w-full bg-background overflow-hidden flex flex-col">
+				<Header />
+				<main className="flex-1">
+					<div className="h-full p-6 bg-surface overflow-auto border">
+						<Outlet />
+					</div>
+				</main>
+				<MobileSidebarDrawer />
+			</div>
+		);
+	}
+
+	// Desktop layout: PanelGroup with resizable sidebar
 	return (
-		<div className="h-screen w-full bg-background overflow-hidden">
-			<PanelGroup orientation="horizontal">
+		<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden">
+			<PanelGroup key={windowWidth} orientation="horizontal">
 				<Panel
 					panelRef={panelRef}
 					defaultSize={
@@ -120,16 +150,18 @@ function AuthenticatedLayout() {
 							}
 						}
 					}}
-					className="flex flex-col">
+					className="flex flex-col transition-[width] duration-300 ease-in-out">
 					<Sidebar />
 				</Panel>
 
 				<SidebarResizeHandle />
 
-				<Panel minSize={50} className="flex flex-col bg-background">
+				<Panel
+					minSize={50}
+					className="flex flex-col bg-background dark:bg-background-tertiary">
 					<Header />
 					<main className="flex-1">
-						<div className="h-full p-6 bg-surface rounded-tl-3xl overflow-auto border">
+						<div className="h-full p-6 bg-surface dark:bg-background-secondary rounded-tl-3xl overflow-auto border">
 							<Outlet />
 						</div>
 					</main>

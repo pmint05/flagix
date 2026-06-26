@@ -3,18 +3,21 @@ import { SidebarSimpleIcon } from '@phosphor-icons/react';
 import { useSidebarStore } from '#/stores';
 import { Breadcrumbs } from './Breadcrumbs';
 import { EnvironmentSwitcher } from './EnvironmentSwitcher';
+import { useIsMobile } from '#/hooks/useIsMobile';
 
 export function Header() {
 	const toggleCollapse = useSidebarStore((s) => s.toggleCollapse);
+	const toggleDrawer = useSidebarStore((s) => s.toggleDrawer);
+	const isMobile = useIsMobile();
 
 	return (
-		<header className="flex h-14 items-center gap-3 px-4">
-			<div className="flex items-center gap-3">
+		<header className="flex h-14 items-center gap-3 sm:px-4 px-2">
+			<div className="flex items-center sm:gap-3 gap-1">
 				<Button
 					variant="ghost"
 					size="sm"
 					isIconOnly
-					onPress={toggleCollapse}
+					onPress={isMobile ? toggleDrawer : toggleCollapse}
 					aria-label="Toggle Sidebar"
 				>
 					<SidebarSimpleIcon weight="duotone" size={20} />

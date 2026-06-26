@@ -3,7 +3,7 @@ import { useAuthStore, useSidebarStore } from "#/stores";
 import { generateAvatarColor } from "#/lib/color-from-string";
 import { getInitials, truncateText } from "#/lib/string-utils";
 import { UserMenu } from "./UserMenu";
-import { DotsThreeOutlineVerticalIcon } from "@phosphor-icons/react";
+import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 
 export function SidebarFooter() {
 	const user = useAuthStore((s) => s.user);
@@ -50,10 +50,7 @@ export function SidebarFooter() {
 				</div>
 			</div>
 			{!isCollapsed && (
-				<DotsThreeOutlineVerticalIcon
-					weight="fill"
-					className="shrink-0 text-default-foreground"
-				/>
+				<DotsThreeVerticalIcon className="shrink-0 text-default-foreground" />
 			)}
 		</Button>
 	);

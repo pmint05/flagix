@@ -7,6 +7,8 @@ import {
 	resolveLabel,
 	resolveHref,
 } from "./breadcrumb-config";
+import { Breadcrumbs as BRH } from "@heroui/react";
+import { useIsMobile } from "#/hooks/useIsMobile";
 
 export function Breadcrumbs() {
 	const matches = useMatches();
@@ -30,55 +32,64 @@ export function Breadcrumbs() {
 		);
 	}
 
+	const isMobile = useIsMobile();
+
 	return (
-		<nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm">
-			{segments.map((segment, index) => {
-				const isLast = index === segments.length - 1;
-				const rawLabel = resolveLabel(segment.label, params);
-				const href = resolveHref(segment.href, params);
+		<BRH aria-label="Breadcrumb">
+			{isMobile ? (
+				<BRH.Item>
+					<span className="font-medium text-foreground">
+						{segments[segments.length - 1]
+							? resolveLabel(segments[segments.length - 1].label, params)
+							: "Dashboard"}
+					</span>
+				</BRH.Item>
+			) : (
+				segments.map((segment, index) => {
+					const isLast = index === segments.length - 1;
+					const rawLabel = resolveLabel(segment.label, params);
+					const href = resolveHref(segment.href, params);
 
-				let displayLabel = rawLabel;
-				let isLoading = false;
+					let displayLabel = rawLabel;
+					let isLoading = false;
 
-				// Resolve project name synchronously from store
-				if (segment.resolveParam === "projectId") {
-					if (selectedProject) {
-						displayLabel = selectedProject.name;
-					} else {
-						isLoading = true;
+					// Resolve project name synchronously from store
+					if (segment.resolveParam === "projectId") {
+						if (selectedProject) {
+							displayLabel = selectedProject.name;
+						} else {
+							isLoading = true;
+						}
 					}
-				}
 
-				return (
-					<div key={index} className="flex items-center gap-1">
-						{index > 0 && (
-							<CaretRightIcon size={14} className="text-default" />
-						)}
-						{segment.resolveParam === "flagId" ? (
-							<FlagNameResolver
-								flagId={params.flagId}
-								fallback={rawLabel}
-								isLast={isLast}
-								href={href}
-							/>
-						) : isLast ? (
-							<span
-								className={`font-medium text-foreground ${
-									isLoading ? "opacity-60" : ""
-								}`}>
-								{displayLabel}
-							</span>
-						) : (
-							<Link
-								to={href as string}
-								className="transition-colors hover:text-foreground">
-								{displayLabel}
-							</Link>
-						)}
-					</div>
-				);
-			})}
-		</nav>
+					return (
+						<BRH.Item key={index} className="flex items-center gap-1">
+							{segment.resolveParam === "flagId" ? (
+								<FlagNameResolver
+									flagId={params.flagId}
+									fallback={rawLabel}
+									isLast={isLast}
+									href={href}
+								/>
+							) : isLast ? (
+								<span
+									className={`font-medium text-foreground ${
+										isLoading ? "opacity-60" : ""
+									}`}>
+									{displayLabel}
+								</span>
+							) : (
+								<Link
+									to={href as string}
+									className="transition-colors hover:text-foreground">
+									{displayLabel}
+								</Link>
+							)}
+						</BRH.Item>
+					);
+				})
+			)}
+		</BRH>
 	);
 }
 

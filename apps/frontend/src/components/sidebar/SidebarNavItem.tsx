@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { cn, Tooltip } from "@heroui/react";
 import type React from "react";
+import { useSidebarStore } from "#/stores";
 
 import type { IconWeight } from "@phosphor-icons/react";
 
@@ -23,9 +24,12 @@ export function SidebarNavItem({
 	isCollapsed,
 	isActive,
 }: SidebarNavItemProps) {
+	const closeDrawer = useSidebarStore((s) => s.closeDrawer);
+
 	const content = (
 		<Link
 			to={to}
+			onClick={closeDrawer}
 			className={cn(
 				"group flex items-center rounded-3xl py-2 transition-all duration-200 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent w-full",
 				{

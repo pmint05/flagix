@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Button } from "@heroui/react";
+import { Drawer, Button } from "@heroui/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,8 +19,15 @@ interface KeyModalProps {
 	isLoading?: boolean;
 }
 
-export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps) {
-	const [selectedType, setSelectedType] = useState<"client" | "server">("client");
+export function KeyModal({
+	isOpen,
+	onClose,
+	onSubmit,
+	isLoading,
+}: KeyModalProps) {
+	const [selectedType, setSelectedType] = useState<"client" | "server">(
+		"client",
+	);
 
 	const {
 		register,
@@ -36,77 +43,70 @@ export function KeyModal({ isOpen, onClose, onSubmit, isLoading }: KeyModalProps
 	};
 
 	return (
-		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Modal.Backdrop />
-			<Modal.Container>
-				<Modal.Dialog>
-					<Modal.Header>
-						<Modal.Heading>Generate SDK Key</Modal.Heading>
-					</Modal.Header>
-					<form onSubmit={handleSubmit(handleFormSubmit)}>
-						<Modal.Body>
-							<div className="space-y-2">
-								<label className="text-sm font-medium">Key Name</label>
-								<input
-									type="text"
-									className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm"
-									placeholder="e.g. production-web-sdk"
-									{...register("name")}
-								/>
-								{errors.name && (
-									<p className="text-sm text-danger">{errors.name.message}</p>
-								)}
-							</div>
-
-							<div className="space-y-2">
-								<label className="text-sm font-medium">Key Type</label>
-								<div className="flex gap-3">
-									<button
-										type="button"
-										className={`flex-1 rounded-lg border p-3 text-left transition ${
-											selectedType === "client"
-												? "border-primary bg-primary-50"
-												: "hover:border-default"
-										}`}
-										onClick={() => setSelectedType("client")}
-									>
-										<div className="font-medium">Client</div>
-										<div className="mt-1 text-xs">
-											Public, safe for browser/mobile
-										</div>
-									</button>
-									<button
-										type="button"
-										className={`flex-1 rounded-lg border p-3 text-left transition ${
-											selectedType === "server"
-												? "border-primary bg-primary-50"
-												: "hover:border-default"
-										}`}
-										onClick={() => setSelectedType("server")}
-									>
-										<div className="font-medium">Server</div>
-										<div className="mt-1 text-xs">
-											Secret, backend only
-										</div>
-									</button>
+		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Drawer.Backdrop>
+				<Drawer.Content placement="right">
+					<Drawer.Dialog>
+						<Drawer.Header>
+							<Drawer.Heading>Generate SDK Key</Drawer.Heading>
+						</Drawer.Header>
+						<form onSubmit={handleSubmit(handleFormSubmit)}>
+							<Drawer.Body>
+								<div className="space-y-2">
+									<label className="text-sm font-medium">Key Name</label>
+									<input
+										type="text"
+										className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm"
+										placeholder="e.g. production-web-sdk"
+										{...register("name")}
+									/>
+									{errors.name && (
+										<p className="text-sm text-danger">{errors.name.message}</p>
+									)}
 								</div>
-							</div>
-						</Modal.Body>
-						<Modal.Footer>
-							<Button variant="ghost" onPress={onClose}>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								variant="primary"
-								isDisabled={isLoading}
-							>
-								{isLoading ? "Generating..." : "Generate"}
-							</Button>
-						</Modal.Footer>
-					</form>
-				</Modal.Dialog>
-			</Modal.Container>
-		</Modal.Root>
+
+								<div className="space-y-2">
+									<label className="text-sm font-medium">Key Type</label>
+									<div className="flex gap-3">
+										<button
+											type="button"
+											className={`flex-1 rounded-lg border p-3 text-left transition ${
+												selectedType === "client"
+													? "border-primary bg-primary-50"
+													: "hover:border-default"
+											}`}
+											onClick={() => setSelectedType("client")}>
+											<div className="font-medium">Client</div>
+											<div className="mt-1 text-xs">
+												Public, safe for browser/mobile
+											</div>
+										</button>
+										<button
+											type="button"
+											className={`flex-1 rounded-lg border p-3 text-left transition ${
+												selectedType === "server"
+													? "border-primary bg-primary-50"
+													: "hover:border-default"
+											}`}
+											onClick={() => setSelectedType("server")}>
+											<div className="font-medium">Server</div>
+											<div className="mt-1 text-xs">Secret, backend only</div>
+										</button>
+									</div>
+								</div>
+							</Drawer.Body>
+							<Drawer.Footer>
+								<Button variant="ghost" onPress={onClose}>
+									Cancel
+								</Button>
+								<Button type="submit" variant="primary" isDisabled={isLoading}>
+									{isLoading ? "Generating..." : "Generate"}
+								</Button>
+							</Drawer.Footer>
+						</form>
+					</Drawer.Dialog>
+				</Drawer.Content>
+			</Drawer.Backdrop>
+		</Drawer>
 	);
 }

@@ -9,7 +9,7 @@ export function Sidebar() {
 	return (
 		<aside
 			data-sidebar-collapsed={isCollapsed}
-			className="flex h-full w-full flex-col bg-background transition-[width] duration-300"
+			className="flex h-full w-full flex-col bg-background dark:bg-background-tertiary"
 		>
 			<SidebarHeader />
 			<SidebarNav />
