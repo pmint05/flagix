@@ -18,7 +18,7 @@
 [data-theme="default"] {
 	/* Theme Colors (Light Mode) */
 	--accent: oklch(65.5% 0.1614 249.79);
-	--accent-foreground: oklch(15% 0.03 249.79);
+	--accent-foreground: oklch(99.11% 0 0);
 	--background: oklch(97.02% 0.0013 249.79);
 	--border: oklch(90% 0.0013 249.79);
 	--danger: oklch(65.32% 0.2334 25.25);
@@ -50,8 +50,8 @@
 	--warning-foreground: oklch(21.03% 0.0059 71.84);
 
 	/* Border Radius */
-	--radius: 0.5rem;
-	--field-radius: 0.75rem;
+	--radius: 0.25rem;
+	--field-radius: 0.5rem;
 
 	/* Font Family */
 	/* Make sure to load Geist font in your app */
@@ -94,6 +94,10 @@
 	--warning: oklch(82.03% 0.1392 75.85);
 	--warning-foreground: oklch(21.03% 0.0059 75.85);
 } 
+
+@theme {
+	--radius-4xl: var(--radius) * 4;
+}
 
 *,
 *::before,
@@ -159,4 +163,19 @@ svg[class*="phosphor"] {
 
 *::-webkit-scrollbar-track {
 	background: transparent;
+}
+
+/* Sidebar transition and resize handle */
+.sidebar-resize-handle {
+	width: 3px;
+	background-color: transparent;
+	cursor: col-resize;
+	transition: background-color 0.2s ease;
+	position: relative;
+	z-index: 10;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle[data-resize-handle-state="drag"] {
+	background-color: var(--focus, oklch(65.5% 0.1614 249.79));
 }
