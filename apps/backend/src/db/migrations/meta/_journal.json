@@ -22,6 +22,13 @@
       "when": 1782404999728,
       "tag": "0002_mute_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782500000000,
+      "tag": "0003_add_environment_type_is_active",
+      "breakpoints": true
     }
   ]
 }

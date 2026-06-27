@@ -32,7 +32,7 @@ const isProduction = process.env.NODE_ENV === 'production';
       {
         name: 'auth',
         ttl: 60_000,
-        limit: 10,
+        limit: 1000,
       },
       {
         name: 'evaluate',
