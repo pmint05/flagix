@@ -67,8 +67,6 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 		}
 	}, [isOpen, project, reset]);
 
-	console.log(errors);
-
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
 			if (isEditing) {

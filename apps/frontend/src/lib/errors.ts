@@ -88,8 +88,8 @@ export function fromHttpError(
 		typeof envelope.message === "string" && envelope.message.trim().length > 0
 			? envelope.message
 			: undefined;
-	const message =
-		code === "validation" && backendMessage ? backendMessage : fallback;
+	const message = backendMessage || fallback;
+	console.log(message)
 
 	return new ApiError({
 		code,

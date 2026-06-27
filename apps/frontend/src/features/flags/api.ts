@@ -8,6 +8,7 @@ import {
 } from "@/types/feature-flag";
 import { z } from "zod";
 import { useContextStore } from "@/stores";
+import { useCurrentProject } from "@/hooks/useCurrentProject";
 
 export interface CreateFlagInput {
 	key: string;
@@ -71,7 +72,7 @@ export const FLAGS_KEY = ["flags"] as const;
 
 export function useFlags(status?: string) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
-	const projectId = useContextStore((s) => s.selectedProject?.id);
+	const projectId = useCurrentProject()?.id;
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useQuery({
@@ -99,7 +100,7 @@ export function useFlag(flagId: string) {
 export function useCreateFlag() {
 	const queryClient = useQueryClient();
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
-	const projectId = useContextStore((s) => s.selectedProject?.id);
+	const projectId = useCurrentProject()?.id;
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useMutation({
@@ -118,7 +119,7 @@ export function useCreateFlag() {
 export function useUpdateFlagState() {
 	const queryClient = useQueryClient();
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
-	const projectId = useContextStore((s) => s.selectedProject?.id);
+	const projectId = useCurrentProject()?.id;
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useMutation({
@@ -155,7 +156,7 @@ export function useUpdateFlag() {
 export function useDeleteFlag() {
 	const queryClient = useQueryClient();
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
-	const projectId = useContextStore((s) => s.selectedProject?.id);
+	const projectId = useCurrentProject()?.id;
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useMutation({

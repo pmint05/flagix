@@ -11,33 +11,23 @@ import {
 	Input,
 	TextArea,
 	Select,
-	SelectTrigger,
-	SelectValue,
-	SelectPopover,
-	SelectIndicator,
 	ListBox,
-	ListBoxItem,
 	Drawer,
 	toast,
 } from "@heroui/react";
 import { useCreateEnvironment, useUpdateEnvironment } from "./api";
 import { useContextStore } from "@/stores";
 import type { Environment } from "@/types/environment";
+import { ApiError } from "#/lib/errors";
 
 const envFormSchema = z.object({
-	name: z.string().min(1, "Name is required").max(255),
+	name: z.string().trim().min(1, "Name is required").max(255),
 	type: z.enum(["development", "staging", "production", "custom"]),
 	description: z.string().optional(),
 });
 
 type EnvFormData = z.infer<typeof envFormSchema>;
-
-const ENV_TYPES = [
-	{ key: "development", label: "Development" },
-	{ key: "staging", label: "Staging" },
-	{ key: "production", label: "Production" },
-	{ key: "custom", label: "Custom" },
-] as const;
+import { ENV_TYPES } from "./constants";
 
 interface EnvironmentModalProps {
 	isOpen: boolean;
@@ -97,12 +87,21 @@ export function EnvironmentModal({
 				toast.success("Environment created successfully");
 			}
 			onClose();
-		} catch {
-			toast.danger(
-				isEditing
-					? "Failed to update environment"
-					: "Failed to create environment",
-			);
+		} catch (error) {
+			if (error instanceof ApiError) {
+				toast.danger(
+					`Error to ${isEditing ? "update" : "create"} environment`,
+					{
+						description: error.message,
+					},
+				);
+			} else {
+				toast.danger(
+					isEditing
+						? "Failed to update environment"
+						: "Failed to create environment",
+				);
+			}
 		}
 	};
 
@@ -114,41 +113,57 @@ export function EnvironmentModal({
 						<Drawer.Header>
 							<Drawer.Heading>
 								{isEditing ? "Edit Environment" : "Create Environment"}
+								<Drawer.CloseTrigger />
 							</Drawer.Heading>
 						</Drawer.Header>
 						<Drawer.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField>
-									<Label>Name</Label>
-									<Input {...register("name")} placeholder="e.g. Production" />
-									{errors.name && (
-										<FieldError>{errors.name.message}</FieldError>
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.name}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Name</Label>
+											<Input placeholder="e.g. Production" />
+											{errors.name && (
+												<FieldError>{errors.name.message}</FieldError>
+											)}
+										</TextField>
 									)}
-								</TextField>
+								/>
 
 								<Controller
 									name="type"
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
-											}}>
+											}}
+											variant="secondary">
 											<Label>Type</Label>
-											<SelectTrigger>
-												<SelectValue />
-												<SelectIndicator />
-											</SelectTrigger>
-											<SelectPopover>
+											<Select.Trigger>
+												<Select.Value />
+												<Select.Indicator />
+											</Select.Trigger>
+											<Select.Popover>
 												<ListBox>
 													{ENV_TYPES.map((t) => (
-														<ListBoxItem id={t.key} key={t.key}>
+														<ListBox.Item
+															textValue={t.label}
+															id={t.key}
+															key={t.key}>
 															{t.label}
-														</ListBoxItem>
+														</ListBox.Item>
 													))}
 												</ListBox>
-											</SelectPopover>
+											</Select.Popover>
 											{errors.type && (
 												<FieldError>{errors.type.message}</FieldError>
 											)}
@@ -156,17 +171,24 @@ export function EnvironmentModal({
 									)}
 								/>
 
-								<TextField>
-									<Label>Description</Label>
-									<TextArea
-										{...register("description")}
-										placeholder="Optional description"
-										rows={3}
-									/>
-								</TextField>
+								<Controller
+									name="description"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.description}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Description</Label>
+											<TextArea placeholder="Optional description" rows={3} />
+										</TextField>
+									)}
+								/>
 
 								<Drawer.Footer>
-									<Button variant="ghost" onPress={onClose}>
+									<Button variant="outline" onPress={onClose}>
 										Cancel
 									</Button>
 									<Button

@@ -93,7 +93,7 @@
 	--surface-tertiary-foreground: oklch(99.11% 0.0013 249.79);
 	--warning: oklch(82.03% 0.1392 75.85);
 	--warning-foreground: oklch(21.03% 0.0059 75.85);
-} 
+}
 
 @theme {
 	--radius-4xl: var(--radius) * 4;
@@ -178,4 +178,29 @@ svg[class*="phosphor"] {
 .sidebar-resize-handle:hover,
 .sidebar-resize-handle[data-resize-handle-state="drag"] {
 	background-color: var(--focus, oklch(65.5% 0.1614 249.79));
+}
+
+.skeleton {
+	border-radius: calc(var(--radius) * 3);
+}
+
+.switch,
+.switch__content,
+.switch__control,
+.switch__thumb {
+	border-radius: calc(var(--radius) * 100);
+}
+
+.checkbox,
+.checkbox__content,
+.checkbox__control {
+	border-radius: calc(var(--radius) * 1.5);
+}
+
+.modal__backdrop {
+	@apply data-[entering]:duration-500 data-[entering]:ease-[cubic-bezier(0.25,1,0.5,1)] data-[exiting]:duration-200 data-[exiting]:ease-[cubic-bezier(0.5,0,0.75,0)];
+}
+
+.modal__container {
+	@apply data-[entering]:animate-in data-[entering]:fade-in-0 data-[entering]:slide-in-from-bottom-4 data-[entering]:duration-500 data-[entering]:ease-[cubic-bezier(0.25,1,0.5,1)] data-[exiting]:animate-out data-[exiting]:fade-out-0 data-[exiting]:slide-out-to-bottom-2 data-[exiting]:duration-200 data-[exiting]:ease-[cubic-bezier(0.5,0,0.75,0)];
 }

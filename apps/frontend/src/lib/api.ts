@@ -33,10 +33,14 @@ async function toApiError(error: unknown): Promise<ApiError> {
 	if (error && typeof error === "object" && "response" in error) {
 		const response = (error as { response: Response }).response;
 		let body: unknown = null;
-		try {
-			body = await response.json();
-		} catch {
-			body = null;
+		if ("data" in (error as any)) {
+			body = (error as any).data;
+		} else {
+			try {
+				body = await response.clone().json();
+			} catch {
+				body = null;
+			}
 		}
 		const apiError = fromHttpError(response.status, body, error);
 		if (apiError.code === "auth") onUnauthorized();
