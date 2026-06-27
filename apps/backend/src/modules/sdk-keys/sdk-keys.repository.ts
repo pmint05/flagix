@@ -59,6 +59,15 @@ export class SdkKeysRepository {
     return key;
   }
 
+  async revoke(id: string, actorId?: string) {
+    const [key] = await this.db
+      .update(sdkKeys)
+      .set({ isActive: false, updatedBy: actorId ?? null })
+      .where(eq(sdkKeys.id, id))
+      .returning();
+    return key ?? null;
+  }
+
   async softDelete(id: string, actorId?: string) {
     const [key] = await this.db
       .update(sdkKeys)

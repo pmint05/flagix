@@ -1,53 +1,31 @@
-interface BaseEntity {
+import { type InferSelectModel } from 'drizzle-orm';
+import {
+  featureFlags,
+  flagStates,
+  targetingRules,
+  sdkKeys,
+  projects,
+  environments,
+  organizations,
+} from '@/db/schema';
+
+type FeatureFlagEntity = InferSelectModel<typeof featureFlags>;
+type FlagStateEntity = InferSelectModel<typeof flagStates>;
+type TargetingRuleEntity = InferSelectModel<typeof targetingRules>;
+type SdkKeyEntity = InferSelectModel<typeof sdkKeys>;
+type ProjectEntity = InferSelectModel<typeof projects>;
+type EnvironmentEntity = InferSelectModel<typeof environments>;
+type OrganizationEntity = InferSelectModel<typeof organizations>;
+
+type BaseEntity = {
   id: string;
-}
+  deletedAt?: Date | string | null;
+};
 
-interface FeatureFlagEntity extends BaseEntity {
-  organizationId: string;
-  projectId: string;
-  key: string;
-  version: number;
-}
-
-interface FlagStateEntity extends BaseEntity {
-  featureFlagId: string;
-  environmentId: string;
-  isEnabled: boolean;
-  status: string;
-}
-
-interface TargetingRuleEntity extends BaseEntity {
-  organizationId: string;
-  featureFlagId: string;
-  ruleType: string;
-  priority: string;
-  isEnabled: boolean;
-}
-
-interface SdkKeyEntity extends BaseEntity {
-  organizationId: string;
-  environmentId: string;
-  name: string;
-  keyHint: string;
-  type: string;
-  isActive: boolean;
-}
-
-interface ProjectEntity extends BaseEntity {
-  organizationId: string;
-  name: string;
-  slug: string;
-}
-
-interface EnvironmentEntity extends BaseEntity {
-  projectId: string;
-  name: string;
-  slug: string;
-}
-
-interface OrganizationEntity extends BaseEntity {
-  name: string;
-  slug: string;
+function isDeleted(before: BaseEntity | null, after: BaseEntity | null): boolean {
+  if (before && !after) return true;
+  if (before && after && !before.deletedAt && after.deletedAt) return true;
+  return false;
 }
 
 export function resolveFlagAction(
@@ -55,7 +33,7 @@ export function resolveFlagAction(
   after: FeatureFlagEntity | null,
 ): string {
   if (!before && after) return 'FLAG_CREATE';
-  if (before && !after) return 'FLAG_DELETE';
+  if (isDeleted(before, after)) return 'FLAG_DELETE';
   return 'FLAG_UPDATE';
 }
 
@@ -64,7 +42,7 @@ export function resolveFlagStateAction(
   after: FlagStateEntity | null,
 ): string {
   if (!before && after) return 'FLAG_STATE_CREATE';
-  if (before && !after) return 'FLAG_STATE_DELETE';
+  if (isDeleted(before, after)) return 'FLAG_STATE_DELETE';
   if (!before || !after) return 'FLAG_STATE_UPDATE';
 
   if (before.status !== after.status) {
@@ -83,7 +61,7 @@ export function resolveRuleAction(
   after: TargetingRuleEntity | null,
 ): string {
   if (!before && after) return 'RULE_CREATE';
-  if (before && !after) return 'RULE_DELETE';
+  if (isDeleted(before, after)) return 'RULE_DELETE';
   if (!before || !after) return 'RULE_UPDATE';
 
   if (before.isEnabled !== after.isEnabled) return 'RULE_TOGGLE';
@@ -97,9 +75,14 @@ export function resolveSdkKeyAction(
   after: SdkKeyEntity | null,
 ): string {
   if (!before && after) return 'SDK_KEY_CREATE';
-  if (before && !after) return 'SDK_KEY_REVOKE';
-  if (before && after) return 'SDK_KEY_ROTATE';
-  return 'SDK_KEY_CREATE';
+  if (isDeleted(before, after)) return 'SDK_KEY_DELETE';
+  if (before && after) {
+    if (before.isActive && !after.isActive) return 'SDK_KEY_REVOKE';
+    if (before.keyHash && after.keyHash && before.keyHash !== after.keyHash) return 'SDK_KEY_ROTATE';
+    if (before.keyHint !== after.keyHint) return 'SDK_KEY_ROTATE';
+    return 'SDK_KEY_UPDATE';
+  }
+  return 'SDK_KEY_UPDATE';
 }
 
 export function resolveProjectAction(
@@ -107,7 +90,7 @@ export function resolveProjectAction(
   after: ProjectEntity | null,
 ): string {
   if (!before && after) return 'PROJECT_CREATE';
-  if (before && !after) return 'PROJECT_DELETE';
+  if (isDeleted(before, after)) return 'PROJECT_DELETE';
   return 'PROJECT_UPDATE';
 }
 
@@ -116,7 +99,7 @@ export function resolveEnvironmentAction(
   after: EnvironmentEntity | null,
 ): string {
   if (!before && after) return 'ENV_CREATE';
-  if (before && !after) return 'ENV_DELETE';
+  if (isDeleted(before, after)) return 'ENV_DELETE';
   return 'ENV_UPDATE';
 }
 
@@ -125,6 +108,6 @@ export function resolveOrganizationAction(
   after: OrganizationEntity | null,
 ): string {
   if (!before && after) return 'ORG_CREATE';
-  if (before && !after) return 'ORG_DELETE';
+  if (isDeleted(before, after)) return 'ORG_DELETE';
   return 'ORG_UPDATE';
 }
