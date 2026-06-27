@@ -83,7 +83,7 @@ export class SdkKeysService {
       throw new NotFoundException('SDK key not found');
 
     const actorId = getActorId();
-    const deleted = await this.sdkKeysRepo.softDelete(keyId, actorId);
+    const revoked = await this.sdkKeysRepo.revoke(keyId, actorId);
 
     if (this.auditLogsService) {
       const [env] = await this.db
@@ -99,7 +99,7 @@ export class SdkKeysService {
         entityType: 'sdk_key',
         entityId: keyId,
         before: key,
-        after: deleted,
+        after: revoked,
         resolveAction: resolveSdkKeyAction,
         sanitize: sanitizeSdkKey,
       });

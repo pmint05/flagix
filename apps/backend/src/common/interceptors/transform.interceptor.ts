@@ -13,6 +13,31 @@ export interface Response<T> {
   data: T;
 }
 
+const SENSITIVE_FIELDS = ['deletedAt', 'deletedBy'];
+
+function stripSensitiveFields(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (obj instanceof Date) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((v) => stripSensitiveFields(v));
+  }
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const key of Object.keys(obj)) {
+      if (SENSITIVE_FIELDS.includes(key)) {
+        continue;
+      }
+      result[key] = stripSensitiveFields(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
@@ -26,7 +51,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
       map((data) => ({
         success: true,
         message: data?.message || 'Operation successful',
-        data: data?.data !== undefined ? data.data : data,
+        data: stripSensitiveFields(data?.data !== undefined ? data.data : data),
       })),
     );
   }
