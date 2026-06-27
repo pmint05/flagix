@@ -29,13 +29,13 @@ import { KeyDisplay } from "@/features/keys/KeyDisplay";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const Route = createFileRoute(
-	"/_authenticated/projects/$projectId/sdk-keys",
+	"/_authenticated/projects/$projectSlug/sdk-keys",
 )({
 	component: SdkKeysPage,
 });
 
 function SdkKeysPage() {
-	const { projectId } = Route.useParams();
+	const { projectSlug } = Route.useParams();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isDisplayOpen, setIsDisplayOpen] = useState(false);
 	const [displayedKey, setDisplayedKey] =
@@ -75,8 +75,8 @@ function SdkKeysPage() {
 			<div className="flex items-center gap-3">
 				<Button isIconOnly variant="ghost">
 					<Link
-						to="/projects/$projectId/flags"
-						params={{ projectId }}
+						to="/projects/$projectSlug/flags"
+						params={{ projectSlug }}
 						className="flex items-center justify-center"
 					>
 						<ArrowLeft className="h-4 w-4" />

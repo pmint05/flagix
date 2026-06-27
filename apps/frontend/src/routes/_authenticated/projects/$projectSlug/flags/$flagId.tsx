@@ -26,7 +26,7 @@ import { TargetingRules } from "@/features/rules/TargetingRules";
 import type { Variation } from "@/types/feature-flag";
 
 export const Route = createFileRoute(
-	"/_authenticated/projects/$projectId/flags/$flagId",
+	"/_authenticated/projects/$projectSlug/flags/$flagId",
 )({
 	component: FlagDetail,
 });
@@ -42,9 +42,9 @@ const STATUS_BADGE_COLOR: Record<
 
 function FlagDetail() {
 	const match = useMatch({
-		from: "/_authenticated/projects/$projectId/flags/$flagId",
+		from: "/_authenticated/projects/$projectSlug/flags/$flagId",
 	});
-	const { projectId, flagId } = match.params;
+	const { projectSlug, flagId } = match.params;
 
 	const { data: flag, isLoading, isError } = useFlag(flagId);
 	const deleteFlag = useDeleteFlag();
@@ -121,8 +121,8 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 				<div className="flex items-center gap-3">
 					<Button isIconOnly variant="ghost">
 						<Link
-							to="/projects/$projectId/flags"
-							params={{ projectId }}
+							to="/projects/$projectSlug/flags"
+							params={{ projectSlug }}
 							className="flex items-center justify-center">
 							<ArrowLeftIcon className="h-4 w-4" />
 						</Link>
@@ -147,8 +147,8 @@ const variation = await flags.getVariation('${flag.key}', { default: 'control' }
 			<div className="flex items-center gap-3">
 				<Button isIconOnly variant="ghost">
 					<Link
-						to="/projects/$projectId/flags"
-						params={{ projectId }}
+						to="/projects/$projectSlug/flags"
+						params={{ projectSlug }}
 						className="flex items-center justify-center">
 						<ArrowLeftIcon className="h-4 w-4" />
 					</Link>

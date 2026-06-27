@@ -60,11 +60,11 @@ function EntitiesGroup({
 	const orgEntered = useRef(false);
 	const prjEntered = useRef(false);
 
-	// Search input refs for auto-focus
 	const orgSearchRef = useRef<HTMLInputElement>(null);
 	const prjSearchRef = useRef<HTMLInputElement>(null);
 
 	const isMobile = useIsMobile();
+	const navigate = useNavigate();
 
 	// Cleanup timers on unmount
 	useEffect(() => {
@@ -109,6 +109,10 @@ function EntitiesGroup({
 		if (selectedProject?.id !== project.id) {
 			setProject(project);
 			setEnvironment(null);
+			navigate({
+				to: "/projects/$projectSlug/environments",
+				params: { projectSlug: project.slug },
+			});
 		}
 		setMainOpen(false);
 		setPrjMenuOpen(false);
@@ -344,10 +348,15 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 	const { data: projects, isLoading: projectsLoading } = useProjects();
 
 	const navigate = useNavigate();
-	const prevOrgIdRef = useRef<string | undefined>(undefined);
+	const prevOrgIdRef = useRef<string | undefined>(selectedOrganization?.id);
+	const isInitialMount = useRef(true);
 
 	// Auto-select first project (or redirect to /projects) when org changes
 	useEffect(() => {
+		if (isInitialMount.current) {
+			return;
+		}
+
 		const orgId = selectedOrganization?.id;
 		if (!orgId) return;
 		if (orgId === prevOrgIdRef.current) return;
@@ -359,6 +368,13 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 	}, [selectedOrganization?.id, setProject, setEnvironment]);
 
 	useEffect(() => {
+		if (isInitialMount.current) {
+			if (!projectsLoading) {
+				isInitialMount.current = false;
+			}
+			return;
+		}
+
 		const orgId = selectedOrganization?.id;
 		if (!orgId) return;
 		if (orgId !== prevOrgIdRef.current) return;
@@ -366,6 +382,10 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 
 		if (projects && projects.length > 0) {
 			setProject(projects[0]);
+			navigate({
+				to: "/projects/$projectSlug/environments",
+				params: { projectSlug: projects[0].slug },
+			});
 		} else {
 			navigate({ to: "/projects" });
 		}

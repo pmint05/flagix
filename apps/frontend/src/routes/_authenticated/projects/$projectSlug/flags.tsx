@@ -32,7 +32,7 @@ import { useState } from "react";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 
 export const Route = createFileRoute(
-	"/_authenticated/projects/$projectId/flags",
+	"/_authenticated/projects/$projectSlug/flags",
 )({
 	component: FlagsIndex,
 });
@@ -47,8 +47,10 @@ const STATUS_BADGE_COLOR: Record<
 };
 
 function FlagsIndex() {
-	const match = useMatch({ from: "/_authenticated/projects/$projectId/flags" });
-	const { projectId } = match.params;
+	const match = useMatch({
+		from: "/_authenticated/projects/$projectSlug/flags",
+	});
+	const { projectSlug } = match.params;
 	const [statusFilter, setStatusFilter] = useState<string | undefined>(
 		undefined,
 	);
@@ -89,14 +91,6 @@ function FlagsIndex() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center gap-3">
-				<Button isIconOnly variant="ghost">
-					<Link
-						to="/projects/$projectId/environments"
-						params={{ projectId }}
-						className="flex items-center justify-center">
-						<ArrowLeftIcon className="h-4 w-4" />
-					</Link>
-				</Button>
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">Feature Flags</h1>
 					<p className="mt-1 text-sm">

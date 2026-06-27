@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType } from "react";
 
 export interface BreadcrumbSegment {
 	/** Static label or function to resolve from route params */
@@ -10,7 +10,7 @@ export interface BreadcrumbSegment {
 	/**
 	 * If set, this segment's label should be resolved by fetching
 	 * data. The breadcrumb component will use this key to determine
-	 * what to resolve (e.g., 'projectId' -> use project name).
+	 * what to resolve (e.g., 'projectSlug' -> use project name).
 	 */
 	resolveParam?: string;
 }
@@ -20,44 +20,44 @@ export interface BreadcrumbSegment {
  * Route IDs must match exactly with those in routeTree.gen.ts.
  */
 export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
-	'/_authenticated/': [{ label: 'Dashboard' }],
-	'/_authenticated/projects/': [{ label: 'Projects', href: '/projects' }],
-	'/_authenticated/projects/$projectId/flags': [
-		{ label: 'Projects', href: '/projects' },
+	"/_authenticated/": [{ label: "Dashboard" }],
+	"/_authenticated/projects/": [{ label: "Projects", href: "/projects" }],
+	"/_authenticated/projects/$projectSlug/flags": [
+		// { label: "Projects", href: "/projects" },
 		{
-			label: (p) => p.projectId,
-			href: (p) => `/projects/${p.projectId}/flags`,
-			resolveParam: 'projectId',
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/flags`,
+			resolveParam: "projectSlug",
 		},
-		{ label: 'Feature Flags' },
+		{ label: "Feature Flags" },
 	],
-	'/_authenticated/projects/$projectId/flags/$flagId': [
-		{ label: 'Projects', href: '/projects' },
+	"/_authenticated/projects/$projectSlug/flags/$flagId": [
+		// { label: "Projects", href: "/projects" },
 		{
-			label: (p) => p.projectId,
-			href: (p) => `/projects/${p.projectId}/flags`,
-			resolveParam: 'projectId',
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/flags`,
+			resolveParam: "projectSlug",
 		},
-		{ label: 'Feature Flags', href: (p) => `/projects/${p.projectId}/flags` },
-		{ label: (p) => p.flagId, resolveParam: 'flagId' },
+		{ label: "Feature Flags", href: (p) => `/projects/${p.projectSlug}/flags` },
+		{ label: (p) => p.flagId, resolveParam: "flagId" },
 	],
-	'/_authenticated/projects/$projectId/environments': [
-		{ label: 'Projects', href: '/projects' },
+	"/_authenticated/projects/$projectSlug/environments": [
+		// { label: "Projects", href: "/projects" },
 		{
-			label: (p) => p.projectId,
-			href: (p) => `/projects/${p.projectId}/flags`,
-			resolveParam: 'projectId',
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/flags`,
+			resolveParam: "projectSlug",
 		},
-		{ label: 'Environments' },
+		{ label: "Environments" },
 	],
-	'/_authenticated/projects/$projectId/sdk-keys': [
-		{ label: 'Projects', href: '/projects' },
+	"/_authenticated/projects/$projectSlug/sdk-keys": [
+		// { label: "Projects", href: "/projects" },
 		{
-			label: (p) => p.projectId,
-			href: (p) => `/projects/${p.projectId}/flags`,
-			resolveParam: 'projectId',
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/flags`,
+			resolveParam: "projectSlug",
 		},
-		{ label: 'SDK Keys' },
+		{ label: "SDK Keys" },
 	],
 };
 
@@ -68,7 +68,7 @@ export function resolveLabel(
 	label: string | ((params: Record<string, string>) => string),
 	params: Record<string, string>,
 ): string {
-	return typeof label === 'function' ? label(params) : label;
+	return typeof label === "function" ? label(params) : label;
 }
 
 /**
@@ -79,5 +79,5 @@ export function resolveHref(
 	params: Record<string, string>,
 ): string | undefined {
 	if (!href) return undefined;
-	return typeof href === 'function' ? href(params) : href;
+	return typeof href === "function" ? href(params) : href;
 }

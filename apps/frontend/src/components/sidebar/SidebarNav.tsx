@@ -1,21 +1,29 @@
-import { useMatchRoute } from '@tanstack/react-router';
+import { useMatchRoute } from "@tanstack/react-router";
 import {
 	FlagIcon,
 	TreeStructureIcon,
 	KeyIcon,
 	ClockCounterClockwiseIcon,
-} from '@phosphor-icons/react';
-import { useContextStore, useSidebarStore } from '#/stores';
-import { SidebarNavItem } from './SidebarNavItem';
+} from "@phosphor-icons/react";
+import { useContextStore, useSidebarStore } from "#/stores";
+import { SidebarNavItem } from "./SidebarNavItem";
 
 const PROJECT_NAV_ITEMS = [
-	{ to: '/projects/$projectId/flags', label: 'Feature Flags', icon: FlagIcon },
-	{ to: '/projects/$projectId/environments', label: 'Environments', icon: TreeStructureIcon },
-	{ to: '/projects/$projectId/sdk-keys', label: 'SDK Keys', icon: KeyIcon },
+	{
+		to: "/projects/$projectSlug/flags",
+		label: "Feature Flags",
+		icon: FlagIcon,
+	},
+	{
+		to: "/projects/$projectSlug/environments",
+		label: "Environments",
+		icon: TreeStructureIcon,
+	},
+	{ to: "/projects/$projectSlug/sdk-keys", label: "SDK Keys", icon: KeyIcon },
 ];
 
 const GLOBAL_NAV_ITEMS = [
-	{ to: '/audit-logs', label: 'Audit Logs', icon: ClockCounterClockwiseIcon },
+	{ to: "/audit-logs", label: "Audit Logs", icon: ClockCounterClockwiseIcon },
 ];
 
 export function SidebarNav() {
@@ -34,7 +42,7 @@ export function SidebarNav() {
 				)}
 				{selectedProject ? (
 					PROJECT_NAV_ITEMS.map((item) => {
-						const to = item.to.replace('$projectId', selectedProject.id);
+						const to = item.to.replace("$projectSlug", selectedProject.slug);
 						const isActive = !!matchRoute({ to, fuzzy: true });
 						return (
 							<SidebarNavItem
@@ -50,9 +58,8 @@ export function SidebarNav() {
 				) : (
 					<div
 						className={`px-3 py-2 text-sm transition-all ${
-							isCollapsed ? 'hidden' : 'block'
-						}`}
-					>
+							isCollapsed ? "hidden" : "block"
+						}`}>
 						Select a project
 					</div>
 				)}

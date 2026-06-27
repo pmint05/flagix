@@ -1,14 +1,25 @@
-import { Dropdown, Button, Label } from "@heroui/react";
+import { Dropdown, Button, Label, Header } from "@heroui/react";
 import {
 	DotsThreeOutlineVerticalIcon,
 	CopyIcon,
-	GearIcon,
+	PencilSimpleIcon,
 	PlusIcon,
+	HashIcon,
+	LinkSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { toast } from "sonner";
+import type { Environment } from "#/types/environment";
 
-export function EnvironmentActions() {
+interface EnvironmentActionsProps {
+	onOpenCreate: () => void;
+	onOpenEdit: (env: Environment) => void;
+}
+
+export function EnvironmentActions({
+	onOpenCreate,
+	onOpenEdit,
+}: EnvironmentActionsProps) {
 	const { selectedEnvironment } = useContextStore();
 
 	const handleCopyId = () => {
@@ -18,12 +29,28 @@ export function EnvironmentActions() {
 		}
 	};
 
+	const handleCopySlug = () => {
+		if (selectedEnvironment) {
+			navigator.clipboard.writeText(selectedEnvironment.slug);
+			toast.success("Environment slug copied to clipboard");
+		}
+	};
+
+	const handleEdit = () => {
+		if (!selectedEnvironment) {
+			toast.info("Select an environment first");
+			return;
+		}
+		onOpenEdit(selectedEnvironment);
+	};
+
 	return (
 		<Dropdown>
 			<Dropdown.Trigger
-				render={() => (
+				render={(props) => (
 					<Button
-						variant="ghost"
+						ref={props.ref}
+						variant="secondary"
 						size="sm"
 						isIconOnly
 						aria-label="Environment actions">
@@ -33,21 +60,37 @@ export function EnvironmentActions() {
 			/>
 			<Dropdown.Popover placement="bottom end">
 				<Dropdown.Menu aria-label="Environment Actions">
-					<Dropdown.Item
-						id="copy"
-						onPress={handleCopyId}
-						isDisabled={!selectedEnvironment}>
-						<CopyIcon size={16} />
-						<Label>Copy Environment ID</Label>
-					</Dropdown.Item>
-					<Dropdown.Item id="settings" onPress={() => toast("Coming soon")}>
-						<GearIcon size={16} />
-						<Label>Environment Settings</Label>
-					</Dropdown.Item>
-					<Dropdown.Item id="create" onPress={() => toast("Coming soon")}>
-						<PlusIcon size={16} />
-						<Label>Create Environment</Label>
-					</Dropdown.Item>
+					<Dropdown.Section>
+						<Header>Copy</Header>
+						<Dropdown.Item
+							id="copy-id"
+							onPress={handleCopyId}
+							isDisabled={!selectedEnvironment}>
+							<HashIcon size={16} />
+							<Label>Environment ID</Label>
+						</Dropdown.Item>
+						<Dropdown.Item
+							id="copy-slug"
+							onPress={handleCopySlug}
+							isDisabled={!selectedEnvironment}>
+							<LinkSimpleIcon size={16} />
+							<Label>Environment Slug</Label>
+						</Dropdown.Item>
+					</Dropdown.Section>
+					<Dropdown.Section>
+						<Header>Manage</Header>
+						<Dropdown.Item
+							id="edit"
+							onPress={handleEdit}
+							isDisabled={!selectedEnvironment}>
+							<PencilSimpleIcon size={16} />
+							<Label>Edit Environment</Label>
+						</Dropdown.Item>
+						<Dropdown.Item id="create" onPress={onOpenCreate}>
+							<PlusIcon size={16} />
+							<Label>Create Environment</Label>
+						</Dropdown.Item>
+					</Dropdown.Section>
 				</Dropdown.Menu>
 			</Dropdown.Popover>
 		</Dropdown>
