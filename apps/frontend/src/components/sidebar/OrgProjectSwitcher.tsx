@@ -1,11 +1,10 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
 	Popover,
 	PopoverTrigger,
 	PopoverContent,
 	Button,
 	Separator,
-	cn,
 } from "@heroui/react";
 import {
 	GearIcon,
@@ -14,9 +13,11 @@ import {
 	FolderOpenIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
+import { useUIStore } from "#/stores/ui";
 import { useOrganizations } from "#/features/organizations/api";
-import { useProjects } from "#/features/projects/api";
+import { useProjects, createProjectsApi, PROJECTS_KEY } from "#/features/projects/api";
 import { useNavigate, Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { EntityList } from "./EntityList";
 import { useIsMobile } from "#/hooks/useIsMobile";
 import { OrganizationModal } from "#/features/organizations/OrganizationModal";
@@ -65,6 +66,7 @@ function EntitiesGroup({
 
 	const isMobile = useIsMobile();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 
 	// Cleanup timers on unmount
 	useEffect(() => {
@@ -95,14 +97,55 @@ function EntitiesGroup({
 		}
 	}, [prjMenuOpen]);
 
-	const handleOrgSelect = (org: any) => {
+	const handleOrgSelect = async (org: any) => {
 		if (selectedOrganization?.id !== org.id) {
 			setOrganization(org);
 			setProject(null);
 			setEnvironment(null);
+			setMainOpen(false);
+			setOrgMenuOpen(false);
+
+			const { showGlobalLoading, hideGlobalLoading, setGlobalLoadingMessage } = useUIStore.getState();
+			const startTime = Date.now();
+
+			try {
+				showGlobalLoading("Changing organization...");
+
+				// Add a small delay so the animation can start smoothly before the main thread blocks
+				await new Promise((r) => setTimeout(r, 50));
+
+				setGlobalLoadingMessage("Loading projects...");
+				const orgProjects = await queryClient.fetchQuery({
+					queryKey: [...PROJECTS_KEY, org.id],
+					queryFn: () => createProjectsApi(org.id).list(),
+				});
+
+				if (orgProjects && orgProjects.length > 0) {
+					setGlobalLoadingMessage(`Navigating to ${orgProjects[0].name}...`);
+					setProject(orgProjects[0]);
+					await navigate({
+						to: "/projects/$projectSlug/environments",
+						params: { projectSlug: orgProjects[0].slug },
+					});
+				} else {
+					setGlobalLoadingMessage("Navigating to projects...");
+					await navigate({ to: "/projects" });
+				}
+			} catch (error) {
+				setGlobalLoadingMessage("Error occurred. Redirecting...");
+				await navigate({ to: "/projects" });
+			} finally {
+				const elapsedTime = Date.now() - startTime;
+				const MIN_LOADING_TIME = 1000;
+				if (elapsedTime < MIN_LOADING_TIME) {
+					await new Promise((r) => setTimeout(r, MIN_LOADING_TIME - elapsedTime));
+				}
+				hideGlobalLoading();
+			}
+		} else {
+			setMainOpen(false);
+			setOrgMenuOpen(false);
 		}
-		setMainOpen(false);
-		setOrgMenuOpen(false);
 	};
 
 	const handleProjectSelect = (project: any) => {
@@ -346,56 +389,6 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 
 	const { data: orgs, isLoading: orgsLoading } = useOrganizations();
 	const { data: projects, isLoading: projectsLoading } = useProjects();
-
-	const navigate = useNavigate();
-	const prevOrgIdRef = useRef<string | undefined>(selectedOrganization?.id);
-	const isInitialMount = useRef(true);
-
-	// Auto-select first project (or redirect to /projects) when org changes
-	useEffect(() => {
-		if (isInitialMount.current) {
-			return;
-		}
-
-		const orgId = selectedOrganization?.id;
-		if (!orgId) return;
-		if (orgId === prevOrgIdRef.current) return;
-		prevOrgIdRef.current = orgId;
-
-		// Org changed — clear current project, wait for projects to load
-		setProject(null);
-		setEnvironment(null);
-	}, [selectedOrganization?.id, setProject, setEnvironment]);
-
-	useEffect(() => {
-		if (isInitialMount.current) {
-			if (!projectsLoading) {
-				isInitialMount.current = false;
-			}
-			return;
-		}
-
-		const orgId = selectedOrganization?.id;
-		if (!orgId) return;
-		if (orgId !== prevOrgIdRef.current) return;
-		if (projectsLoading) return;
-
-		if (projects && projects.length > 0) {
-			setProject(projects[0]);
-			navigate({
-				to: "/projects/$projectSlug/environments",
-				params: { projectSlug: projects[0].slug },
-			});
-		} else {
-			navigate({ to: "/projects" });
-		}
-	}, [
-		selectedOrganization?.id,
-		projects,
-		projectsLoading,
-		setProject,
-		navigate,
-	]);
 
 	const [mainOpen, setMainOpen] = useState(false);
 	const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);

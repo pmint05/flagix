@@ -19,7 +19,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { Panel, Group as PanelGroup } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -76,13 +76,7 @@ function AuthenticatedLayout() {
 		}
 	}, [isCollapsed, size]);
 
-	const [windowWidth, setWindowWidth] = useState(0);
 
-	useEffect(() => {
-		const handleResize = () => setWindowWidth(window.innerWidth);
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
 
 	if (!isHydrated) {
 		return (
@@ -145,7 +139,7 @@ function AuthenticatedLayout() {
 	// Desktop layout: PanelGroup with resizable sidebar
 	return (
 		<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden">
-			<PanelGroup key={windowWidth} orientation="horizontal">
+			<PanelGroup orientation="horizontal">
 				<Panel
 					panelRef={panelRef}
 					defaultSize={
@@ -182,7 +176,7 @@ function AuthenticatedLayout() {
 					minSize={50}
 					className="flex flex-col bg-background dark:bg-background-tertiary">
 					<Header />
-					<main className="flex-1">
+					<main className="flex-1 overflow-auto">
 						<div className="h-full p-6 bg-surface dark:bg-background-secondary rounded-tl-3xl overflow-auto border">
 							<Outlet />
 						</div>
