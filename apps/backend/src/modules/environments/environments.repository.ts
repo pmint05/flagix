@@ -57,6 +57,7 @@ export class EnvironmentsRepository {
         projectId: input.projectId,
         name: input.name,
         slug: input.slug!,
+        type: input.type ?? 'development',
         description: input.description ?? null,
         createdBy: actorId ?? null,
       })
@@ -69,6 +70,8 @@ export class EnvironmentsRepository {
       .update(environments)
       .set({
         ...(input.name !== undefined && { name: input.name }),
+        ...(input.type !== undefined && { type: input.type }),
+        ...(input.isActive !== undefined && { isActive: input.isActive }),
         ...(input.description !== undefined && {
           description: input.description,
         }),

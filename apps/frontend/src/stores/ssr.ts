@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { create, type StateCreator } from 'zustand';
 import {
   createJSONStorage,
@@ -60,6 +60,9 @@ export function createPersistedStore<T>(
   return store;
 }
 
+let _isHydrated = false;
+const hydrationListeners = new Set<(hydrated: boolean) => void>();
+
 /**
  * Mounted once in `routes/__root.tsx`. Rehydrates every registered persisted
  * store on the client. Safe to call multiple times — registration is a
@@ -67,7 +70,34 @@ export function createPersistedStore<T>(
  */
 export function useHydrateStores() {
   useEffect(() => {
-    if (isSSR) return;
-    void Promise.all(registry.map((entry) => entry.rehydrate()));
+    if (isSSR || _isHydrated) return;
+    void Promise.all(registry.map((entry) => entry.rehydrate())).then(() => {
+      _isHydrated = true;
+      hydrationListeners.forEach((listener) => listener(true));
+    });
   }, []);
+}
+
+/**
+ * Returns true if the persisted stores have finished hydrating.
+ *
+ * Always initialises to `false` so the first render on both server and client
+ * produces identical markup (avoiding hydration mismatch). The `useEffect`
+ * callback — which only runs on the client — immediately flips to `true` when
+ * stores have already been rehydrated.
+ */
+export function useIsHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (_isHydrated) {
+      setHydrated(true);
+      return;
+    }
+    const listener = (h: boolean) => setHydrated(h);
+    hydrationListeners.add(listener);
+    return () => {
+      hydrationListeners.delete(listener);
+    };
+  }, []);
+  return hydrated;
 }

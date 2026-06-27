@@ -2,9 +2,10 @@ import { z } from "zod";
 
 export const uuidSchema = z.uuid();
 export const timestampSchema = z.iso.datetime();
-export const nonEmptyString = z.string().min(1).max(255);
+export const nonEmptyString = z.string().trim().min(1).max(255);
 export const slugSchema = z
 	.string()
+	.trim()
 	.regex(/^[a-zA-Z0-9-_]+$/)
 	.min(1)
 	.max(100);

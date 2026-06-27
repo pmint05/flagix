@@ -20,7 +20,7 @@ function AuthLayout() {
 							Flagix
 						</h1>
 					</div>
-					<p className="mt-2 text-sm text-default-500">
+					<p className="mt-2 text-sm">
 						Master your feature flags with precision
 					</p>
 				</div>

@@ -10,7 +10,7 @@ import {
 	TextField,
 	Input,
 	TextArea,
-	Modal,
+	Drawer,
 	toast,
 } from "@heroui/react";
 import { useCreateProject, useUpdateProject } from "./api";
@@ -67,8 +67,6 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 		}
 	}, [isOpen, project, reset]);
 
-	console.log(errors);
-
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
 			if (isEditing) {
@@ -94,16 +92,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	};
 
 	return (
-		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Modal.Backdrop>
-				<Modal.Container>
-					<Modal.Dialog>
-						<Modal.Header>
-							<Modal.Heading>
+		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Drawer.Backdrop>
+				<Drawer.Content placement="right">
+					<Drawer.Dialog>
+						<Drawer.Header>
+							<Drawer.Heading>
 								{isEditing ? "Edit Project" : "Create Project"}
-							</Modal.Heading>
-						</Modal.Header>
-						<Modal.Body>
+							</Drawer.Heading>
+						</Drawer.Header>
+						<Drawer.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 								<TextField>
 									<Label>Name</Label>
@@ -146,7 +144,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 									/>
 								</TextField>
 
-								<Modal.Footer>
+								<Drawer.Footer>
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
@@ -158,12 +156,12 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 										}>
 										{isEditing ? "Update" : "Create"}
 									</Button>
-								</Modal.Footer>
+								</Drawer.Footer>
 							</Form>
-						</Modal.Body>
-					</Modal.Dialog>
-				</Modal.Container>
-			</Modal.Backdrop>
-		</Modal.Root>
+						</Drawer.Body>
+					</Drawer.Dialog>
+				</Drawer.Content>
+			</Drawer.Backdrop>
+		</Drawer>
 	);
 }

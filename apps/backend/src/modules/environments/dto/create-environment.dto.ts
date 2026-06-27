@@ -1,4 +1,10 @@
-import { IsString, Length, Matches, IsOptional } from 'class-validator';
+import {
+  IsString,
+  Length,
+  Matches,
+  IsOptional,
+  IsIn,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateEnvironmentDto {
@@ -13,6 +19,15 @@ export class CreateEnvironmentDto {
   @Matches(/^[a-z0-9-]+$/)
   @Length(1, 100)
   slug?: string;
+
+  @ApiPropertyOptional({
+    enum: ['development', 'staging', 'production', 'custom'],
+    default: 'development',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['development', 'staging', 'production', 'custom'])
+  type?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

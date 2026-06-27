@@ -3,11 +3,6 @@ import {
 	Button,
 	Skeleton,
 	Table,
-	TableBody,
-	TableColumn,
-	TableHeader,
-	TableRow,
-	TableCell,
 	Tooltip,
 } from "@heroui/react";
 import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -50,7 +45,7 @@ function ProjectsIndex() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-foreground">Projects</h1>
-					<p className="mt-1 text-sm text-default-500">
+					<p className="mt-1 text-sm">
 						Manage your feature flag projects
 					</p>
 				</div>
@@ -97,12 +92,12 @@ function ProjectsIndex() {
 												</span>
 											</Table.Cell>
 											<Table.Cell>
-												<span className="text-default-500">
+												<span>
 													{project.description || "—"}
 												</span>
 											</Table.Cell>
 											<Table.Cell>
-												<span className="text-default-700">
+												<span>
 													{project.flagCount ?? 0}
 												</span>
 											</Table.Cell>
@@ -152,7 +147,7 @@ function ProjectsIndex() {
 								onPress={() => setPage(page - 1)}>
 								Previous
 							</Button>
-							<span className="text-sm text-default-500">
+							<span className="text-sm">
 								Page {page} of {totalPages}
 							</span>
 							<Button

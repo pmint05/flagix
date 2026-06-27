@@ -21,12 +21,12 @@ export function EmptyState({
 	return (
 		<div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
 			{icon && (
-				<div className="text-default-400 [&_svg]:h-12 [&_svg]:w-12">{icon}</div>
+				<div className="text-default [&_svg]:h-12 [&_svg]:w-12">{icon}</div>
 			)}
 			<div className="space-y-1">
-				<h3 className="text-lg font-medium text-default-700">{title}</h3>
+				<h3 className="text-lg font-medium text-default-foreground">{title}</h3>
 				{description && (
-					<p className="text-sm text-default-500">{description}</p>
+					<p className="text-sm">{description}</p>
 				)}
 			</div>
 			{actionLabel && onAction && (

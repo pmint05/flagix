@@ -79,12 +79,12 @@ function LoginPage() {
 	};
 
 	return (
-		<Card className="p-6">
+		<Card className="p-6 rounded-[1.5rem]">
 			<Card.Header>
 				<Card.Title className="text-lg font-semibold text-foreground">
 					Sign in to your account
 				</Card.Title>
-				<Card.Description className="text-sm text-default-500">
+				<Card.Description className="text-sm">
 					Enter your details to proceed
 				</Card.Description>
 			</Card.Header>
@@ -99,10 +99,7 @@ function LoginPage() {
 								<Label className="font-medium">Email address</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<EnvelopeSimpleIcon
-											className="text-default-400 size-5"
-											weight="bold"
-										/>
+										<EnvelopeSimpleIcon className="size-5" weight="bold" />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("email")}
@@ -125,10 +122,7 @@ function LoginPage() {
 								</div>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<LockKeyIcon
-											className="text-default-400 size-5"
-											weight="bold"
-										/>
+										<LockKeyIcon className="size-5" weight="bold" />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("password")}
@@ -144,7 +138,7 @@ function LoginPage() {
 											variant="ghost"
 											onClick={toggleVisibility}
 											aria-label="Toggle password visibility"
-											className="text-default-400 hover:text-default-600">
+											className="">
 											{isVisible ? <EyeSlashIcon /> : <EyeIcon />}
 										</Button>
 									</InputGroup.Suffix>
@@ -162,7 +156,7 @@ function LoginPage() {
 								{!isLoading && <SignInIcon weight="bold" className="mr-2" />}
 								{isLoading ? <Spinner size="sm" color="current" /> : "Sign in"}
 							</Button>
-							<div className="mt-4 text-center text-sm text-default-500">
+							<div className="mt-4 text-center text-sm">
 								Don't have an account?{" "}
 								<Link
 									to="/signup"

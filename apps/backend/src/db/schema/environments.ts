@@ -5,12 +5,13 @@ import {
   varchar,
   text,
   timestamp,
+  boolean,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { projects } from './projects';
-import { featureFlags } from './feature-flags';
+import { flagStates } from './flag-states';
 import { sdkKeys } from './sdk-keys';
 import { user } from './auth-schema';
 
@@ -26,6 +27,8 @@ export const environments = pgTable(
       .references(() => projects.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 100 }).notNull(),
+    type: varchar('type', { length: 50 }).notNull().default('development'),
+    isActive: boolean('is_active').notNull().default(true),
     description: text('description'),
     createdBy: text('created_by').references(() => user.id),
     updatedBy: text('updated_by').references(() => user.id),
@@ -58,7 +61,7 @@ export const environmentRelations = relations(
       fields: [environments.projectId],
       references: [projects.id],
     }),
-    featureFlags: many(featureFlags),
+    flagStates: many(flagStates),
     sdkKeys: many(sdkKeys),
   }),
 );

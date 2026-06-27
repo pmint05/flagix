@@ -94,11 +94,11 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 4
 
-- [ ] T025 [P] [US4] Create Flags API methods in `apps/frontend/src/features/flags/api.ts`
-- [ ] T026 [US4] Create Flags list page with status filter and client-side search in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/index.tsx` (Note: relies on `selectedEnvironment` from global store to fetch flags)
-- [ ] T027 [US4] Implement Flag fast toggle component in `apps/frontend/src/features/flags/FlagToggle.tsx` using HeroUI's native `Switch`
-- [ ] T028 [US4] Implement Create Flag modal (defines key, name, type, and immutable variations) using HeroUI `Form`, RHF and Zod in `apps/frontend/src/features/flags/FlagModal.tsx`
-- [ ] T029 [US4] Create Flag Detail page showing Draft/Active/Archived badges and allowing name/description updates in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/$flagId.tsx`
+- [X] T025 [P] [US4] Create Flags API methods in `apps/frontend/src/features/flags/api.ts`
+- [X] T026 [US4] Create Flags list page with status filter and client-side search in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/index.tsx` (Note: relies on `selectedEnvironment` from global store to fetch flags)
+- [X] T027 [US4] Implement Flag fast toggle component in `apps/frontend/src/features/flags/FlagToggle.tsx` using HeroUI's native `Switch`
+- [X] T028 [US4] Implement Create Flag modal (defines key, name, type, and immutable variations) using HeroUI `Form`, RHF and Zod in `apps/frontend/src/features/flags/FlagModal.tsx`
+- [X] T029 [US4] Create Flag Detail page showing Draft/Active/Archived badges and allowing name/description updates in `apps/frontend/src/routes/_authenticated/projects/$projectId/flags/$flagId.tsx`
 
 ---
 
@@ -110,11 +110,11 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 5
 
-- [ ] T030 [P] [US5] Create Rules API methods in `apps/frontend/src/features/rules/api.ts`
-- [ ] T031 [US5] Create Rules section for the flag detail page in `apps/frontend/src/features/rules/TargetingRules.tsx`
-- [ ] T032 [US5] Implement Rule editor (KillSwitch, User, Role, Percentage) allowing variation selection using HeroUI `Form` in `apps/frontend/src/features/rules/RuleEditor.tsx`
-- [ ] T033 [US5] Add custom Zod validation to ensure Percentage Rollout sums to exactly 100% in `apps/frontend/src/features/rules/schema.ts`
-- [ ] T034 [US5] Implement drag-and-drop rule reordering (recalculating LexoRank priority string for `UpdateTargetingRuleDto`) in `apps/frontend/src/features/rules/RulesList.tsx`
+- [X] T030 [P] [US5] Create Rules API methods in `apps/frontend/src/features/rules/api.ts`
+- [X] T031 [US5] Create Rules section for the flag detail page in `apps/frontend/src/features/rules/TargetingRules.tsx`
+- [X] T032 [US5] Implement Rule editor (KillSwitch, User, Role, Percentage) allowing variation selection using HeroUI `Form` in `apps/frontend/src/features/rules/RuleEditor.tsx`
+- [X] T033 [US5] Add custom Zod validation to ensure Percentage Rollout sums to exactly 100% in `apps/frontend/src/features/rules/schema.ts`
+- [X] T034 [US5] Implement drag-and-drop rule reordering (recalculating LexoRank priority string for `UpdateTargetingRuleDto`) in `apps/frontend/src/features/rules/RulesList.tsx`
 
 ---
 
@@ -126,10 +126,10 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 6
 
-- [ ] T035 [P] [US6] Create SDK Keys API methods in `apps/frontend/src/features/keys/api.ts`
-- [ ] T036 [US6] Create SDK Keys page grouped by environment in `apps/frontend/src/routes/_authenticated/projects/$projectId/sdk-keys.tsx`
-- [ ] T037 [US6] Implement Generate Key modal with 5-key limit enforcement using HeroUI `Form` in `apps/frontend/src/features/keys/KeyModal.tsx`
-- [ ] T038 [US6] Implement one-time raw key display dialog and masked format view in `apps/frontend/src/features/keys/KeyDisplay.tsx`
+- [X] T035 [P] [US6] Create SDK Keys API methods in `apps/frontend/src/features/keys/api.ts`
+- [X] T036 [US6] Create SDK Keys page grouped by environment in `apps/frontend/src/routes/_authenticated/projects/$projectId/sdk-keys.tsx`
+- [X] T037 [US6] Implement Generate Key modal with 5-key limit enforcement using HeroUI `Form` in `apps/frontend/src/features/keys/KeyModal.tsx`
+- [X] T038 [US6] Implement one-time raw key display dialog and masked format view in `apps/frontend/src/features/keys/KeyDisplay.tsx`
 
 ---
 
