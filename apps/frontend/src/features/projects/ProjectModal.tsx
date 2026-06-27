@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -47,25 +47,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 		handleSubmit,
 		reset,
 		setValue,
+		control,
 		formState: { errors },
 	} = useForm<ProjectFormData>({
 		resolver: zodResolver(projectFormSchema),
-		defaultValues: {
+		values: {
 			name: project?.name ?? "",
 			slug: project?.slug ?? "",
 			description: project?.description ?? "",
 		},
 	});
-
-	useEffect(() => {
-		if (isOpen) {
-			reset({
-				name: project?.name ?? "",
-				slug: project?.slug ?? "",
-				description: project?.description ?? "",
-			});
-		}
-	}, [isOpen, project, reset]);
 
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
@@ -103,46 +94,68 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 						</Drawer.Header>
 						<Drawer.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField>
-									<Label>Name</Label>
-									<Input
-										variant="secondary"
-										{...register("name")}
-										placeholder="My Project"
-										onChange={(e) => {
-											register("name").onChange(e);
-											if (!isEditing) {
-												setValue("slug", slugify(e.currentTarget.value));
-											}
-										}}
-									/>
-									{errors.name && (
-										<FieldError>{errors.name.message}</FieldError>
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.name}
+											variant="secondary"
+											value={field.value}
+											onChange={(val) => {
+												field.onChange(val);
+												if (!isEditing) {
+													setValue("slug", slugify(val));
+												}
+											}}
+											onBlur={field.onBlur}>
+											<Label>Name</Label>
+											<Input placeholder="My Project" />
+											{errors.name && (
+												<FieldError>{errors.name.message}</FieldError>
+											)}
+										</TextField>
 									)}
-								</TextField>
+								/>
 
-								<TextField name="slug" isInvalid={!!errors.slug}>
-									<Label>Slug</Label>
-									<Input
-										variant="secondary"
-										{...register("slug")}
-										placeholder="my-project"
-										disabled={isEditing}
-									/>
-									{errors.slug && (
-										<FieldError>{errors.slug.message}</FieldError>
+								<Controller
+									name="slug"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.slug}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}
+											isDisabled={isEditing}>
+											<Label>Slug</Label>
+											<Input placeholder="my-project" />
+											{errors.slug && (
+												<FieldError>{errors.slug.message}</FieldError>
+											)}
+										</TextField>
 									)}
-								</TextField>
+								/>
 
-								<TextField>
-									<Label>Description</Label>
-									<TextArea
-										variant="secondary"
-										{...register("description")}
-										placeholder="Optional description"
-										rows={3}
-									/>
-								</TextField>
+								<Controller
+									name="description"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.description}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Description</Label>
+											<TextArea placeholder="Optional description" rows={3} />
+											{errors.description && (
+												<FieldError>{errors.description.message}</FieldError>
+											)}
+										</TextField>
+									)}
+								/>
 
 								<Drawer.Footer>
 									<Button variant="ghost" onPress={onClose}>

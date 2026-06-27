@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button, Skeleton, Table, Tooltip } from "@heroui/react";
 import {
-	Button,
-	Skeleton,
-	Table,
-	Tooltip,
-} from "@heroui/react";
-import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+	PencilSimpleIcon,
+	PlusIcon,
+	TrashSimpleIcon,
+} from "@phosphor-icons/react";
 import { useProjects, useDeleteProject } from "@/features/projects/api";
 import { ProjectModal } from "@/features/projects/ProjectModal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useState } from "react";
 import type { Project } from "@/types/project";
+import CopyButton from "#/components/ui/copy-button";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
 	component: ProjectsIndex,
@@ -45,9 +45,7 @@ function ProjectsIndex() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-foreground">Projects</h1>
-					<p className="mt-1 text-sm">
-						Manage your feature flag projects
-					</p>
+					<p className="mt-1 text-sm">Manage your feature flag projects</p>
 				</div>
 				<Button variant="primary" className="gap-2" onPress={handleCreate}>
 					<PlusIcon className="h-4 w-4" />
@@ -79,6 +77,7 @@ function ProjectsIndex() {
 							<Table.Content>
 								<Table.Header>
 									<Table.Column>Name</Table.Column>
+									<Table.Column>Slug</Table.Column>
 									<Table.Column>Description</Table.Column>
 									<Table.Column>Flags</Table.Column>
 									<Table.Column>Actions</Table.Column>
@@ -87,19 +86,31 @@ function ProjectsIndex() {
 									{(project: Project) => (
 										<Table.Row key={project.id}>
 											<Table.Cell>
-												<span className="font-medium text-primary">
+												<Link
+													className="font-medium hover:underline hover:text-accent transition"
+													to={`/projects/$projectSlug/flags`}
+													params={{ projectSlug: project.slug }}>
 													{project.name}
-												</span>
+												</Link>
 											</Table.Cell>
 											<Table.Cell>
-												<span>
-													{project.description || "—"}
-												</span>
+												<div className="flex items-center gap-2 group">
+													<span>{project.slug}</span>
+													<CopyButton
+														text={project.slug}
+														buttonProps={{
+															isIconOnly: true,
+															className:
+																"size-8 group-hover:opacity-100 opacity-0 transition-opacity",
+														}}
+													/>
+												</div>
 											</Table.Cell>
 											<Table.Cell>
-												<span>
-													{project.flagCount ?? 0}
-												</span>
+												<span>{project.description || "—"}</span>
+											</Table.Cell>
+											<Table.Cell>
+												<span>{project.flagCount ?? 0}</span>
 											</Table.Cell>
 											<Table.Cell>
 												<div className="flex items-center gap-1">
@@ -110,7 +121,7 @@ function ProjectsIndex() {
 																variant="ghost"
 																size="sm"
 																onPress={() => handleEdit(project)}>
-																<PencilIcon className="h-4 w-4" />
+																<PencilSimpleIcon className="h-4 w-4" />
 															</Button>
 														</Tooltip.Trigger>
 														<Tooltip.Content>Edit</Tooltip.Content>
@@ -121,11 +132,11 @@ function ProjectsIndex() {
 																isIconOnly
 																variant="ghost"
 																size="sm"
-																className="text-danger"
+																className="hover:text-danger hover:bg-danger-soft transition"
 																onPress={() =>
 																	deleteProject.mutate(project.id)
 																}>
-																<TrashIcon className="h-4 w-4" />
+																<TrashSimpleIcon className="h-4 w-4" />
 															</Button>
 														</Tooltip.Trigger>
 														<Tooltip.Content>Delete</Tooltip.Content>

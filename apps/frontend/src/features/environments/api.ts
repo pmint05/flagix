@@ -57,6 +57,7 @@ export function useEnvironments() {
 		queryKey: [...ENVIRONMENTS_KEY, orgId, projectId],
 		queryFn: () => createEnvironmentsApi(orgId!, projectId!).list(),
 		enabled: isHydrated && !!orgId && !!projectId,
+		staleTime: 1000 * 60 * 5,
 	});
 }
 

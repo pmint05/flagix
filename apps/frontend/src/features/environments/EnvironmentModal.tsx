@@ -53,22 +53,12 @@ export function EnvironmentModal({
 		formState: { errors },
 	} = useForm<EnvFormData>({
 		resolver: zodResolver(envFormSchema),
-		defaultValues: {
+		values: {
 			name: environment?.name ?? "",
 			type: environment?.type ?? "development",
 			description: environment?.description ?? "",
 		},
 	});
-
-	useEffect(() => {
-		if (isOpen) {
-			reset({
-				name: environment?.name ?? "",
-				type: environment?.type ?? "development",
-				description: environment?.description ?? "",
-			});
-		}
-	}, [isOpen, environment, reset]);
 
 	const onSubmit = async (data: EnvFormData) => {
 		try {

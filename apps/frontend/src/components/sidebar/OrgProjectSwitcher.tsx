@@ -11,7 +11,7 @@ import {
 	GearIcon,
 	UserPlusIcon,
 	PlusIcon,
-	FolderIcon,
+	FolderOpenIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { useOrganizations } from "#/features/organizations/api";
@@ -303,19 +303,6 @@ function EntitiesGroup({
 							<PlusIcon size={14} />
 							Create new project
 						</Button>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="w-full justify-start"
-							render={(props) => (
-								<Link
-									to="/projects"
-									className={props.className}
-									onClick={() => setMainOpen(false)}>
-									<FolderIcon size={14} />
-									View all projects
-								</Link>
-							)}></Button>
 					</div>
 				}
 			/>
@@ -330,6 +317,19 @@ function EntitiesGroup({
 					<GearIcon size={16} />
 					Settings
 				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="w-full justify-start"
+					render={(props) => (
+						<Link
+							to="/projects"
+							className={props.className}
+							onClick={() => setMainOpen(false)}>
+							<FolderOpenIcon size={14} />
+							All projects
+						</Link>
+					)}></Button>
 			</div>
 		</>
 	);

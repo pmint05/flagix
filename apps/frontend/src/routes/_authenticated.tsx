@@ -34,10 +34,18 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	return session;
 });
 
+const authSessionQueryOptions = () => ({
+	queryKey: ["auth-session"],
+	queryFn: () => getAuthSession(),
+	staleTime: 1000 * 60 * 5,
+});
+
 export const Route = createFileRoute("/_authenticated")({
 	component: AuthenticatedLayout,
-	beforeLoad: async () => {
-		const session = await getAuthSession();
+	beforeLoad: async ({ context }) => {
+		const session = await context.queryClient.ensureQueryData(
+			authSessionQueryOptions(),
+		);
 
 		if (!session.data?.session) {
 			throw redirect({ to: "/login" });

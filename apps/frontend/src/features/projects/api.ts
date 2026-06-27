@@ -48,6 +48,7 @@ export function useProjects() {
 		queryKey: [...PROJECTS_KEY, orgId],
 		queryFn: () => createProjectsApi(orgId!).list(),
 		enabled: !!orgId,
+		staleTime: 1000 * 60 * 5,
 	});
 }
 

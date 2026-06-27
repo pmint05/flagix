@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -36,21 +36,14 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 		register,
 		handleSubmit,
 		reset,
+		control,
 		formState: { errors },
 	} = useForm<OrganizationFormData>({
 		resolver: zodResolver(organizationFormSchema),
-		defaultValues: {
+		values: {
 			name: organization?.name ?? "",
 		},
 	});
-
-	useEffect(() => {
-		if (isOpen) {
-			reset({
-				name: organization?.name ?? "",
-			});
-		}
-	}, [isOpen, organization, reset]);
 
 	const onSubmit = async (data: OrganizationFormData) => {
 		try {
@@ -84,17 +77,24 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 						</Drawer.Header>
 						<Drawer.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField>
-									<Label>Name</Label>
-									<Input
-										variant="secondary"
-										{...register("name")}
-										placeholder="My Organization"
-									/>
-									{errors.name && (
-										<FieldError>{errors.name.message}</FieldError>
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.name}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Name</Label>
+											<Input placeholder="My Organization" />
+											{errors.name && (
+												<FieldError>{errors.name.message}</FieldError>
+											)}
+										</TextField>
 									)}
-								</TextField>
+								/>
 
 								<Drawer.Footer>
 									<Button variant="ghost" onPress={onClose}>
