@@ -141,9 +141,9 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 7
 
-- [ ] T039 [P] [US7] Create Audit Logs API methods in `apps/frontend/src/features/audit/api.ts`
-- [ ] T040 [US7] Create Audit Logs list page with pagination in `apps/frontend/src/routes/_authenticated/audit-logs.tsx`
-- [ ] T041 [US7] Implement filtering (by entity type, actor, date range) in `apps/frontend/src/features/audit/AuditFilter.tsx`
+- [X] T039 [P] [US7] Create Audit Logs API methods in `apps/frontend/src/features/audit/api.ts`
+- [X] T040 [US7] Create Audit Logs list page with pagination in `apps/frontend/src/routes/_authenticated/audit-logs.tsx`
+- [X] T041 [US7] Implement filtering (by entity type, actor, date range) in `apps/frontend/src/features/audit/AuditFilter.tsx`
 
 ---
 

@@ -1,13 +1,12 @@
 import { z } from "zod";
-import { uuidSchema, timestampSchema } from "./base";
 
 export const auditLogSchema = z.object({
-	id: uuidSchema,
-	actorId: uuidSchema,
-	actorName: z.string(),
+	id: z.string(),
+	actorId: z.string().nullable(),
+	actorEmail: z.string().nullable(),
 	actorType: z.enum(["user", "system"]),
-	timestamp: timestampSchema,
-	action: z.string(),
+	timestamp: z.coerce.date(),
+	actionType: z.string(),
 	entityType: z.enum([
 		"organization",
 		"project",
@@ -17,8 +16,16 @@ export const auditLogSchema = z.object({
 		"variation",
 		"sdk_key",
 	]),
-	entityId: uuidSchema,
-	changes: z.record(z.string(), z.unknown()).optional(),
+	entityId: z.string(),
+	changes: z.record(z.string(), z.unknown()).nullable(),
+	actorIp: z.string().nullable().optional(),
+	userAgent: z.string().nullable().optional(),
+	requestMethod: z.string().nullable().optional(),
+	requestPath: z.string().nullable().optional(),
+	source: z.enum(["web", "api", "sdk", "system"]).nullable().optional(),
+	description: z.string().nullable().optional(),
+	projectId: z.string().nullable().optional(),
+	environmentId: z.string().nullable().optional(),
 });
 
 export type AuditLog = z.infer<typeof auditLogSchema>;

@@ -23,6 +23,7 @@ export function Breadcrumbs() {
 
 	const segments = BREADCRUMB_CONFIG[routeId];
 	const selectedProject = useContextStore((s) => s.selectedProject);
+	const isMobile = useIsMobile();
 
 	if (!segments) {
 		return (
@@ -31,8 +32,6 @@ export function Breadcrumbs() {
 			</div>
 		);
 	}
-
-	const isMobile = useIsMobile();
 
 	return (
 		<BRH aria-label="Breadcrumb">
