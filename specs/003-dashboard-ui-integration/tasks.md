@@ -194,8 +194,49 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 **Purpose**: Improvements that affect multiple user stories
 
 - [ ] T050 [P] Add unit tests for critical components (Rule Evaluation, RBAC hook) in `apps/frontend/src/hooks/__tests__/`
-- [ ] T051 Refactor list tables (Projects, Environments, Audit Logs) into a reusable `<DataTable>` component with integrated Pagination and EmptyState.
-- [ ] T052 Verify all sensitive data (emails, keys) are properly masked in UI
+
+### Phase 13.1: DataTable Core Foundation (TanStack + HeroUI)
+- [X] T051 [P] Install dependencies: `pnpm add @tanstack/react-table` in `apps/frontend` (or run `pnpm --filter frontend add @tanstack/react-table` from root).
+- [X] T052 [P] Implement `useDataTableUrlSync` in `apps/frontend/src/hooks/useDataTableUrlSync.ts`.
+  - Use `useSearch({ strict: false })` and `useNavigate()` from `@tanstack/react-router`.
+  - Create standard schema/type for table state: `page` (number), `pageSize` (number), `sortBy` (string), `sortDir` ("asc" | "desc"), `query` (string), and `filters` (Record<string, unknown>).
+  - Implement a `whitelist` validation to avoid URL pollution.
+  - Return `tableState` and `updateTableState` function.
+- [X] T053 Create generic `<DataTable>` component in `apps/frontend/src/components/ui/data-table/DataTable.tsx`.
+  - Accept props: `data`, `columns`, `state`, `onStateChange`, `pageCount`, `rowCount`.
+  - Initialize `useReactTable` with `getCoreRowModel()`, mapping `state` (sorting, pagination, globalFilter, rowSelection) directly to the table options.
+  - Implement `flexRender` for `<Table.Column>` headers and `<Table.Cell>` rendering using HeroUI components.
+
+### Phase 13.2: DataTable Features & UX Polish
+- [X] T054 Integrate HeroUI EmptyState via `renderEmptyState` in `<Table.Body>`. Expose `emptyState` prop in `DataTable.tsx` to accept a custom message or use a generic default.
+- [X] T055 Implement a dedicated `<DataTableFooter>` component.
+  - Implement HeroUI `<Pagination>` linked to TanStack Table's `pageIndex` and `pageCount`.
+  - Add Page Size selector using `<Combobox>` (options: [10, 20, 50, 100, 200], default 20) to change `pageSize`.
+  - Add Page Jump using `<NumberField>` to navigate directly to a specific page.
+  - Expose boolean props on `DataTable` to individually hide/show these components.
+- [X] T056 Implement Visual and Layout Options.
+  - Support `isHeaderSticky` prop: Inject Tailwind classes `sticky top-0 z-20 bg-background` into the header wrapper/cells via `classNames.th`.
+  - Support `isCompact` prop: Inject `py-1 text-sm` classNames to cells via HeroUI's `classNames.td` slots to increase data density.
+  - Support `allowsResizing` prop: Map to TanStack Table's column sizing API and bind to HeroUI native resize events/props.
+- [X] T057 Integrate Row Selection.
+  - Enable `enableRowSelection` in TanStack Table.
+  - Use `selectionMode="multiple"` on HeroUI `<Table>` and sync `selectedKeys` with TanStack's `rowSelection` state.
+  - Expose `onSelectionChange` prop in `<DataTable>` that returns an array/Set of selected row data/IDs.
+
+### Phase 13.3: Refactor Existing Views
+- [X] T058 Refactor Environments List (`environments.tsx`).
+  - Create `columns.tsx` using `createColumnHelper<Environment>()`.
+  - Migrate status toggles, copy buttons, edit/delete actions into cell renderers.
+  - Replace manual sorting/filtering state with `useDataTableUrlSync` and `<DataTable>`.
+  - Re-wire the batch delete and batch status change logic to use the new selection output.
+- [X] T059 Refactor Projects List (`projects/index.tsx`) using the new `<DataTable>` and `columns` definition.
+- [X] T060 Refactor Flags List (`flags/index.tsx`) using `<DataTable>`, incorporating the custom status chip renderers.
+- [X] T061 Refactor Audit Logs List (`audit-logs.tsx`) using `<DataTable>`.
+  - Force `isCompact={true}` for improved density.
+  - Utilize `filters` object in `useDataTableUrlSync` to handle actor/action multi-select filtering via URL.
+
+### Phase 13.4: Final Polish
+- [ ] T062 Verify all sensitive data (emails, SDK keys) are properly masked in the UI.
 
 ---
 

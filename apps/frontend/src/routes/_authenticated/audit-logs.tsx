@@ -1,19 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	Skeleton,
-	Table,
-	Pagination,
-	PaginationContent,
-	PaginationItem,
-	PaginationLink,
-	PaginationNext,
-	PaginationPrevious,
-} from "@heroui/react";
-import { useState } from "react";
+import { Skeleton } from "@heroui/react";
 import { useAuditLogs } from "@/features/audit/api";
 import { AuditFilter, type AuditFilters } from "@/features/audit/AuditFilter";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { format } from "date-fns";
+import { useMemo } from "react";
+import { auditLogColumns } from "@/features/audit/columns";
+import { DataTable } from "@/components/ui/data-table/DataTable";
+import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
+import type { CalendarDate } from "@internationalized/date";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { AuditLog } from "@/types/audit-log";
 
 export const Route = createFileRoute("/_authenticated/audit-logs")({
@@ -21,24 +16,60 @@ export const Route = createFileRoute("/_authenticated/audit-logs")({
 });
 
 function AuditLogsIndex() {
-	const [page, setPage] = useState(1);
-	const pageSize = 15;
-	const [filters, setFilters] = useState<AuditFilters>({});
+	const { tableState, updateTableState } = useDataTableUrlSync({
+		defaultPageSize: 15,
+		whitelist: ["entityType", "actionType", "from", "to"],
+	});
+
+	const filters = tableState.filters as {
+		entityType?: string;
+		actionType?: string;
+		from?: string;
+		to?: string;
+	};
 
 	const queryParams = {
-		limit: pageSize,
-		offset: (page - 1) * pageSize,
+		limit: tableState.pageSize,
+		offset: (tableState.page - 1) * tableState.pageSize,
 		entityType: filters.entityType,
 		actionType: filters.actionType,
-		from: filters.dateRange?.start?.toString(),
-		to: filters.dateRange?.end?.toString(),
+		from: filters.from,
+		to: filters.to,
 	};
 
 	const { data, isLoading, isError } = useAuditLogs(queryParams);
 
 	const logs = data?.data ?? [];
 	const total = data?.total ?? 0;
-	const totalPages = Math.ceil(total / pageSize);
+	const pageCount = Math.ceil(total / tableState.pageSize);
+
+	const handleFilterChange = (newFilters: AuditFilters) => {
+		const dateRange = newFilters.dateRange;
+		updateTableState({
+			filters: {
+				entityType: newFilters.entityType,
+				actionType: newFilters.actionType,
+				from: dateRange?.start?.toString(),
+				to: dateRange?.end?.toString(),
+			},
+			page: 1,
+		});
+	};
+
+	const auditFilters: AuditFilters = useMemo(
+		() => ({
+			entityType: filters.entityType,
+			actionType: filters.actionType,
+			dateRange:
+				filters.from || filters.to
+					? {
+							start: filters.from as unknown as CalendarDate,
+							end: filters.to as unknown as CalendarDate,
+						}
+					: null,
+		}),
+		[filters],
+	);
 
 	return (
 		<div className="space-y-6">
@@ -49,13 +80,7 @@ function AuditLogsIndex() {
 				</p>
 			</div>
 
-			<AuditFilter
-				filters={filters}
-				onChange={(newFilters) => {
-					setFilters(newFilters);
-					setPage(1); // Reset to first page on filter change
-				}}
-			/>
+			<AuditFilter filters={auditFilters} onChange={handleFilterChange} />
 
 			{isLoading ? (
 				<div className="space-y-3">
@@ -73,117 +98,16 @@ function AuditLogsIndex() {
 					description="Try adjusting your filters or checking back later."
 				/>
 			) : (
-				<div className="flex flex-col gap-4">
-					<Table aria-label="Audit logs">
-						<Table.ScrollContainer>
-							<Table.Content>
-								<Table.Header>
-									<Table.Column isRowHeader>Timestamp</Table.Column>
-									<Table.Column>Actor</Table.Column>
-									<Table.Column>Action</Table.Column>
-									<Table.Column>Entity</Table.Column>
-									<Table.Column>Details</Table.Column>
-								</Table.Header>
-								<Table.Body items={logs}>
-									{(log: AuditLog) => (
-										<Table.Row key={log.id}>
-											<Table.Cell className="whitespace-nowrap">
-												{format(
-													new Date(log.timestamp),
-													"MMM d, yyyy HH:mm:ss",
-												)}
-											</Table.Cell>
-											<Table.Cell>
-												<div className="flex flex-col">
-													<span className="font-medium">
-														{log.actorEmail ?? "System"}
-													</span>
-													<span className="text-xs text-default-400 capitalize">
-														{log.actorType}
-													</span>
-												</div>
-											</Table.Cell>
-											<Table.Cell>
-												<span className="capitalize">{log.actionType}</span>
-											</Table.Cell>
-											<Table.Cell>
-												<div className="flex flex-col">
-													<span className="capitalize">
-														{log.entityType.replace("_", " ")}
-													</span>
-													<span
-														className="text-xs text-default-400 font-mono"
-														title={log.entityId}>
-														{log.entityId.substring(0, 8)}...
-													</span>
-												</div>
-											</Table.Cell>
-											<Table.Cell>
-												<div className="max-w-xs truncate text-sm text-default-500">
-													{log.changes
-														? JSON.stringify(log.changes)
-														: "No details"}
-												</div>
-											</Table.Cell>
-										</Table.Row>
-									)}
-								</Table.Body>
-							</Table.Content>
-						</Table.ScrollContainer>
-					</Table>
-
-					{totalPages > 1 && (
-						<div className="flex justify-center w-full">
-							<Pagination>
-								<PaginationContent>
-									<PaginationItem>
-										<PaginationPrevious
-											isDisabled={page <= 1}
-											onPress={() => setPage((p) => Math.max(1, p - 1))}>
-											Previous
-										</PaginationPrevious>
-									</PaginationItem>
-									{Array.from({ length: totalPages }, (_, i) => i + 1)
-										.filter((p) => {
-											if (totalPages <= 7) return true;
-											if (p === 1 || p === totalPages) return true;
-											if (Math.abs(p - page) <= 1) return true;
-											return false;
-										})
-										.reduce<(number | "ellipsis")[]>((acc, p, i, arr) => {
-											if (i > 0 && p - (arr[i - 1] as number) > 1) {
-												acc.push("ellipsis");
-											}
-											acc.push(p);
-											return acc;
-										}, [])
-										.map((item, i) =>
-											item === "ellipsis" ? (
-												<PaginationItem key={`ellipsis-${i}`}>
-													<span className="px-2 text-default-400">...</span>
-												</PaginationItem>
-											) : (
-												<PaginationItem key={item}>
-													<PaginationLink
-														isActive={item === page}
-														onPress={() => setPage(item)}>
-														{item}
-													</PaginationLink>
-												</PaginationItem>
-											),
-										)}
-									<PaginationItem>
-										<PaginationNext
-											isDisabled={page >= totalPages}
-											onPress={() => setPage((p) => Math.min(totalPages, p + 1))}>
-											Next
-										</PaginationNext>
-									</PaginationItem>
-								</PaginationContent>
-							</Pagination>
-						</div>
-					)}
-				</div>
+				<DataTable
+					data={logs}
+					columns={auditLogColumns as ColumnDef<AuditLog, unknown>[]}
+					state={tableState}
+					onStateChange={updateTableState}
+					pageCount={pageCount}
+					rowCount={total}
+					isCompact
+					isHeaderSticky
+				/>
 			)}
 		</div>
 	);
