@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@heroui/react";
 import { api } from "@/lib/api";
 import {
 	type FeatureFlag,
@@ -32,17 +33,23 @@ export interface UpdateFlagStateInput {
 	status?: "draft" | "active" | "archived";
 }
 
-export const createFlagsApi = (orgId: string, projectId: string, envId: string) => {
+export const createFlagsApi = (
+	orgId: string,
+	projectId: string,
+	envId: string,
+) => {
 	const basePath = `organizations/${orgId}/projects/${projectId}/environments/${envId}/flags`;
 	return {
 		list: (status?: string): Promise<FeatureFlagListItem[]> =>
-			api.get(basePath, {
-				searchParams: status ? { status } : undefined,
-				schema: z.object({
-					flags: z.array(featureFlagListItemSchema),
-					total: z.number(),
-				}),
-			}).then(res => res.flags),
+			api
+				.get(basePath, {
+					searchParams: status ? { status } : undefined,
+					schema: z.object({
+						flags: z.array(featureFlagListItemSchema),
+						total: z.number(),
+					}),
+				})
+				.then((res) => res.flags),
 		get: (flagId: string): Promise<FeatureFlag> =>
 			api.get(`organizations/${orgId}/flags/${flagId}`, {
 				schema: featureFlagSchema,
@@ -58,9 +65,12 @@ export const createFlagsApi = (orgId: string, projectId: string, envId: string) 
 				schema: featureFlagSchema,
 			}),
 		updateState: (flagId: string, input: UpdateFlagStateInput) =>
-			api.patch(`organizations/${orgId}/flags/${flagId}/environments/${envId}/state`, {
-				json: input,
-			}),
+			api.patch(
+				`organizations/${orgId}/flags/${flagId}/environments/${envId}/state`,
+				{
+					json: input,
+				},
+			),
 		delete: (flagId: string): Promise<void> =>
 			api.delete(`organizations/${orgId}/flags/${flagId}`).then(() => {}),
 	};
@@ -123,11 +133,50 @@ export function useUpdateFlagState() {
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useMutation({
-		mutationFn: ({ flagId, ...input }: UpdateFlagStateInput & { flagId: string }) => {
+		mutationFn: ({
+			flagId,
+			...input
+		}: UpdateFlagStateInput & { flagId: string }) => {
 			if (!orgId || !projectId || !envId) throw new Error("Missing context");
 			return createFlagsApi(orgId, projectId, envId).updateState(flagId, input);
 		},
-		onSuccess: () => {
+		onMutate: async ({ flagId, isEnabled }) => {
+			await queryClient.cancelQueries({
+				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
+			});
+
+			const previousFlags = queryClient.getQueryData<FeatureFlagListItem[]>([
+				...FLAGS_KEY,
+				orgId,
+				projectId,
+				envId,
+			]);
+
+			queryClient.setQueryData<FeatureFlagListItem[]>(
+				[...FLAGS_KEY, orgId, projectId, envId],
+				(old) =>
+					old?.map((flag) =>
+						flag.id === flagId
+							? { ...flag, isEnabled: isEnabled ?? flag.isEnabled }
+							: flag,
+					),
+			);
+
+			return { previousFlags };
+		},
+		onError: (_err, _vars, context) => {
+			toast.danger("Failed to update flag state", {
+				description: "Your change has been reverted.",
+			});
+
+			if (context?.previousFlags) {
+				queryClient.setQueryData(
+					[...FLAGS_KEY, orgId, projectId, envId],
+					context.previousFlags,
+				);
+			}
+		},
+		onSettled: () => {
 			queryClient.invalidateQueries({
 				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
 			});
@@ -140,7 +189,10 @@ export function useUpdateFlag() {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 
 	return useMutation({
-		mutationFn: ({ flagId, ...input }: UpdateFlagInput & { flagId: string }) => {
+		mutationFn: ({
+			flagId,
+			...input
+		}: UpdateFlagInput & { flagId: string }) => {
 			if (!orgId) throw new Error("Missing context");
 			return api.patch(`organizations/${orgId}/flags/${flagId}`, {
 				json: input,

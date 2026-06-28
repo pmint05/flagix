@@ -155,10 +155,10 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 8
 
-- [ ] T042 [P] [US8] Implement `usePermissions` hook evaluating current user role against action requirements in `apps/frontend/src/hooks/usePermissions.ts`
-- [ ] T043 [US8] Create `<Protected>` wrapper component in `apps/frontend/src/components/Protected.tsx`
-- [ ] T044 [US8] Apply `<Protected>` wrapping to all Create/Edit/Delete actions in Project, Environment, Flag, Rule, and SDK Key features.
-- [ ] T044.b [US8] Integrate `usePermissions` into TanStack Router `beforeLoad` route guards to secure routing access based on user roles.
+- [X] T042 [P] [US8] Implement `usePermissions` hook evaluating current user role against action requirements in `apps/frontend/src/hooks/usePermissions.ts`
+- [X] T043 [US8] Create `<Protected>` wrapper component in `apps/frontend/src/components/Protected.tsx`
+- [X] T044 [US8] Apply `<Protected>` wrapping to all Create/Edit/Delete actions in Project, Environment, Flag, Rule, and SDK Key features.
+- [X] T044.b [US8] Integrate `usePermissions` into TanStack Router `beforeLoad` route guards to secure routing access based on user roles.
 
 ---
 
@@ -170,8 +170,8 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 9
 
-- [ ] T045 [US9] Implement mobile responsiveness for Sidebar using HeroUI v3 `<Drawer>` (Hamburger menu) instead of resizing panels.
-- [ ] T046 [US9] Integrate `EmptyState` component into Projects, Environments, Flags, and Audit Logs lists with action prompts.
+- [X] T045 [US9] Implement mobile responsiveness for Sidebar using HeroUI v3 `<Drawer>` (Hamburger menu) instead of resizing panels.
+- [X] T046 [US9] Integrate `EmptyState` component into Projects, Environments, Flags, and Audit Logs lists with action prompts.
 
 ---
 
@@ -183,9 +183,9 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 10
 
-- [ ] T047 [US10] Leverage TanStack Router's `errorComponent` for route-specific error boundaries, ensuring the sidebar/header remain functional during route failures.
-- [ ] T048 [US10] Ensure all form submit handlers use mutations that prevent duplicate submissions (`isPending` state disables buttons)
-- [ ] T049 [US10] Verify TanStack Query optimistic updates handle rollback and show user-friendly toasts on network failures.
+- [x] T047 [US10] Leverage TanStack Router's `errorComponent` for route-specific error boundaries, ensuring the sidebar/header remain functional during route failures.
+- [x] T048 [US10] Ensure all form submit handlers use mutations that prevent duplicate submissions (`isPending` state disables buttons)
+- [x] T049 [US10] Verify TanStack Query optimistic updates handle rollback and show user-friendly toasts on network failures.
 
 ---
 
