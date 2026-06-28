@@ -169,31 +169,35 @@ export function EnvironmentSwitcher() {
 							{environments?.length === 0 ? (
 								<Dropdown.Item isDisabled>No environments</Dropdown.Item>
 							) : (
-								environments?.map((env) => (
-									<Dropdown.Item
-										id={env.id}
-										key={env.id}
-										onPress={() => handleEnvironmentSelect(env)}
-										textValue={env.name}>
-										<div className="flex w-full items-center justify-between">
-											<div className="flex items-baseline gap-2">
-												<div
-													className="size-3 top-0.5 rounded-full relative"
-													style={{
-														backgroundColor: generateColorFromString(env.slug),
-													}}
-												/>
-												<div className="flex flex-col">
-													<Label>{env.name}</Label>
-													<Description>{env.type}</Description>
+								environments
+									?.filter((env) => env.isActive)
+									.map((env) => (
+										<Dropdown.Item
+											id={env.id}
+											key={env.id}
+											onPress={() => handleEnvironmentSelect(env)}
+											textValue={env.name}>
+											<div className="flex w-full items-center justify-between">
+												<div className="flex items-baseline gap-2">
+													<div
+														className="size-3 top-0.5 rounded-full relative"
+														style={{
+															backgroundColor: generateColorFromString(
+																env.slug,
+															),
+														}}
+													/>
+													<div className="flex flex-col">
+														<Label>{env.name}</Label>
+														<Description>{env.type}</Description>
+													</div>
 												</div>
+												{selectedEnvironment?.id === env.id && (
+													<CheckIcon size={16} />
+												)}
 											</div>
-											{selectedEnvironment?.id === env.id && (
-												<CheckIcon size={16} />
-											)}
-										</div>
-									</Dropdown.Item>
-								)) || []
+										</Dropdown.Item>
+									)) || []
 							)}
 						</Dropdown.Menu>
 					</Dropdown.Popover>

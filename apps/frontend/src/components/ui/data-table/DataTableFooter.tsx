@@ -1,4 +1,10 @@
-import { NumberField, Pagination, Select } from "@heroui/react";
+import {
+	NumberField,
+	Pagination,
+	ComboBox,
+	Input,
+	Separator,
+} from "@heroui/react";
 import { Label } from "@heroui/react";
 import { ListBox } from "@heroui/react";
 import { useMemo, useState } from "react";
@@ -67,91 +73,101 @@ export function DataTableFooter({
 	};
 
 	return (
-		<div className="flex items-center justify-between gap-4 px-4 py-3">
+		<div className="flex items-center justify-between gap-4 px-4 py-3 w-full">
 			{showPageSizeSelector && (
-				<Select
-					className="w-32"
-					value={String(pageSize)}
-					onChange={(key) => {
-						if (key != null) onPageSizeChange(Number(key));
-					}}>
-					<Label>Rows</Label>
-					<Select.Trigger>
-						<Select.Value />
-						<Select.Indicator />
-					</Select.Trigger>
-					<Select.Popover>
-						<ListBox>
-							{PAGE_SIZE_OPTIONS.map((size) => (
-								<ListBox.Item
-									key={size}
-									id={String(size)}
-									textValue={String(size)}>
-									{size}
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-							))}
-						</ListBox>
-					</Select.Popover>
-				</Select>
+				<div className="flex items-center gap-2">
+					<Label>Show</Label>
+					<ComboBox
+						className="w-20"
+						value={String(pageSize)}
+						onChange={(key) => {
+							if (key != null) onPageSizeChange(Number(key));
+						}}>
+						<ComboBox.InputGroup>
+							<Input placeholder="..." />
+							<ComboBox.Trigger />
+						</ComboBox.InputGroup>
+						<ComboBox.Popover>
+							<ListBox>
+								{PAGE_SIZE_OPTIONS.map((size) => (
+									<ListBox.Item
+										key={size}
+										id={String(size)}
+										textValue={String(size)}>
+										{size}
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+								))}
+							</ListBox>
+						</ComboBox.Popover>
+					</ComboBox>
+					<span>per page</span>
+				</div>
 			)}
 
 			{showPagination && pageCount > 0 && (
-				<Pagination size="sm">
-					{rowCount != null && (
-						<Pagination.Summary>
-							{start} to {end} of {rowCount} results
-						</Pagination.Summary>
-					)}
-					<Pagination.Content>
-						<Pagination.Item>
-							<Pagination.Previous
-								isDisabled={page === 1}
-								onPress={() => onPageChange(page - 1)}>
-								<Pagination.PreviousIcon />
-								Prev
-							</Pagination.Previous>
-						</Pagination.Item>
-						{pages.map((p, i) =>
-							p === "ellipsis" ? (
-								<Pagination.Item key={`ellipsis-${i}`}>
-									<Pagination.Ellipsis />
-								</Pagination.Item>
-							) : (
-								<Pagination.Item key={p}>
-									<Pagination.Link
-										isActive={p === page}
-										onPress={() => onPageChange(p)}>
-										{p}
-									</Pagination.Link>
-								</Pagination.Item>
-							),
+				<div className="flex items-center gap-2">
+					<Pagination size="md">
+						{rowCount != null && (
+							<Pagination.Summary>
+								{start} to {end} of {rowCount} results
+							</Pagination.Summary>
 						)}
-						<Pagination.Item>
-							<Pagination.Next
-								isDisabled={page === pageCount}
-								onPress={() => onPageChange(page + 1)}>
-								Next
-								<Pagination.NextIcon />
-							</Pagination.Next>
-						</Pagination.Item>
-					</Pagination.Content>
-				</Pagination>
-			)}
 
-			{showPageJump && pageCount > 0 && (
-				<NumberField
-					className="w-28"
-					minValue={1}
-					maxValue={pageCount}
-					value={jumpValue}
-					onChange={setJumpValue}
-					onKeyDown={handleKeyDown}>
-					<Label>Page</Label>
-					<NumberField.Group>
-						<NumberField.Input className="w-20" />
-					</NumberField.Group>
-				</NumberField>
+						<Pagination.Content>
+							<Pagination.Item>
+								<Pagination.Previous
+									isDisabled={page === 1}
+									onPress={() => onPageChange(page - 1)}>
+									<Pagination.PreviousIcon />
+									Prev
+								</Pagination.Previous>
+							</Pagination.Item>
+							{pages.map((p, i) =>
+								p === "ellipsis" ? (
+									<Pagination.Item key={`ellipsis-${i}`}>
+										<Pagination.Ellipsis />
+									</Pagination.Item>
+								) : (
+									<Pagination.Item key={p}>
+										<Pagination.Link
+											isActive={p === page}
+											onPress={() => onPageChange(p)}>
+											{p}
+										</Pagination.Link>
+									</Pagination.Item>
+								),
+							)}
+							<Pagination.Item>
+								<Pagination.Next
+									isDisabled={page === pageCount}
+									onPress={() => onPageChange(page + 1)}>
+									Next
+									<Pagination.NextIcon />
+								</Pagination.Next>
+							</Pagination.Item>
+						</Pagination.Content>
+					</Pagination>
+					{showPageJump && pageCount > 0 && (
+						<>
+							<Separator orientation="vertical" className="h-6 self-center mr-2" variant="secondary" />
+							<div className="flex items-center gap-2 shrink-0">
+								<span>Jump to</span>
+								<NumberField
+									className="w-20"
+									minValue={1}
+									maxValue={pageCount}
+									value={jumpValue}
+									onChange={setJumpValue}
+									onKeyDown={handleKeyDown}>
+									<NumberField.Group>
+										<NumberField.Input className="w-20" placeholder="Page..." />
+									</NumberField.Group>
+								</NumberField>
+							</div>
+						</>
+					)}
+				</div>
 			)}
 		</div>
 	);

@@ -22,16 +22,17 @@ export const Route = createFileRoute(
 });
 
 function FlagsIndex() {
-	const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+	const { tableState, updateTableState } = useDataTableUrlSync({
+		defaultPageSize: 20,
+		whitelist: ["status"],
+	});
+
+	const statusFilter = (tableState.filters as { status?: string }).status;
 	const { data: flags, isLoading, isError } = useFlags(statusFilter);
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
 
 	const [modalOpen, setModalOpen] = useState(false);
-
-	const { tableState, updateTableState } = useDataTableUrlSync({
-		defaultPageSize: 20,
-	});
 
 	const handleCreate = () => {
 		setModalOpen(true);
@@ -77,7 +78,7 @@ function FlagsIndex() {
 						key={label}
 						size="sm"
 						variant={statusFilter === value ? "primary" : "ghost"}
-						onPress={() => setStatusFilter(value)}>
+						onPress={() => updateTableState({ filters: { status: value }, page: 1 })}>
 						{label}
 					</Button>
 				))}

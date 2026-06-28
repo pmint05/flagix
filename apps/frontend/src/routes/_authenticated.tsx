@@ -94,7 +94,7 @@ function AuthenticatedLayout() {
 
 	if (!isHydrated) {
 		return (
-			<div className="h-screen w-full bg-background overflow-hidden flex">
+			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex">
 				<div
 					className={cn(
 						"shrink-0 border-r h-full w-62.5 p-2 sm:flex flex-col gap-4 hidden",
@@ -138,10 +138,10 @@ function AuthenticatedLayout() {
 	// Mobile layout: no PanelGroup, sidebar in Drawer
 	if (isMobile) {
 		return (
-			<div className="h-screen w-full bg-background overflow-hidden flex flex-col">
+			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex flex-col">
 				<Header />
-				<main className="flex-1">
-					<div className="h-full p-6 bg-surface overflow-auto border">
+				<main className="flex-1 overflow-auto">
+					<div className="h-full p-6 bg-surface dark:bg-background-secondary overflow-auto border">
 						<Outlet />
 					</div>
 				</main>

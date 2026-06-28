@@ -1,15 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	Button,
-	Skeleton,
-	Select,
-	ListBox,
-	SearchField,
-} from "@heroui/react";
-import {
-	PlusIcon,
-	MagnifyingGlassIcon,
-} from "@phosphor-icons/react";
+import { Button, Skeleton, Select, ListBox, SearchField } from "@heroui/react";
+import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
 	useEnvironments,
 	useToggleEnvironmentActive,
@@ -127,7 +118,9 @@ function EnvironmentsIndex() {
 
 	const handleBatchDelete = async () => {
 		if (selectedIds.length === 0) return;
-		await Promise.all(selectedIds.map((id) => deleteEnvironment.mutateAsync(id)));
+		await Promise.all(
+			selectedIds.map((id) => deleteEnvironment.mutateAsync(id)),
+		);
 		setSelectedIds([]);
 	};
 
@@ -146,7 +139,9 @@ function EnvironmentsIndex() {
 	const emptyStateContent = (
 		<HeroUIEmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center min-h-50">
 			<TrayIcon className="size-8 text-muted" weight="duotone" />
-			<span className="text-muted">No results matching the current filters.</span>
+			<span className="text-muted">
+				No results matching the current filters.
+			</span>
 		</HeroUIEmptyState>
 	);
 
@@ -237,7 +232,8 @@ function EnvironmentsIndex() {
 									updateTableState({
 										filters: {
 											...tableState.filters,
-											type: key?.toString() === "all" ? undefined : key?.toString(),
+											type:
+												key?.toString() === "all" ? undefined : key?.toString(),
 										},
 									})
 								}
@@ -269,7 +265,8 @@ function EnvironmentsIndex() {
 									updateTableState({
 										filters: {
 											...tableState.filters,
-											active: key?.toString() === "all" ? undefined : key?.toString(),
+											active:
+												key?.toString() === "all" ? undefined : key?.toString(),
 										},
 									})
 								}
@@ -329,6 +326,7 @@ function EnvironmentsIndex() {
 				showToast
 				toastTitle="Deleted"
 				toastMessage={`Environment "${deletingEnv?.name}" has been deleted.`}
+				requireRetypeContent={deletingEnv?.slug}
 			/>
 
 			<ConfirmModal
@@ -343,6 +341,8 @@ function EnvironmentsIndex() {
 				showToast
 				toastTitle="Deleted"
 				toastMessage="Selected environments have been deleted."
+				requireRetypeContent={`delete ${selectedIds.length} environments`}
+				retypeLabel={`Type "delete ${selectedIds.length} environments" to confirm`}
 			/>
 		</div>
 	);

@@ -21,7 +21,7 @@ export function MobileSidebarDrawer() {
 				<Drawer.Content placement="left" className="p-0">
 					<Drawer.Dialog className="p-0">
 						<Drawer.Body className="p-0">
-							<aside className="flex h-full w-full flex-col bg-background">
+							<aside className="flex h-full w-full flex-col bg-surface dark:bg-background-secondary border-r">
 								<SidebarHeader />
 								<SidebarNav />
 								<SidebarFooter />

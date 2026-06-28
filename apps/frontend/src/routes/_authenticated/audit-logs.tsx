@@ -1,24 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Skeleton } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useAuditLogs } from "@/features/audit/api";
 import { AuditFilter, type AuditFilters } from "@/features/audit/AuditFilter";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { useMemo } from "react";
 import { auditLogColumns } from "@/features/audit/columns";
 import { DataTable } from "@/components/ui/data-table/DataTable";
 import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
-import type { CalendarDate } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { AuditLog } from "@/types/audit-log";
 
 export const Route = createFileRoute("/_authenticated/audit-logs")({
 	component: AuditLogsIndex,
+	staticData: {
+		hideEnvironmentSwitcher: true,
+	},
 });
 
 function AuditLogsIndex() {
 	const { tableState, updateTableState } = useDataTableUrlSync({
-		defaultPageSize: 15,
-		whitelist: ["entityType", "actionType", "from", "to"],
+		defaultPageSize: 10,
+		whitelist: [
+			"entityType",
+			"actionType",
+			"from",
+			"to",
+			"actorEmail",
+			"entityId",
+		],
 	});
 
 	const filters = tableState.filters as {
@@ -26,6 +35,8 @@ function AuditLogsIndex() {
 		actionType?: string;
 		from?: string;
 		to?: string;
+		actorEmail?: string;
+		entityId?: string;
 	};
 
 	const queryParams = {
@@ -35,6 +46,8 @@ function AuditLogsIndex() {
 		actionType: filters.actionType,
 		from: filters.from,
 		to: filters.to,
+		actorEmail: filters.actorEmail,
+		entityId: filters.entityId,
 	};
 
 	const { data, isLoading, isError } = useAuditLogs(queryParams);
@@ -51,25 +64,45 @@ function AuditLogsIndex() {
 				actionType: newFilters.actionType,
 				from: dateRange?.start?.toString(),
 				to: dateRange?.end?.toString(),
+				actorEmail: newFilters.actorEmail,
+				entityId: newFilters.entityId,
 			},
-			page: 1,
+			page: 1, // When manually applying a filter, go to page 1
 		});
 	};
 
-	const auditFilters: AuditFilters = useMemo(
-		() => ({
+	const auditFilters: AuditFilters = useMemo(() => {
+		let dateRange = null;
+		if (filters.from && filters.to) {
+			try {
+				dateRange = {
+					start: parseDate(filters.from),
+					end: parseDate(filters.to),
+				};
+			} catch (e) {
+				// Fallback if URL dates are malformed
+			}
+		}
+
+		return {
 			entityType: filters.entityType,
 			actionType: filters.actionType,
-			dateRange:
-				filters.from || filters.to
-					? {
-							start: filters.from as unknown as CalendarDate,
-							end: filters.to as unknown as CalendarDate,
-						}
-					: null,
-		}),
-		[filters],
+			dateRange,
+			actorEmail: filters.actorEmail,
+			entityId: filters.entityId,
+		};
+	}, [filters]);
+
+	const hasAnyFilter = Object.values(filters).some(
+		(v) => v !== undefined && v !== "",
 	);
+
+	const handleClearAll = () => {
+		updateTableState({
+			filters: {},
+			// specifically requested by user NOT to reset page/pageSize on clear all
+		});
+	};
 
 	return (
 		<div className="space-y-6">
@@ -80,33 +113,35 @@ function AuditLogsIndex() {
 				</p>
 			</div>
 
-			<AuditFilter filters={auditFilters} onChange={handleFilterChange} />
+			<div className="flex flex-col gap-4">
+				<AuditFilter filters={auditFilters} onChange={handleFilterChange} />
+				{hasAnyFilter && (
+					<div className="flex justify-end">
+						<Button variant="secondary" size="sm" onPress={handleClearAll}>
+							Clear All Filters
+						</Button>
+					</div>
+				)}
+			</div>
 
-			{isLoading ? (
-				<div className="space-y-3">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<Skeleton key={i} className="h-12 w-full rounded-lg" />
-					))}
-				</div>
-			) : isError ? (
+			{isError ? (
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load audit logs. Please try again.
 				</div>
-			) : logs.length === 0 ? (
-				<EmptyState
-					title="No audit logs found"
-					description="Try adjusting your filters or checking back later."
-				/>
 			) : (
 				<DataTable
+					isLoading={isLoading}
 					data={logs}
 					columns={auditLogColumns as ColumnDef<AuditLog, unknown>[]}
 					state={tableState}
 					onStateChange={updateTableState}
 					pageCount={pageCount}
 					rowCount={total}
+					emptyMessage="No audit logs found for the selected filters."
 					isCompact
 					isHeaderSticky
+					allowsResizing
+					showPageJump
 				/>
 			)}
 		</div>

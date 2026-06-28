@@ -1,6 +1,13 @@
 "use client";
 
-import { cn, Modal, type ModalProps } from "@heroui/react";
+import {
+	cn,
+	Modal,
+	type ModalProps,
+	TextField,
+	Label,
+	InputGroup,
+} from "@heroui/react";
 import {
 	CheckCircleIcon,
 	WarningIcon,
@@ -29,6 +36,8 @@ export interface ConfirmModalProps extends Omit<ModalProps, "children"> {
 	showToast?: boolean;
 	toastTitle?: React.ReactNode;
 	toastMessage?: React.ReactNode;
+	requireRetypeContent?: string;
+	retypeLabel?: string;
 }
 
 const VARIANT_CONFIG = {
@@ -78,6 +87,8 @@ export function ConfirmModal({
 	showToast,
 	toastTitle,
 	toastMessage,
+	requireRetypeContent,
+	retypeLabel,
 	...props
 }: ConfirmModalProps) {
 	const config = VARIANT_CONFIG[variant];
@@ -90,6 +101,8 @@ export function ConfirmModal({
 		children,
 		toastTitle,
 		toastMessage,
+		requireRetypeContent,
+		retypeLabel,
 	});
 	React.useEffect(() => {
 		if (isOpen) {
@@ -99,13 +112,44 @@ export function ConfirmModal({
 				children,
 				toastTitle,
 				toastMessage,
+				requireRetypeContent,
+				retypeLabel,
 			};
 		}
-	}, [isOpen, title, description, children, toastTitle, toastMessage]);
+	}, [
+		isOpen,
+		title,
+		description,
+		children,
+		toastTitle,
+		toastMessage,
+		requireRetypeContent,
+		retypeLabel,
+	]);
 
 	const display = isOpen
-		? { title, description, children, toastTitle, toastMessage }
+		? {
+				title,
+				description,
+				children,
+				toastTitle,
+				toastMessage,
+				requireRetypeContent,
+				retypeLabel,
+			}
 		: contentRef.current;
+
+	const [retypeValue, setRetypeValue] = React.useState("");
+
+	React.useEffect(() => {
+		if (isOpen) {
+			setRetypeValue("");
+		}
+	}, [isOpen]);
+
+	const isRetypeValid =
+		!display.requireRetypeContent ||
+		retypeValue === display.requireRetypeContent;
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open && onCancel) {
@@ -138,9 +182,27 @@ export function ConfirmModal({
 						</Modal.Header>
 						<Modal.Body>
 							{display.description && (
-								<p className="text-default-500">{display.description}</p>
+								<p className="text-default-foreground">{display.description}</p>
 							)}
 							{display.children}
+							{display.requireRetypeContent && (
+								<TextField className="w-full mt-3" variant="primary">
+									<Label className="font-medium mb-1.5 block">
+										{display.retypeLabel ||
+											`Type "${display.requireRetypeContent}" to confirm`}
+									</Label>
+									<InputGroup variant="secondary">
+										<InputGroup.Input
+											value={retypeValue}
+											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+												setRetypeValue(e.target.value)
+											}
+											placeholder={display.requireRetypeContent}
+											className="w-full"
+										/>
+									</InputGroup>
+								</TextField>
+							)}
 						</Modal.Body>
 						<Modal.Footer>
 							<ActionButton
@@ -153,7 +215,8 @@ export function ConfirmModal({
 								action={handleConfirm}
 								showToast={showToast}
 								toastTitle={display.toastTitle}
-								toastMessage={display.toastMessage}>
+								toastMessage={display.toastMessage}
+								isDisabled={!isRetypeValid}>
 								{confirmText}
 							</ActionButton>
 						</Modal.Footer>

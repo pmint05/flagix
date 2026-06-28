@@ -7,7 +7,7 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Checkbox, EmptyState, Table } from "@heroui/react";
+import { Checkbox, EmptyState, Skeleton, Table } from "@heroui/react";
 import type { Selection, SortDescriptor } from "@heroui/react";
 import { useMemo, useState } from "react";
 import type { TableState } from "@/hooks/useDataTableUrlSync";
@@ -22,6 +22,7 @@ interface DataTableProps<TData> {
 	pageCount?: number;
 	rowCount?: number;
 	emptyState?: React.ReactNode;
+	emptyMessage?: string;
 	isHeaderSticky?: boolean;
 	isCompact?: boolean;
 	allowsResizing?: boolean;
@@ -31,6 +32,7 @@ interface DataTableProps<TData> {
 	showPagination?: boolean;
 	showPageSizeSelector?: boolean;
 	showPageJump?: boolean;
+	isLoading?: boolean;
 	getRowId?: (row: TData) => string;
 }
 
@@ -57,9 +59,11 @@ export function DataTable<TData>({
 	columns,
 	state,
 	onStateChange,
+	isLoading = false,
 	pageCount,
 	rowCount,
 	emptyState,
+	emptyMessage,
 	isHeaderSticky = false,
 	isCompact = false,
 	allowsResizing = false,
@@ -84,19 +88,71 @@ export function DataTable<TData>({
 		pageSize: state.pageSize,
 	};
 
-	const rowSelection: RowSelectionState = useMemo(() => {
-		if (!selectedRowIds) return {};
-		return Object.fromEntries(selectedRowIds.map((id) => [id, true]));
-	}, [selectedRowIds]);
-
 	const resolvedSelectionKeys: Selection = selectedRowIds
 		? new Set(selectedRowIds)
 		: internalSelection;
 
+	const rowSelection: RowSelectionState = useMemo(() => {
+		const keys = Array.from(resolvedSelectionKeys);
+		return Object.fromEntries(keys.map((id) => [id, true]));
+	}, [resolvedSelectionKeys]);
+
+	const selectionColumn: ColumnDef<TData, unknown> = useMemo(
+		() => ({
+			id: "__selection",
+			size: 40,
+			header: ({ table }) => (
+				<Checkbox 
+					aria-label="Select all" 
+					slot="selection"
+					isSelected={table.getIsAllPageRowsSelected()}
+					isIndeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+					onPress={() => table.toggleAllPageRowsSelected()}
+				>
+					<Checkbox.Content>
+						<Checkbox.Control>
+							<Checkbox.Indicator />
+						</Checkbox.Control>
+					</Checkbox.Content>
+				</Checkbox>
+			),
+			cell: ({ row }) => (
+				<Checkbox
+					aria-label={`Select row ${row.id}`}
+					isSelected={row.getIsSelected()}
+					onPress={() => row.toggleSelected()}
+					slot="selection"
+					variant="secondary">
+					<Checkbox.Content>
+						<Checkbox.Control>
+							<Checkbox.Indicator />
+						</Checkbox.Control>
+					</Checkbox.Content>
+				</Checkbox>
+			),
+		}),
+		[],
+	);
+
+	const allColumns = useMemo(
+		() => (enableRowSelection ? [selectionColumn, ...columns] : columns),
+		[enableRowSelection, selectionColumn, columns],
+	);
+
 	const table = useReactTable({
 		data,
-		columns,
+		columns: allColumns,
 		state: { sorting, pagination, globalFilter: state.query, rowSelection },
+		onRowSelectionChange: (updater) => {
+			const next = typeof updater === "function" ? updater(rowSelection) : updater;
+			const keys = new Set(Object.keys(next).filter((k) => next[k]));
+			if (selectedRowIds === undefined) {
+				setInternalSelection(keys);
+			}
+			if (onSelectionChange) {
+				onSelectionChange(Array.from(keys));
+			}
+		},
 		onSortingChange: (updater) => {
 			const next = typeof updater === "function" ? updater(sorting) : updater;
 			if (next.length > 0) {
@@ -125,51 +181,6 @@ export function DataTable<TData>({
 	const rows = table.getRowModel().rows;
 	const resolvedPageCount = pageCount ?? table.getPageCount();
 
-	const handleSelectionChange = (keys: Selection) => {
-		if (selectedRowIds === undefined) {
-			setInternalSelection(keys);
-		}
-		if (onSelectionChange) {
-			if (keys === "all") {
-				onSelectionChange(rows.map((r) => r.id));
-			} else {
-				onSelectionChange(Array.from(keys).map(String));
-			}
-		}
-	};
-
-	const selectionColumn: ColumnDef<TData, unknown> = {
-		id: "__selection",
-		size: 40,
-		header: () => (
-			<Checkbox aria-label="Select all" slot="selection">
-				<Checkbox.Content>
-					<Checkbox.Control>
-						<Checkbox.Indicator />
-					</Checkbox.Control>
-				</Checkbox.Content>
-			</Checkbox>
-		),
-		cell: ({ row }) => (
-			<Checkbox
-				aria-label={`Select row ${row.id}`}
-				isSelected={row.getIsSelected()}
-				onPress={() => row.toggleSelected()}
-				slot="selection"
-				variant="secondary">
-				<Checkbox.Content>
-					<Checkbox.Control>
-						<Checkbox.Indicator />
-					</Checkbox.Control>
-				</Checkbox.Content>
-			</Checkbox>
-		),
-	};
-
-	const allColumns = enableRowSelection
-		? [selectionColumn, ...columns]
-		: columns;
-
 	const content = (
 		<Table.Content
 			aria-label="Data table"
@@ -177,7 +188,7 @@ export function DataTable<TData>({
 			selectedKeys={enableRowSelection ? resolvedSelectionKeys : undefined}
 			selectionMode={enableRowSelection ? "multiple" : undefined}
 			sortDescriptor={sortDescriptor}
-			onSelectionChange={enableRowSelection ? handleSelectionChange : undefined}
+			onSelectionChange={() => {}} // Ignore row clicks, selection is handled by Checkbox onPress
 			onSortChange={(d) => {
 				const newSorting = toSortingState(d);
 				if (newSorting.length > 0) {
@@ -190,9 +201,7 @@ export function DataTable<TData>({
 				}
 			}}>
 			<Table.Header
-				className={
-					isHeaderSticky ? "sticky top-0 z-20 bg-background" : undefined
-				}>
+				className={isHeaderSticky ? "sticky top-0 z-20" : undefined}>
 				{table.getHeaderGroups()[0]?.headers.map((header, idx) => {
 					const col = allColumns[idx];
 					const colDef = col as ColumnDef<TData, unknown> & {
@@ -217,6 +226,9 @@ export function DataTable<TData>({
 													header.column.columnDef.header,
 													header.getContext(),
 												)}
+										{allowsResizing && (
+											<Table.ColumnResizer className="hover:bg-accent" />
+										)}
 									</Table.SortableColumnHeader>
 								)
 							) : (
@@ -237,23 +249,45 @@ export function DataTable<TData>({
 			<Table.Body
 				renderEmptyState={() =>
 					emptyState ?? (
-						<EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center min-h-50">
+						<EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center min-h-42">
 							<TrayIcon className="size-8 text-muted" weight="duotone" />
-							<span className="text-muted">No data available</span>
+							<span className="text-muted">
+								{emptyMessage || "No data available"}
+							</span>
 						</EmptyState>
 					)
 				}>
-				{rows.map((row) => (
-					<Table.Row key={row.id} id={row.id}>
-						{row.getVisibleCells().map((cell) => (
-							<Table.Cell
-								key={cell.id}
-								className={isCompact ? "py-1 text-sm" : undefined}>
-								{flexRender(cell.column.columnDef.cell, cell.getContext())}
-							</Table.Cell>
-						))}
-					</Table.Row>
-				))}
+				{isLoading &&
+					Array.from({ length: 5 }).map((_, rowIndex) => (
+						<Table.Row
+							key={`skeleton-row-${rowIndex}`}
+							id={`skeleton-row-${rowIndex}`}>
+							{allColumns.map((_, colIndex) => (
+								<Table.Cell
+									key={`skeleton-cell-${rowIndex}-${colIndex}`}
+									className={isCompact ? "py-1" : undefined}>
+									<Skeleton
+										className="h-6 rounded-2xl!"
+										style={{
+											width: `${Math.floor(Math.random() * 50) + 50}%`,
+										}}
+									/>
+								</Table.Cell>
+							))}
+						</Table.Row>
+					))}
+				{!isLoading &&
+					rows.map((row) => (
+						<Table.Row key={row.id} id={row.id}>
+							{row.getVisibleCells().map((cell) => (
+								<Table.Cell
+									key={cell.id}
+									className={isCompact ? "py-1 text-sm" : undefined}>
+									{flexRender(cell.column.columnDef.cell, cell.getContext())}
+								</Table.Cell>
+							))}
+						</Table.Row>
+					))}
 			</Table.Body>
 		</Table.Content>
 	);

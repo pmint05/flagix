@@ -50,7 +50,7 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 		},
 		{ label: "Environments" },
 	],
-	"/_authenticated/projects/$projectSlug/sdk-keys": [
+	"/_authenticated/projects/$projectSlug/_admin/sdk-keys": [
 		// { label: "Projects", href: "/projects" },
 		{
 			label: (p) => p.projectSlug,
@@ -59,7 +59,7 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 		},
 		{ label: "SDK Keys" },
 	],
-	"_authenticated/audit-logs": [
+	"/_authenticated/audit-logs": [
 		{ label: "Audit Logs", href: "/_authenticated/audit-logs" },
 	],
 };
