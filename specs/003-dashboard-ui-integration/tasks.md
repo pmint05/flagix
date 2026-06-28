@@ -158,6 +158,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 - [ ] T042 [P] [US8] Implement `usePermissions` hook evaluating current user role against action requirements in `apps/frontend/src/hooks/usePermissions.ts`
 - [ ] T043 [US8] Create `<Protected>` wrapper component in `apps/frontend/src/components/Protected.tsx`
 - [ ] T044 [US8] Apply `<Protected>` wrapping to all Create/Edit/Delete actions in Project, Environment, Flag, Rule, and SDK Key features.
+- [ ] T044.b [US8] Integrate `usePermissions` into TanStack Router `beforeLoad` route guards to secure routing access based on user roles.
 
 ---
 
@@ -169,7 +170,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 9
 
-- [ ] T045 [US9] Audit and refine mobile responsiveness for Sidebar, Header, and Main Content
+- [ ] T045 [US9] Implement mobile responsiveness for Sidebar using HeroUI v3 `<Drawer>` (Hamburger menu) instead of resizing panels.
 - [ ] T046 [US9] Integrate `EmptyState` component into Projects, Environments, Flags, and Audit Logs lists with action prompts.
 
 ---
@@ -182,7 +183,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ### Implementation for User Story 10
 
-- [ ] T047 [US10] Implement global React Error Boundary in `apps/frontend/src/components/ErrorBoundary.tsx`
+- [ ] T047 [US10] Leverage TanStack Router's `errorComponent` for route-specific error boundaries, ensuring the sidebar/header remain functional during route failures.
 - [ ] T048 [US10] Ensure all form submit handlers use mutations that prevent duplicate submissions (`isPending` state disables buttons)
 - [ ] T049 [US10] Verify TanStack Query optimistic updates handle rollback and show user-friendly toasts on network failures.
 
@@ -193,7 +194,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 **Purpose**: Improvements that affect multiple user stories
 
 - [ ] T050 [P] Add unit tests for critical components (Rule Evaluation, RBAC hook) in `apps/frontend/src/hooks/__tests__/`
-- [ ] T051 Refactor duplicate UI patterns into shared components in `apps/frontend/src/components/ui/`
+- [ ] T051 Refactor list tables (Projects, Environments, Audit Logs) into a reusable `<DataTable>` component with integrated Pagination and EmptyState.
 - [ ] T052 Verify all sensitive data (emails, keys) are properly masked in UI
 
 ---

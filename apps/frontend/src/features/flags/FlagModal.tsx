@@ -22,6 +22,7 @@ import {
 } from "@heroui/react";
 import { useCreateFlag, useUpdateFlag } from "./api";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
 
 const flagFormSchema = z.object({
 	key: z
@@ -185,12 +186,16 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button
-										type="submit"
-										variant="primary"
-										isDisabled={isPending}>
-										{isEditing ? "Save Changes" : "Create Flag"}
-									</Button>
+									<PermissionGuard
+										permission={(isEditing ? "flag:edit" : "flag:create")}
+										mode="disable">
+										<Button
+											type="submit"
+											variant="primary"
+											isDisabled={isPending}>
+											{isEditing ? "Save Changes" : "Create Flag"}
+										</Button>
+									</PermissionGuard>
 								</Drawer.Footer>
 							</Form>
 						</Drawer.Body>

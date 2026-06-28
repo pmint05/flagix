@@ -1,6 +1,11 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
-import { useAuthStore, useSidebarStore, useIsHydrated } from "@/stores";
+import {
+	useAuthStore,
+	useSidebarStore,
+	useContextStore,
+	useIsHydrated,
+} from "@/stores";
 import { cn, Skeleton } from "@heroui/react";
 import {
 	Sidebar,
@@ -21,6 +26,7 @@ import { Panel, Group as PanelGroup } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useNavigate } from "@tanstack/react-router";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	const headers = getRequestHeaders();
@@ -58,8 +64,18 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
 	const isHydrated = useIsHydrated();
 	const isMobile = useIsMobile();
+	const selectedOrganization = useContextStore((s) => s.selectedOrganization);
 	const { isCollapsed, size, setCollapsed, setSize } = useSidebarStore();
 	const panelRef = useRef<PanelImperativeHandle>(null);
+	const navigate = useNavigate();
+
+	// Check org selection - redirect if no org selected (after hydration)
+	useEffect(() => {
+		if (!isHydrated) return;
+		if (!selectedOrganization) {
+			void navigate({ to: "/orgSelect", replace: true });
+		}
+	}, [isHydrated, selectedOrganization, navigate]);
 
 	// Sync imperative panel API when toggle buttons are clicked
 	useEffect(() => {
@@ -75,8 +91,6 @@ function AuthenticatedLayout() {
 			panel.resize(size || SIDEBAR_WIDTH_DEFAULT);
 		}
 	}, [isCollapsed, size]);
-
-
 
 	if (!isHydrated) {
 		return (

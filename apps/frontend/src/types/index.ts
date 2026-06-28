@@ -1,11 +1,13 @@
 export { uuidSchema, timestampSchema, nonEmptyString, slugSchema, paginatedSchema } from "./base";
 export type { Paginated } from "./base";
 
+export * from "./permission";
+
 export { userSchema } from "./user";
 export type { User } from "./user";
 
 export { organizationSchema } from "./organization";
-export type { Organization } from "./organization";
+export type { Organization, Role } from "./organization";
 
 export { projectSchema } from "./project";
 export type { Project } from "./project";

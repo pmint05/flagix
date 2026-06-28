@@ -1,4 +1,4 @@
-import { Button, cn, Tooltip } from "@heroui/react";
+import { Button, cn } from "@heroui/react";
 import { useAuthStore, useSidebarStore } from "#/stores";
 import { generateAvatarColor } from "#/lib/color-from-string";
 import { getInitials, truncateText } from "#/lib/string-utils";

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useMatch } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	Badge,
 	Button,
@@ -15,7 +15,6 @@ import {
 	Tooltip,
 } from "@heroui/react";
 import {
-	ArrowLeftIcon,
 	PlusIcon,
 	TrashIcon,
 	WarningIcon,
@@ -47,10 +46,6 @@ const STATUS_BADGE_COLOR: Record<
 };
 
 function FlagsIndex() {
-	const match = useMatch({
-		from: "/_authenticated/projects/$projectSlug/flags",
-	});
-	const { projectSlug } = match.params;
 	const [statusFilter, setStatusFilter] = useState<string | undefined>(
 		undefined,
 	);

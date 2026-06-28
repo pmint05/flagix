@@ -19,7 +19,7 @@ import {
 import { useAuthStore, useThemeStore } from "#/stores";
 import { authClient } from "#/lib/auth-client";
 import type React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useIsMobile } from "#/hooks/useIsMobile";
 
 interface UserMenuProps {

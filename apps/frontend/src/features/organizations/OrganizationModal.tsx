@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,9 +32,7 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 	const updateOrganization = useUpdateOrganization();
 
 	const {
-		register,
 		handleSubmit,
-		reset,
 		control,
 		formState: { errors },
 	} = useForm<OrganizationFormData>({

@@ -1,5 +1,4 @@
 import { Link, useMatches } from "@tanstack/react-router";
-import { CaretRightIcon } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { useFlag } from "#/features/flags/api";
 import {

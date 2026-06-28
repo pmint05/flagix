@@ -27,9 +27,10 @@ import type { CreateSdkKeyResponse } from "@/features/keys/api";
 import { KeyModal } from "@/features/keys/KeyModal";
 import { KeyDisplay } from "@/features/keys/KeyDisplay";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
 
 export const Route = createFileRoute(
-	"/_authenticated/projects/$projectSlug/sdk-keys",
+	"/_authenticated/projects/$projectSlug/_admin/sdk-keys",
 )({
 	component: SdkKeysPage,
 });
@@ -89,14 +90,27 @@ function SdkKeysPage() {
 						server keys must be kept secret.
 					</p>
 				</div>
-				<Button
-					variant="primary"
-					className="gap-2"
-					onPress={() => setIsCreateOpen(true)}
-				>
-					<Plus className="h-4 w-4" />
-					Generate Key
-				</Button>
+				<PermissionGuard
+					permission="sdk-key:create"
+					mode="disable"
+					fallback={
+						<Button
+							variant="primary"
+							className="gap-2"
+							isDisabled>
+							<Plus className="h-4 w-4" />
+							Generate Key
+						</Button>
+					}>
+					<Button
+						variant="primary"
+						className="gap-2"
+						onPress={() => setIsCreateOpen(true)}
+					>
+						<Plus className="h-4 w-4" />
+						Generate Key
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			{isLoading ? (
@@ -175,20 +189,39 @@ function SdkKeysPage() {
 								</TableCell>
 								<TableCell>
 									{key.isActive && (
-										<Tooltip>
-											<Tooltip.Trigger>
-												<Button
-													isIconOnly
-													size="sm"
-													variant="ghost"
-													className="text-danger"
-													onPress={() => handleRevoke(key.id)}
-												>
-													<Trash className="h-4 w-4" />
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content>Revoke key</Tooltip.Content>
-										</Tooltip>
+										<PermissionGuard
+											permission={"sdk-key:delete"}
+											mode="disable"
+											fallback={
+												<Tooltip>
+													<Tooltip.Trigger>
+														<Button
+															isIconOnly
+															size="sm"
+															variant="ghost"
+															className="text-danger"
+															isDisabled>
+															<Trash className="h-4 w-4" />
+														</Button>
+													</Tooltip.Trigger>
+													<Tooltip.Content>Revoke key</Tooltip.Content>
+												</Tooltip>
+											}>
+											<Tooltip>
+												<Tooltip.Trigger>
+													<Button
+														isIconOnly
+														size="sm"
+														variant="ghost"
+														className="text-danger"
+														onPress={() => handleRevoke(key.id)}
+													>
+														<Trash className="h-4 w-4" />
+													</Button>
+												</Tooltip.Trigger>
+												<Tooltip.Content>Revoke key</Tooltip.Content>
+											</Tooltip>
+										</PermissionGuard>
 									)}
 								</TableCell>
 							</TableRow>

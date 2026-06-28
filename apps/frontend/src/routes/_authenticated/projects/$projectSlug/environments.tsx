@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	Button,
 	Chip,
 	Skeleton,
-	Switch,
 	Table,
 	Tooltip,
 	Select,
@@ -13,7 +12,6 @@ import {
 	Checkbox,
 } from "@heroui/react";
 import {
-	ArrowLeftIcon,
 	PlusIcon,
 	PencilSimpleIcon,
 	TrashSimpleIcon,
@@ -38,7 +36,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { Selection, SortDescriptor } from "@heroui/react";
 import { useContextStore } from "@/stores";
 import type { Environment } from "@/types/environment";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import CopyButton from "#/components/ui/copy-button";
 import { generateColorFromString } from "#/lib/color-from-string";
 import { formatDate } from "#/lib/date";

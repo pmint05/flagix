@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +16,7 @@ import { useCreateProject, useUpdateProject } from "./api";
 import { useContextStore } from "@/stores";
 import type { Project } from "@/types/project";
 import { slugify } from "#/lib/utils";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
 
 const projectFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
@@ -43,9 +43,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	const organizationId = useContextStore((s) => s.selectedOrganization?.id);
 
 	const {
-		register,
 		handleSubmit,
-		reset,
 		setValue,
 		control,
 		formState: { errors },
@@ -161,14 +159,19 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button
-										type="submit"
-										variant="primary"
-										isDisabled={
-											createProject.isPending || updateProject.isPending
-										}>
-										{isEditing ? "Update" : "Create"}
-									</Button>
+									<PermissionGuard
+										permission={isEditing ? ("project:edit") : ("project:create")}
+										mode="disable">
+										<Button
+											type="submit"
+											variant="primary"
+											isDisabled={
+												createProject.isPending ||
+												updateProject.isPending
+											}>
+											{isEditing ? "Update" : "Create"}
+										</Button>
+									</PermissionGuard>
 								</Drawer.Footer>
 							</Form>
 						</Drawer.Body>

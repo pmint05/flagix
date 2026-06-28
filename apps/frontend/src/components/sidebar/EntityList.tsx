@@ -1,11 +1,10 @@
 import { Button, Skeleton, cn, SearchField } from "@heroui/react";
 import {
 	CheckIcon,
-	PlusIcon,
 	MagnifyingGlassIcon,
 	CaretRightIcon,
 } from "@phosphor-icons/react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { generateAvatarColor } from "#/lib/color-from-string";
 import { getInitials } from "#/lib/string-utils";
 import { useEffect } from "react";

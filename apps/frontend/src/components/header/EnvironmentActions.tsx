@@ -1,7 +1,6 @@
 import { Dropdown, Button, Label, Header } from "@heroui/react";
 import {
 	DotsThreeOutlineVerticalIcon,
-	CopyIcon,
 	PencilSimpleIcon,
 	PlusIcon,
 	HashIcon,
