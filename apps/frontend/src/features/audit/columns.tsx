@@ -1,5 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { maskEmail } from "@/lib/masking";
 import type { AuditLog } from "@/types/audit-log";
 
 const columnHelper = createColumnHelper<AuditLog>();
@@ -21,7 +22,7 @@ export const auditLogColumns = [
 			const row = info.row.original;
 			return (
 				<div className="flex flex-col">
-					<span className="font-medium">{row.actorEmail ?? "System"}</span>
+					<span className="font-medium">{row.actorEmail ? maskEmail(row.actorEmail) : "System"}</span>
 					<span className="text-xs text-default-400 capitalize">
 						{row.actorType}
 					</span>

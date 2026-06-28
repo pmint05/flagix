@@ -236,7 +236,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
   - Utilize `filters` object in `useDataTableUrlSync` to handle actor/action multi-select filtering via URL.
 
 ### Phase 13.4: Final Polish
-- [ ] T062 Verify all sensitive data (emails, SDK keys) are properly masked in the UI.
+- [X] T062 Verify all sensitive data (emails, SDK keys) are properly masked in the UI.
 
 ---
 
