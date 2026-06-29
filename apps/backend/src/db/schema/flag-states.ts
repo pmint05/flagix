@@ -12,6 +12,7 @@ import {
 import { organizations } from './organizations';
 import { featureFlags } from './feature-flags';
 import { environments } from './environments';
+import { variations } from './variations';
 
 export const flagStates = pgTable(
   'flag_states',
@@ -29,6 +30,10 @@ export const flagStates = pgTable(
     isEnabled: boolean('is_enabled').notNull().default(false),
     status: varchar('status', { length: 20 }).notNull().default('draft'),
     version: integer('version').notNull().default(1),
+    offVariationId: uuid('off_variation_id').references(() => variations.id),
+    defaultVariationId: uuid('default_variation_id').references(
+      () => variations.id,
+    ),
     createdBy: varchar('created_by', { length: 255 }),
     updatedBy: varchar('updated_by', { length: 255 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -60,5 +65,13 @@ export const flagStatesRelations = relations(flagStates, ({ one }) => ({
   environment: one(environments, {
     fields: [flagStates.environmentId],
     references: [environments.id],
+  }),
+  offVariation: one(variations, {
+    fields: [flagStates.offVariationId],
+    references: [variations.id],
+  }),
+  defaultVariation: one(variations, {
+    fields: [flagStates.defaultVariationId],
+    references: [variations.id],
   }),
 }));

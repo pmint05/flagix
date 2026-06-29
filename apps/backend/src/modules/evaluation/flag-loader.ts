@@ -53,6 +53,8 @@ export class FlagLoader {
       status: state.status as LoadedFlag['status'],
       isEnabled: state.isEnabled,
       version: state.version,
+      offVariationId: state.offVariationId,
+      defaultVariationId: state.defaultVariationId,
       variations: flag.variations.map((v) => ({
         id: v.id,
         key: v.key,
@@ -114,6 +116,8 @@ export class FlagLoader {
           status: s.status as LoadedFlag['status'],
           isEnabled: s.isEnabled,
           version: s.version,
+          offVariationId: s.offVariationId,
+          defaultVariationId: s.defaultVariationId,
           variations: flag.variations.map((v) => ({
             id: v.id,
             key: v.key,

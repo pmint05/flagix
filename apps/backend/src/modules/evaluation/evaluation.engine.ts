@@ -1,15 +1,7 @@
-import type {
-  EvaluationContext,
-  EvaluationResult,
-  RuleType,
-} from '@flagix/shared';
+import type { EvaluationContext, EvaluationResult } from '@flagix/shared';
 import type { LoadedFlag } from './safe-default.util';
 import { buildSafeDefault } from './safe-default.util';
-import {
-  getMatcher,
-  MATCHER_TIERS,
-  type RuleForMatching,
-} from './rule-matcher';
+import { getMatcher } from './rule-matcher';
 
 export function evaluate(
   flag: LoadedFlag,
@@ -27,33 +19,43 @@ export function evaluate(
     return buildSafeDefault(flag, flag.key, 'FLAG_DISABLED');
   }
 
-  const killSwitchMatcher = getMatcher('kill_switch');
-  const killSwitchRule = flag.rules.find(
-    (r) =>
-      r.ruleType === 'kill_switch' &&
-      r.isEnabled &&
-      killSwitchMatcher?.matchFn(r, flag.key, context),
+  // Sort rules by priority ascending to ensure strict order evaluation
+  const sortedRules = [...flag.rules].sort((a, b) =>
+    a.priority.localeCompare(b.priority),
   );
 
-  if (killSwitchRule) {
-    const variation = flag.variations.find(
-      (v) => v.id === killSwitchRule.variationId,
-    );
-    return {
-      flagKey: flag.key,
-      enabled: false,
-      variationKey: variation?.key ?? '',
-      resolvedValue: variation?.value ?? false,
-      evaluationReason: 'KILL_SWITCH',
-    };
+  for (const rule of sortedRules) {
+    if (!rule.isEnabled) continue;
+    const matcher = getMatcher(rule.ruleType);
+    if (!matcher) continue;
+
+    const matchResult = matcher.matchFn(rule, flag.key, context);
+    if (matchResult.isMatched) {
+      const resolvedVarId = matchResult.variationId || rule.variationId;
+      const variation = flag.variations.find((v) => v.id === resolvedVarId);
+
+      const isEnabled = rule.ruleType !== 'kill_switch';
+
+      if (variation) {
+        return {
+          flagKey: flag.key,
+          enabled: isEnabled,
+          variationKey: variation.key,
+          resolvedValue: variation.value,
+          evaluationReason: matcher.reason,
+        };
+      }
+    }
   }
 
-  for (const tier of MATCHER_TIERS) {
-    const result = evaluateTier(tier, flag, context);
-    if (result) return result;
+  // Resolve environment-specific defaultVariationId first, fall back to global default variation
+  let defaultVariation = flag.defaultVariationId
+    ? flag.variations.find((v) => v.id === flag.defaultVariationId)
+    : undefined;
+  if (!defaultVariation) {
+    defaultVariation = flag.variations.find((v) => v.isDefault);
   }
 
-  const defaultVariation = flag.variations.find((v) => v.isDefault);
   if (defaultVariation) {
     return {
       flagKey: flag.key,
@@ -65,34 +67,4 @@ export function evaluate(
   }
 
   return buildSafeDefault(flag, flag.key, 'EVALUATION_ERROR');
-}
-
-function evaluateTier(
-  ruleType: RuleType,
-  flag: LoadedFlag,
-  context: EvaluationContext,
-): EvaluationResult | null {
-  const matcher = getMatcher(ruleType);
-  if (!matcher) return null;
-
-  const tierRules = flag.rules.filter(
-    (r) => r.ruleType === ruleType && r.isEnabled,
-  );
-
-  for (const rule of tierRules) {
-    if (!matcher.matchFn(rule, flag.key, context)) continue;
-
-    const variation = flag.variations.find((v) => v.id === rule.variationId);
-    if (variation) {
-      return {
-        flagKey: flag.key,
-        enabled: true,
-        variationKey: variation.key,
-        resolvedValue: variation.value,
-        evaluationReason: matcher.reason,
-      };
-    }
-  }
-
-  return null;
 }

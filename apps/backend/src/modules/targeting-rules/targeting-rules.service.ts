@@ -35,6 +35,10 @@ export class TargetingRulesService {
   ) {}
 
   async create(orgId: string, flagId: string, dto: CreateTargetingRuleDto) {
+    if (!dto.environmentId) {
+      throw new BadRequestException('environmentId is required');
+    }
+
     if (dto.ruleType === 'kill_switch') {
       const existing = await this.rulesRepo.findKillSwitchForFlag(flagId);
       if (existing)
@@ -43,12 +47,16 @@ export class TargetingRulesService {
         );
     }
 
-    const variation = await this.rulesRepo.findVariationForFlag(
-      flagId,
-      dto.variationId,
-    );
-    if (!variation) {
-      throw new BadRequestException('Variation does not belong to this flag');
+    if (dto.variationId) {
+      const variation = await this.rulesRepo.findVariationForFlag(
+        flagId,
+        dto.variationId,
+      );
+      if (!variation) {
+        throw new BadRequestException('Variation does not belong to this flag');
+      }
+    } else if (dto.ruleType !== 'percentage') {
+      throw new BadRequestException('variationId is required for this rule type');
     }
 
     const lastRule = await this.rulesRepo.findLastRuleForFlag(flagId);
@@ -89,7 +97,10 @@ export class TargetingRulesService {
     return rule;
   }
 
-  async findAllForFlag(orgId: string, flagId: string) {
+  async findAllForFlag(orgId: string, flagId: string, envId?: string) {
+    if (envId) {
+      return this.rulesRepo.findAllForFlagAndEnv(flagId, envId);
+    }
     return this.rulesRepo.findAllForFlag(flagId);
   }
 

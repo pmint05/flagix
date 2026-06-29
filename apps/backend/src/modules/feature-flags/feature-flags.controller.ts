@@ -7,7 +7,7 @@ import {
   OrgContext,
 } from '@/common/decorators/current-context.decorator';
 import { FeatureFlagsService } from './feature-flags.service';
-import { CreateFeatureFlagDto } from './dto/create-feature-flag.dto';
+import { CreateFeatureFlagDto } from './dto/feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Feature Flags')
@@ -51,7 +51,8 @@ export class FeatureFlagsController {
   async findByKey(
     @CurrentContext() ctx: OrgContext,
     @Param('key') key: string,
+    @Query('envId') envId?: string,
   ) {
-    return this.flagsService.findByKey(ctx.organizationId, ctx.projectId!, key);
+    return this.flagsService.findByKey(ctx.organizationId, ctx.projectId!, key, envId);
   }
 }

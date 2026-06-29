@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
@@ -16,7 +17,7 @@ import {
   OrgContext,
 } from '@/common/decorators/current-context.decorator';
 import { FeatureFlagsService } from './feature-flags.service';
-import { UpdateFeatureFlagDto } from './dto/create-feature-flag.dto';
+import { UpdateFeatureFlagDto, PatchFeatureFlagConfigDto } from './dto/feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Feature Flags')
@@ -28,8 +29,11 @@ export class FeatureFlagItemController {
 
   @Get()
   @ApiOperation({ summary: 'Get feature flag' })
-  async findOne(@CurrentContext() ctx: OrgContext) {
-    return this.flagsService.findOne(ctx.organizationId, ctx.flagId!);
+  async findOne(
+    @CurrentContext() ctx: OrgContext,
+    @Query('envId') envId?: string,
+  ) {
+    return this.flagsService.findOne(ctx.organizationId, ctx.flagId!, envId);
   }
 
   @Patch()
@@ -50,6 +54,21 @@ export class FeatureFlagItemController {
     @Body() dto: { isEnabled?: boolean; status?: string },
   ) {
     return this.flagsService.updateFlagState(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.envId!,
+      dto,
+    );
+  }
+
+  @Patch('environments/:envId/config')
+  @PlatformOrgRoles(['admin', 'editor'])
+  @ApiOperation({ summary: 'Patch feature flag config (variations, rules, etc.)' })
+  async patchConfig(
+    @CurrentContext() ctx: OrgContext,
+    @Body() dto: PatchFeatureFlagConfigDto,
+  ) {
+    return this.flagsService.patchConfig(
       ctx.organizationId,
       ctx.flagId!,
       ctx.envId!,

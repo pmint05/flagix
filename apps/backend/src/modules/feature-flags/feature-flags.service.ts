@@ -19,7 +19,8 @@ import { sanitizeFlag } from '@/common/audit/sanitize';
 import type {
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
-} from './dto/create-feature-flag.dto';
+  PatchFeatureFlagConfigDto,
+} from './dto/feature-flag.dto';
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['active'],
@@ -123,24 +124,24 @@ export class FeatureFlagsService {
     return this.flagRepo.findAllForEnv(envId, statusFilter);
   }
 
-  async findOne(orgId: string, flagId: string) {
+  async findOne(orgId: string, flagId: string, envId?: string) {
     const flag = await this.flagRepo.findById(flagId);
     if (!flag || flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flagId);
-    const flagStates = await this.flagRepo.findFlagStatesForFlag(flagId);
+    const flagStates = await this.flagRepo.findFlagStatesForFlag(flagId, envId);
     return { ...flag, variations: flagVariations, states: flagStates };
   }
 
-  async findByKey(orgId: string, projectId: string, key: string) {
+  async findByKey(orgId: string, projectId: string, key: string, envId?: string) {
     const flag = await this.flagRepo.findByKey(projectId, key);
     console.log(flag)
     if (!flag || flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flag.id);
-    const flagStates = await this.flagRepo.findFlagStatesForFlag(flag.id);
+    const flagStates = await this.flagRepo.findFlagStatesForFlag(flag.id, envId);
     return { ...flag, variations: flagVariations, states: flagStates };
   }
 
@@ -259,6 +260,58 @@ export class FeatureFlagsService {
     }
 
     return updated;
+  }
+
+  async patchConfig(
+    orgId: string,
+    flagId: string,
+    envId: string,
+    dto: PatchFeatureFlagConfigDto,
+  ) {
+    const actorId = getActorId();
+    const beforeConfig = await this.findOne(orgId, flagId, envId).catch(() => null);
+
+    const updated = await this.flagRepo.patchConfig(
+      flagId,
+      envId,
+      orgId,
+      dto,
+      actorId,
+    );
+
+    if (this.auditLogsService && beforeConfig) {
+      const afterConfig = await this.findOne(orgId, flagId, envId).catch(() => null);
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId: updated.projectId,
+        environmentId: envId,
+        entityType: 'feature_flag',
+        entityId: flagId,
+        before: beforeConfig,
+        after: afterConfig,
+        resolveAction: resolveFlagAction,
+        sanitize: sanitizeFlag,
+      });
+    }
+
+    if (this.flagChangePublisher) {
+      const isEnabledState = dto.isEnabled !== undefined 
+        ? dto.isEnabled 
+        : (beforeConfig?.states?.find((s) => s.environmentId === envId)?.isEnabled ?? false);
+
+      this.flagChangePublisher.publish(envId, {
+        type: 'flag.updated',
+        flagKey: updated.key,
+        environmentId: envId,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          version: updated.version,
+          isEnabled: isEnabledState,
+        },
+      });
+    }
+
+    return this.findOne(orgId, flagId, envId);
   }
 
   async remove(orgId: string, flagId: string) {

@@ -11,8 +11,15 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { CreateTargetingRuleDto } from '../../targeting-rules/dto/create-targeting-rule.dto';
+
 
 class VariationDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty()
   @IsString()
   @Length(1, 100)
@@ -91,4 +98,51 @@ export class UpdateFeatureFlagDto {
   @ApiPropertyOptional()
   @IsOptional()
   version?: number;
+}
+
+export class PatchFeatureFlagConfigDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(1, 255)
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isEnabled?: boolean;
+
+  @ApiPropertyOptional({ enum: ['draft', 'active', 'archived'] })
+  @IsOptional()
+  @IsEnum(['draft', 'active', 'archived'])
+  status?: 'draft' | 'active' | 'archived';
+
+  @ApiPropertyOptional({ type: [VariationDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariationDto)
+  variations?: VariationDto[];
+
+  @ApiPropertyOptional({ type: [CreateTargetingRuleDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateTargetingRuleDto)
+  rules?: CreateTargetingRuleDto[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultVariationId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  offVariationId?: string;
 }
