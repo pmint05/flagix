@@ -1,17 +1,28 @@
-import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
-import { useCurrentProject } from "@/hooks/useCurrentProject";
-import { useProjects } from "@/features/projects/api";
+import { createFileRoute, Outlet, Navigate, useParams } from "@tanstack/react-router";
+import { useProjects, useProjectBySlug } from "@/features/projects/api";
 import { Skeleton } from "@heroui/react";
+import { useContextStore } from "@/stores";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectSlug")({
 	component: ProjectSlugLayout,
 });
 
 function ProjectSlugLayout() {
-	const project = useCurrentProject();
+	const params = useParams({ strict: false });
+	const projectSlug = (params as any).projectSlug as string | undefined;
+
+	const { data: project, isLoading: isProjectDetailLoading } = useProjectBySlug(projectSlug);
+	const { selectedProject, setProject } = useContextStore();
 	const { isPending, isLoading } = useProjects();
 
-	const isProjectLoading = isPending || isLoading;
+	useEffect(() => {
+		if (project && project.id !== selectedProject?.id) {
+			setProject(project);
+		}
+	}, [project, selectedProject?.id, setProject]);
+
+	const isProjectLoading = isPending || isLoading || isProjectDetailLoading;
 
 	if (isProjectLoading) {
 		return (

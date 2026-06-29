@@ -49,7 +49,7 @@ function FlagsIndex() {
 				onStatusChange: (flag, status) =>
 					updateFlagState.mutate({ flagId: flag.id, status }),
 			}) as ColumnDef<FeatureFlagListItem, unknown>[],
-		[],
+		[projectSlug, deleteFlag, updateFlagState],
 	);
 
 	const flagList = flags ?? [];

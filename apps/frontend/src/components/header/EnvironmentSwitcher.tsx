@@ -39,13 +39,14 @@ export function EnvironmentSwitcher() {
 			return;
 
 		const urlSlug = search.env;
+		const isCurrentEnvValid = selectedEnvironment && environments.some((e) => e.id === selectedEnvironment.id);
+		const fallbackEnv = isCurrentEnvValid ? selectedEnvironment! : environments[0];
 
 		if (urlSlug) {
 			const matchedEnv = environments.find((e) => e.slug === urlSlug);
 			if (matchedEnv && matchedEnv.id !== selectedEnvironment?.id) {
 				setEnvironment(matchedEnv);
 			} else if (!matchedEnv) {
-				const fallbackEnv = selectedEnvironment || environments[0];
 				setEnvironment(fallbackEnv);
 				navigate({
 					to: ".",
@@ -54,7 +55,6 @@ export function EnvironmentSwitcher() {
 				});
 			}
 		} else {
-			const fallbackEnv = selectedEnvironment || environments[0];
 			if (selectedEnvironment?.id !== fallbackEnv.id) {
 				setEnvironment(fallbackEnv);
 			}
