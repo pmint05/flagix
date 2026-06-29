@@ -187,7 +187,10 @@ svg[class*="phosphor"] {
 .switch,
 .switch__content,
 .switch__control,
-.switch__thumb {
+.switch__thumb,
+.slider__track,
+.slider__thumb::after,
+.slider__thumb {
 	border-radius: calc(var(--radius) * 100);
 }
 

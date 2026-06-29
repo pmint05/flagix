@@ -43,7 +43,7 @@ function SdkKeysPage() {
 		useState<CreateSdkKeyResponse | null>(null);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
-	const { data: keys, isLoading } = useSdkKeys();
+	const { data: keys, isPending } = useSdkKeys();
 	const createMutation = useCreateSdkKey();
 	const revokeMutation = useRevokeSdkKey();
 
@@ -113,7 +113,7 @@ function SdkKeysPage() {
 				</PermissionGuard>
 			</div>
 
-			{isLoading ? (
+			{isPending ? (
 				<div className="space-y-3">
 					{Array.from({ length: 3 }).map((_, i) => (
 						<Skeleton key={i} className="h-14 w-full rounded-lg" />

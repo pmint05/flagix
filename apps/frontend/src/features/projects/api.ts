@@ -27,6 +27,8 @@ export const createProjectsApi = (orgId: string) => {
 			}).then(res => res.projects),
 		get: (id: string): Promise<Project> =>
 			api.get(`${basePath}/${id}`, { schema: projectSchema }),
+		getBySlug: (slug: string): Promise<Project> =>
+			api.get(`${basePath}/by-slug/${slug}`, { schema: projectSchema }),
 		create: (input: CreateProjectInput): Promise<Project> =>
 			api.post(basePath, { json: input, schema: projectSchema }),
 		update: (id: string, input: UpdateProjectInput): Promise<Project> =>
@@ -58,6 +60,15 @@ export function useProject(id: string) {
 		queryKey: [...PROJECTS_KEY, "detail", orgId, id],
 		queryFn: () => createProjectsApi(orgId!).get(id),
 		enabled: !!orgId && !!id,
+	});
+}
+
+export function useProjectBySlug(slug: string | undefined) {
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	return useQuery({
+		queryKey: [...PROJECTS_KEY, "detail", orgId, "by-slug", slug],
+		queryFn: () => createProjectsApi(orgId!).getBySlug(slug!),
+		enabled: !!orgId && !!slug,
 	});
 }
 

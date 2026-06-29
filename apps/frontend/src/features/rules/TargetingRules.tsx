@@ -15,7 +15,7 @@ interface TargetingRulesProps {
 }
 
 export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
-	const { data: rules, isLoading } = useRules(flagId);
+	const { data: rules, isPending } = useRules(flagId);
 	const { data: environments } = useEnvironments();
 	const updateRule = useUpdateRule();
 	const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -54,7 +54,7 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 		[flagId, updateRule],
 	);
 
-	if (isLoading) {
+	if (isPending) {
 		return (
 			<div className="space-y-3">
 				<div className="flex items-center justify-between">

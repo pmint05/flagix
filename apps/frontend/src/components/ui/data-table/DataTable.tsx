@@ -247,6 +247,19 @@ export function DataTable<TData>({
 				})}
 			</Table.Header>
 			<Table.Body
+				items={
+					isLoading
+						? Array.from({ length: 5 }).map((_, rowIndex) => ({
+								id: `skeleton-row-${rowIndex}`,
+								isSkeleton: true as const,
+								rowIndex,
+							}))
+						: rows.map((row) => ({
+								id: row.id,
+								isSkeleton: false as const,
+								row,
+							}))
+				}
 				renderEmptyState={() =>
 					emptyState ?? (
 						<EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center min-h-42">
@@ -257,37 +270,33 @@ export function DataTable<TData>({
 						</EmptyState>
 					)
 				}>
-				{isLoading &&
-					Array.from({ length: 5 }).map((_, rowIndex) => (
-						<Table.Row
-							key={`skeleton-row-${rowIndex}`}
-							id={`skeleton-row-${rowIndex}`}>
-							{allColumns.map((_, colIndex) => (
-								<Table.Cell
-									key={`skeleton-cell-${rowIndex}-${colIndex}`}
-									className={isCompact ? "py-1" : undefined}>
-									<Skeleton
-										className="h-6 rounded-2xl!"
-										style={{
-											width: `${Math.floor(Math.random() * 50) + 50}%`,
-										}}
-									/>
-								</Table.Cell>
-							))}
-						</Table.Row>
-					))}
-				{!isLoading &&
-					rows.map((row) => (
-						<Table.Row key={row.id} id={row.id}>
-							{row.getVisibleCells().map((cell) => (
-								<Table.Cell
-									key={cell.id}
-									className={isCompact ? "py-1 text-sm" : undefined}>
-									{flexRender(cell.column.columnDef.cell, cell.getContext())}
-								</Table.Cell>
-							))}
-						</Table.Row>
-					))}
+				{(item: any) => (
+					<Table.Row key={item.id} id={item.id}>
+						{item.isSkeleton
+							? allColumns.map((_, colIndex) => (
+									<Table.Cell
+										key={`skeleton-cell-${item.rowIndex}-${colIndex}`}
+										className={isCompact ? "py-1" : undefined}>
+										<Skeleton
+											className="h-6 rounded-2xl!"
+											style={{
+												width: `${Math.floor(Math.random() * 50) + 50}%`,
+											}}
+										/>
+									</Table.Cell>
+								))
+							: item.row.getVisibleCells().map((cell: any) => (
+									<Table.Cell
+										key={cell.id}
+										className={isCompact ? "py-1 text-sm" : undefined}>
+										{flexRender(
+											cell.column.columnDef.cell,
+											cell.getContext(),
+										)}
+									</Table.Cell>
+								))}
+					</Table.Row>
+				)}
 			</Table.Body>
 		</Table.Content>
 	);

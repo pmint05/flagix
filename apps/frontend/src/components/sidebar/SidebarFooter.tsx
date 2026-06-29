@@ -1,7 +1,7 @@
 import { Button, cn } from "@heroui/react";
 import { useAuthStore, useSidebarStore } from "#/stores";
 import { generateAvatarColor } from "#/lib/color-from-string";
-import { getInitials, truncateText } from "#/lib/string-utils";
+import { getInitials } from "#/lib/string-utils";
 import { UserMenu } from "./UserMenu";
 import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 import { maskEmail } from "@/lib/masking";

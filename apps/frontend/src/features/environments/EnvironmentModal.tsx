@@ -140,15 +140,15 @@ export function EnvironmentModal({
 												<Select.Indicator />
 											</Select.Trigger>
 											<Select.Popover>
-												<ListBox>
-													{ENV_TYPES.map((t) => (
+												<ListBox items={ENV_TYPES}>
+													{(t: any) => (
 														<ListBox.Item
 															textValue={t.label}
 															id={t.key}
 															key={t.key}>
 															{t.label}
 														</ListBox.Item>
-													))}
+													)}
 												</ListBox>
 											</Select.Popover>
 											{errors.type && (

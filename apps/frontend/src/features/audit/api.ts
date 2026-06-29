@@ -9,6 +9,7 @@ export interface AuditLogQueryParams {
 	projectId?: string;
 	environmentId?: string;
 	entityType?: string;
+	entityId?: string;
 	actionType?: string;
 	limit?: number;
 	offset?: number;

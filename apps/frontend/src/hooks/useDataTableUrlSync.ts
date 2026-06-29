@@ -91,7 +91,16 @@ export function useDataTableUrlSync(
 
 			navigate({
 				to: ".",
-				search: urlParams,
+				search: (prev: any) => {
+					const newSearch = { ...prev, ...urlParams };
+					if (newState.page === 1) delete newSearch.page;
+					if (newState.pageSize === defaultPageSize) delete newSearch.pageSize;
+					if (!newState.sortBy) delete newSearch.sortBy;
+					if (!newState.sortDir) delete newSearch.sortDir;
+					if (!newState.query) delete newSearch.query;
+					if (Object.keys(allowedFilters).length === 0) delete newSearch.filters;
+					return newSearch;
+				},
 				replace: true,
 			});
 		},
