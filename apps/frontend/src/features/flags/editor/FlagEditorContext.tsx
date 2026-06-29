@@ -37,7 +37,7 @@ export function FlagEditorProvider({
 	children: ReactNode 
 }) {
 	const currentEnv = useContextStore((s) => s.selectedEnvironment);
-	const { data: rulesData } = useRules(flag.id);
+	const { data: rulesData } = useRules(flag.id, currentEnv?.id);
 	
 	const [draftVariations, setDraftVariations] = useState<Variation[]>([]);
 	const [isFlagOn, setIsFlagOn] = useState(true);
@@ -58,10 +58,12 @@ export function FlagEditorProvider({
 			setDraftRules([]);
 		}
 		
-		// Set some mock default for now
-		if (flag.variations && flag.variations.length > 0) {
-			setDefaultVariationId(flag.variations[0].id);
-			setOffVariationId(flag.variations[flag.variations.length - 1].id);
+		if (flagState) {
+			setDefaultVariationId(flagState.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "");
+			setOffVariationId(flagState.offVariationId ?? "");
+		} else {
+			setDefaultVariationId(flag.variations?.find((v) => v.isDefault)?.id ?? "");
+			setOffVariationId("");
 		}
 	}, [flag, rulesData, currentEnv]);
 	

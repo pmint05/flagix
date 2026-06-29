@@ -49,14 +49,16 @@ export const createFlagsApi = (
 					}),
 				})
 				.then((res) => res.flags),
-		get: (flagId: string): Promise<FeatureFlag> =>
+		get: (flagId: string, envId?: string): Promise<FeatureFlag> =>
 			api.get(`organizations/${orgId}/flags/${flagId}`, {
+				searchParams: envId ? { envId } : {},
 				schema: featureFlagSchema,
 			}),
-		getByKey: (key: string): Promise<FeatureFlag> =>
+		getByKey: (key: string, envId?: string): Promise<FeatureFlag> =>
 			api.get(
 				`${basePath}/by-key/${key}`,
 				{
+					searchParams: envId ? { envId } : {},
 					schema: featureFlagSchema,
 				},
 			),
@@ -75,6 +77,14 @@ export const createFlagsApi = (
 				`organizations/${orgId}/flags/${flagId}/environments/${envId}/state`,
 				{
 					json: input,
+				},
+			),
+		patchConfig: (flagId: string, envId: string, input: any): Promise<FeatureFlag> =>
+			api.patch(
+				`organizations/${orgId}/flags/${flagId}/environments/${envId}/config`,
+				{
+					json: input,
+					schema: featureFlagSchema,
 				},
 			),
 		delete: (flagId: string): Promise<void> =>
@@ -107,7 +117,7 @@ export function useFlagByKey(key: string) {
 		queryKey: [...FLAGS_KEY, "detail", orgId, projectId, envId, key],
 		queryFn: () => {
 			if (!orgId || !projectId) throw new Error("Missing context");
-			return createFlagsApi(orgId, projectId).getByKey(key);
+			return createFlagsApi(orgId, projectId).getByKey(key, envId);
 		},
 		enabled: !!orgId && !!projectId && !!key,
 	});
@@ -225,6 +235,34 @@ export function useDeleteFlag() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
+			});
+		},
+	});
+}
+
+export function usePatchFlagConfig() {
+	const queryClient = useQueryClient();
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	const projectId = useCurrentProject()?.id;
+	const envId = useContextStore((s) => s.selectedEnvironment?.id);
+
+	return useMutation({
+		mutationFn: ({
+			flagId,
+			...input
+		}: { flagId: string } & any) => {
+			if (!orgId || !projectId || !envId) throw new Error("Missing context");
+			return createFlagsApi(orgId, projectId).patchConfig(flagId, envId, input);
+		},
+		onSuccess: (data) => {
+			queryClient.invalidateQueries({
+				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
+			});
+			queryClient.invalidateQueries({
+				queryKey: [...FLAGS_KEY, "detail", orgId, projectId, envId, data.key],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["rules", orgId, data.id, envId],
 			});
 		},
 	});

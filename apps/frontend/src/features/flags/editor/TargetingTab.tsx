@@ -24,7 +24,7 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 			<div>
 				<h2 className="text-lg font-semibold text-foreground">Targeting</h2>
 				<p className="text-sm text-default-500 mt-1">
-					Configure how this flag serves variations to different users.
+					Configure how this flag resolves variations for different users.
 				</p>
 			</div>
 
@@ -36,7 +36,7 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 						<div>
 							<p className="text-sm text-default-600">
 								Targeting rules are hidden because the flag is OFF. All users
-								receive the off variation.
+								resolve to the off variation.
 							</p>
 						</div>
 						<Button

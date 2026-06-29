@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { Tabs, toast, Button, Separator } from "@heroui/react";
+import {
+	Panel,
+	Group as PanelGroup,
+	Separator as ResizableSeparator,
+} from "react-resizable-panels";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { TargetingTab } from "./TargetingTab";
 import { VariationsTab } from "./VariationsTab";
@@ -14,6 +19,8 @@ import { flagEditorFormSchema, type FlagEditorFormValues } from "./schema";
 import CopyButton from "#/components/ui/copy-button";
 import { useContextStore } from "#/stores";
 import { useRules } from "@/features/rules/api";
+import { usePatchFlagConfig } from "../api";
+import { ActionButton } from "#/components/ui/action-button";
 
 const routeApi = getRouteApi(
 	"/_authenticated/projects/$projectSlug/flags/$flagSlug",
@@ -24,7 +31,7 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 	const search = routeApi.useSearch();
 	const navigate = routeApi.useNavigate();
 	const isMobile = useIsMobile();
-	const { data: rulesData } = useRules(flag.id);
+	const { data: rulesData } = useRules(flag.id, currentEnv?.id);
 
 	const activeTab = search.tab ?? "targeting";
 
@@ -43,8 +50,8 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 		resolver: zodResolver(flagEditorFormSchema),
 		defaultValues: {
 			isFlagOn: defaultFlagState?.isEnabled ?? false,
-			offVariationId: flag.variations?.[flag.variations.length - 1]?.id ?? "",
-			defaultVariationId: flag.variations?.[0]?.id ?? "",
+			offVariationId: defaultFlagState?.offVariationId ?? "",
+			defaultVariationId: defaultFlagState?.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "",
 			rules: [],
 			variations: flag.variations || [],
 		},
@@ -54,20 +61,29 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 		if (rulesData && currentEnv) {
 			const envRules = rulesData
 				.filter((r) => r.environmentId === currentEnv.id)
-				.sort((a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority));
+				.sort(
+					(a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority),
+				);
 
 			methods.reset({
 				isFlagOn: defaultFlagState?.isEnabled ?? false,
-				offVariationId: flag.variations?.[flag.variations.length - 1]?.id ?? "",
-				defaultVariationId: flag.variations?.[0]?.id ?? "",
+				offVariationId: defaultFlagState?.offVariationId ?? "",
+				defaultVariationId: defaultFlagState?.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "",
 				variations: flag.variations || [],
 				rules: envRules.map((rule) => {
 					const ruleType = rule.ruleType as string;
 					if (ruleType === "percentage") {
 						const conditions: any = rule.conditions || {};
-						const rollouts = conditions.rollouts || (conditions.percentage !== undefined ? [
-							{ variationId: rule.variationId || "", percentage: conditions.percentage }
-						] : []);
+						const rollouts =
+							conditions.rollouts ||
+							(conditions.percentage !== undefined
+								? [
+										{
+											variationId: rule.variationId || "",
+											percentage: conditions.percentage,
+										},
+									]
+								: []);
 						return {
 							id: rule.id,
 							ruleType: "percentage" as const,
@@ -126,15 +142,85 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 		}
 	}, [rulesData, currentEnv, defaultFlagState, flag, methods]);
 
+	const { mutate: patchConfig, isPending: isSaving } = usePatchFlagConfig();
+
 	const {
 		handleSubmit,
-		formState: { isDirty: isFormDirty },
+		formState: { isDirty: isFormDirty, dirtyFields },
 	} = methods;
 
 	const handleSave = handleSubmit((data) => {
-		console.log("Saving data:", data);
-		toast.success("Flag configuration saved successfully");
-		// In a real app we'd dispatch multiple mutations here
+		const payload: any = {};
+
+		if (dirtyFields.isFlagOn) {
+			payload.isEnabled = data.isFlagOn;
+		}
+		payload.offVariationId = data.offVariationId || null;
+		payload.defaultVariationId = data.defaultVariationId || null;
+		if (dirtyFields.variations) {
+			payload.variations = data.variations.map((v) => ({
+				id: v.id,
+				key: v.key,
+				value: v.value,
+				description: v.description,
+				isDefault: v.id === data.defaultVariationId,
+			}));
+		}
+		if (dirtyFields.rules) {
+			payload.rules = data.rules.map((rule) => {
+				const baseRule: any = {
+					id: rule.id,
+					ruleType: rule.ruleType,
+					isEnabled: rule.isEnabled,
+					variationId: rule.variationId || undefined,
+					conditions: {},
+				};
+				if (rule.ruleType === "percentage") {
+					baseRule.conditions = {
+						rollouts:
+							rule.conditions?.rollouts?.map((r: any) => ({
+								variationId: r.variationId,
+								percentage: Number(r.percentage),
+							})) || [],
+					};
+				} else if (rule.ruleType === "user") {
+					baseRule.conditions = {
+						operator: rule.conditions.operator,
+						userIds: rule.conditions.userIds,
+					};
+				} else if (rule.ruleType === "role") {
+					baseRule.conditions = {
+						operator: rule.conditions.operator,
+						roles: rule.conditions.roles,
+					};
+				} else if (rule.ruleType === "custom") {
+					baseRule.conditions = {
+						conditions: rule.conditions.conditions,
+					};
+				}
+				return baseRule;
+			});
+		}
+
+		patchConfig(
+			{ flagId: flag.id, ...payload },
+			{
+				onSuccess: () => {
+					toast.success("Flag configuration saved successfully");
+					methods.reset(data);
+				},
+				onError: (err: any) => {
+					toast.danger("Failed to save changes", {
+						description: err.message || "An unexpected error occurred.",
+					});
+				},
+			},
+		);
+	}, (errors) => {
+		console.warn("Validation failed:", errors);
+		toast.danger("Validation failed", {
+			description: "Please check all fields and fix any errors before saving.",
+		});
 	});
 
 	const handleDiscard = () => {
@@ -176,12 +262,13 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 						<Button variant="ghost" onPress={handleDiscard}>
 							Discard
 						</Button>
-						<Button
+						<ActionButton
 							variant="primary"
 							onPress={handleSave as any}
-							isDisabled={!isFormDirty}>
+							isDisabled={!isFormDirty || isSaving}
+							isPending={isSaving}>
 							Save Changes
-						</Button>
+						</ActionButton>
 					</div>
 				</div>
 
@@ -221,14 +308,29 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 									{isMobile ? (
 										<TargetingTab flag={flag} />
 									) : (
-										<div className="flex gap-6 h-full min-h-125">
-											<div className="flex-1">
+										<PanelGroup
+											orientation="horizontal"
+											className="flex h-full">
+											<Panel
+												defaultSize="70%"
+												minSize="40%"
+												maxSize="80%"
+												className="flex flex-col h-full">
 												<TargetingTab flag={flag} />
-											</div>
-											<div className="w-1/3 shrink-0">
+											</Panel>
+											<ResizableSeparator className="group mx-6 relative bg-border/50 w-px">
+												<div className="absolute inset-y-0 -left-3 -right-3 z-10 cursor-col-resize flex items-center justify-center">
+													<div className="w-1 h-12 bg-default opacity-0 group-hover:opacity-100 group-data-[resize-handle-state=drag]:opacity-100 rounded-full transition-opacity" />
+												</div>
+											</ResizableSeparator>
+											<Panel
+												defaultSize="30%"
+												minSize="20%"
+												maxSize="60%"
+												className="flex flex-col h-full">
 												<VariationsTab flag={flag} />
-											</div>
-										</div>
+											</Panel>
+										</PanelGroup>
 									)}
 								</Tabs.Panel>
 								<Tabs.Panel

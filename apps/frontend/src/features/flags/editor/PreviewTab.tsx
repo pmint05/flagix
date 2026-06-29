@@ -136,7 +136,7 @@ export function PreviewTab({}: PreviewTabProps) {
 						Evaluation Result
 					</h2>
 					<p className="text-sm text-default-500">
-						See what variation this context receives.
+						See what variation this context resolves.
 					</p>
 				</div>
 				<Card className="border border-divider shadow-sm bg-default-50 h-[380px]">
@@ -152,7 +152,7 @@ export function PreviewTab({}: PreviewTabProps) {
 							<div className="space-y-6 animate-appearance-in">
 								<div>
 									<div className="text-sm font-medium text-default-500 mb-2 uppercase tracking-wider">
-										Variation Served
+										Resolved Variation
 									</div>
 									<Chip
 										variant="soft"

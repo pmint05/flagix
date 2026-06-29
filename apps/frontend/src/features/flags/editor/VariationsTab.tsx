@@ -54,7 +54,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 					</Chip>
 				</div>
 				<p className="text-sm text-default-500">
-					Variations are the different values your feature flag can serve to
+					Variations are the different values your feature flag can resolve for
 					users.
 				</p>
 			</div>

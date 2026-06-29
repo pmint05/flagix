@@ -8,6 +8,7 @@ import {
 	TagGroup,
 	Tag,
 	ButtonGroup,
+	FieldError,
 } from "@heroui/react";
 import { PlusIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -23,9 +24,10 @@ export function UserTargetingContent({
 	flag,
 	ruleIndex,
 }: UserTargetingContentProps) {
-	const { watch, setValue } = useFormContext<FlagEditorFormValues>();
+	const { watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
 	const userIds: string[] =
 		watch(`rules.${ruleIndex}.conditions.userIds`) ?? [];
+	const userIdsError = (errors?.rules as any)?.[ruleIndex]?.conditions?.userIds;
 
 	const onRemoveUserIds = (keys: Set<Key>) => {
 		const newIds = userIds.filter((_, idx) => !keys.has(idx));
@@ -49,22 +51,29 @@ export function UserTargetingContent({
 				<span className="text-sm font-medium text-default-700">IF</span>
 				<span className="text-sm text-default-600">user ID is one of</span>
 			</div>
-			<div className="flex items-center gap-2 flex-wrap pl-6">
-				<TagGroup selectionMode="single" onRemove={onRemoveUserIds}>
-					<TagGroup.List
-						items={userIds.map((id, idx) => ({ id: idx, name: id }))}
-						renderEmptyState={() => <span>No users added</span>}>
-						{(item) => (
-							<Tag key={item.id} id={item.id} textValue={item.name} size="lg">
-								{item.name}
-							</Tag>
-						)}
-					</TagGroup.List>
-				</TagGroup>
-				<AddUserIdInput onAdd={addUserId} />
+			<div className="flex flex-col gap-1 pl-6">
+				<div className="flex items-center gap-2 flex-wrap">
+					<TagGroup selectionMode="single" onRemove={onRemoveUserIds}>
+						<TagGroup.List
+							items={userIds.map((id, idx) => ({ id: idx, name: id }))}
+							renderEmptyState={() => <span>No users added</span>}>
+							{(item) => (
+								<Tag key={item.id} id={item.id} textValue={item.name} size="lg">
+									{item.name}
+								</Tag>
+							)}
+						</TagGroup.List>
+					</TagGroup>
+					<AddUserIdInput onAdd={addUserId} />
+				</div>
+				{userIdsError && (
+					<FieldError className="text-xs text-danger">
+						{userIdsError.message}
+					</FieldError>
+				)}
 			</div>
 			<div className="flex items-center gap-2 pl-6">
-				<span className="text-sm text-default-600">then serve</span>
+				<span className="text-sm text-default-600">then resolve</span>
 				<VariationSelector
 					flag={flag}
 					name={`rules.${ruleIndex}.variationId`}

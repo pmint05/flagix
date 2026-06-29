@@ -10,6 +10,7 @@ import {
 	Tag,
 	ListBox,
 	ButtonGroup,
+	FieldError,
 } from "@heroui/react";
 import { PlusIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -35,8 +36,9 @@ export function RoleTargetingContent({
 	flag,
 	ruleIndex,
 }: RoleTargetingContentProps) {
-	const { watch, setValue } = useFormContext<FlagEditorFormValues>();
+	const { watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
 	const roles: string[] = watch(`rules.${ruleIndex}.conditions.roles`) ?? [];
+	const rolesError = (errors?.rules as any)?.[ruleIndex]?.conditions?.roles;
 
 	const onRemoveRoles = (keys: Set<Key>) => {
 		const newRoles = roles.filter((_, idx) => !keys.has(idx));
@@ -60,22 +62,29 @@ export function RoleTargetingContent({
 				<span className="text-sm font-medium text-default-700">IF</span>
 				<span>user role is one of</span>
 			</div>
-			<div className="flex items-center gap-2 flex-wrap pl-6">
-				<TagGroup selectionMode="none" onRemove={onRemoveRoles}>
-					<TagGroup.List
-						items={roles.map((role, idx) => ({ id: idx, name: role }))}
-						renderEmptyState={() => <span>No roles added</span>}>
-						{(item) => (
-							<Tag key={item.id} id={item.id} textValue={item.name}>
-								{item.name}
-							</Tag>
-						)}
-					</TagGroup.List>
-				</TagGroup>
-				<AddRoleInput onAdd={addRole} existingRoles={roles} />
+			<div className="flex flex-col gap-1 pl-6">
+				<div className="flex items-center gap-2 flex-wrap">
+					<TagGroup selectionMode="none" onRemove={onRemoveRoles}>
+						<TagGroup.List
+							items={roles.map((role, idx) => ({ id: idx, name: role }))}
+							renderEmptyState={() => <span>No roles added</span>}>
+							{(item) => (
+								<Tag key={item.id} id={item.id} textValue={item.name}>
+									{item.name}
+								</Tag>
+							)}
+						</TagGroup.List>
+					</TagGroup>
+					<AddRoleInput onAdd={addRole} existingRoles={roles} />
+				</div>
+				{rolesError && (
+					<FieldError className="text-xs text-danger">
+						{rolesError.message}
+					</FieldError>
+				)}
 			</div>
 			<div className="flex items-center gap-2 pl-6">
-				<span>then serve</span>
+				<span>then resolve</span>
 				<VariationSelector
 					flag={flag}
 					name={`rules.${ruleIndex}.variationId`}

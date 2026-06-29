@@ -7,6 +7,7 @@ export const variationSchema = z.object({
 	key: z.string().min(1).max(100),
 	value: z.union([z.boolean(), z.string(), z.record(z.string(), z.unknown())]),
 	description: z.string().nullable().optional(),
+	isDefault: z.boolean().optional(),
 });
 
 export const flagStateSchema = z.object({
@@ -16,6 +17,8 @@ export const flagStateSchema = z.object({
 	isEnabled: z.boolean(),
 	status: z.enum(["draft", "active", "archived"]),
 	version: z.number(),
+	defaultVariationId: uuidSchema.nullable().optional(),
+	offVariationId: uuidSchema.nullable().optional(),
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
 });

@@ -6,6 +6,7 @@ import {
 	Autocomplete,
 	useFilter,
 	SearchField,
+	FieldError,
 } from "@heroui/react";
 import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -17,7 +18,7 @@ interface DefaultRuleCardProps {
 }
 
 export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
-	const { control, watch } = useFormContext<FlagEditorFormValues>();
+	const { control, watch, formState: { errors } } = useFormContext<FlagEditorFormValues>();
 	const isFlagOn = watch("isFlagOn");
 
 	return (
@@ -27,18 +28,26 @@ export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
 			</h3>
 			<div className="flex-items-center flex-row gap-2 w-full">
 				<span className="inline-block mr-2">
-					If none of the above rules match, serve
+					If none of the above rules match, resolve
 				</span>
 				<Controller
 					name="defaultVariationId"
 					control={control}
 					render={({ field }) => (
-						<VariationSelect
-							flag={flag}
-							value={field.value}
-							onChange={field.onChange}
-							isDisabled={!isFlagOn}
-						/>
+						<div className="flex flex-col gap-1 inline-flex">
+							<VariationSelect
+								flag={flag}
+								value={field.value}
+								onChange={field.onChange}
+								isDisabled={!isFlagOn}
+								isInvalid={!!errors.defaultVariationId}
+							/>
+							{errors.defaultVariationId && (
+								<FieldError className="text-xs text-danger mt-1">
+									{errors.defaultVariationId.message}
+								</FieldError>
+							)}
+						</div>
 					)}
 				/>
 			</div>
@@ -51,6 +60,7 @@ interface VariationSelectProps {
 	value: string;
 	onChange: (value: string) => void;
 	isDisabled?: boolean;
+	isInvalid?: boolean;
 }
 
 function VariationSelect({
@@ -58,6 +68,7 @@ function VariationSelect({
 	value,
 	onChange,
 	isDisabled,
+	isInvalid,
 }: VariationSelectProps) {
 	const { contains } = useFilter({ sensitivity: "base" });
 	const { watch } = useFormContext<FlagEditorFormValues>();
@@ -65,12 +76,13 @@ function VariationSelect({
 
 	return (
 		<Autocomplete
-			value={value}
-			onChange={(v) => onChange(v as string)}
+			selectedKey={value}
+			onSelectionChange={(v) => onChange(v as string)}
 			className="inline-flex"
 			variant="secondary"
 			allowsEmptyCollection
-			isDisabled={isDisabled}>
+			isDisabled={isDisabled}
+			isInvalid={isInvalid}>
 			<Autocomplete.Trigger className="min-h-4 py-1 px-1.5">
 				<Autocomplete.Value />
 			</Autocomplete.Trigger>

@@ -48,10 +48,10 @@ export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 					)}
 				/>
 				{isFlagOn ? (
-					<span className="">serving variations based on rules</span>
+					<span className="">resolving variations based on rules</span>
 				) : (
 					<>
-						<span className="">serving</span>
+						<span className="">resolving</span>
 						<OffVariationSelect variations={variations} />
 						<span className="">to all traffic</span>
 					</>
@@ -77,8 +77,8 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 				<Autocomplete
 					variant="secondary"
 					placeholder="None"
-					value={field.value}
-					onChange={(v) => field.onChange(v)}
+					selectedKey={field.value}
+					onSelectionChange={(v) => field.onChange(v as string)}
 					aria-label="Select off variation"
 					className="w-fit">
 					<Autocomplete.Trigger className="min-h-4 py-1 px-1.5">

@@ -84,7 +84,7 @@ export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
 					<div
 						key={field.id}
 						className="flex items-center gap-4 flex-wrap p-3 rounded-3xl border">
-						<span className="text-sm font-medium text-default-600">Serve</span>
+						<span className="text-sm font-medium text-default-600">Resolve</span>
 						<div className="min-w-48 flex-1">
 							<Controller
 								name={
@@ -179,16 +179,16 @@ export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
 					{totalPercentage > 100 ? (
-						<Chip size="sm" variant="soft" color="danger">
+						<Chip size="lg" variant="soft" color="danger">
 							Error: Total percentage is {totalPercentage}% (must not exceed
 							100%)
 						</Chip>
 					) : remaining > 0 ? (
-						<Chip size="sm" variant="soft" color="default">
+						<Chip size="lg" variant="soft" color="default">
 							{remaining}% continues to next rules
 						</Chip>
 					) : (
-						<Chip size="sm" variant="soft" color="warning">
+						<Chip size="lg" variant="soft" color="warning">
 							Warning: 0% of traffic continues to next rules
 						</Chip>
 					)}

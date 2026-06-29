@@ -15,6 +15,7 @@ import {
 	Tooltip,
 	TextArea,
 	Switch,
+	FieldError,
 } from "@heroui/react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -71,8 +72,15 @@ const OPERATORS_BY_TYPE: Record<string, { key: string; label: string }[]> = {
 	],
 };
 
+const getValuesErrorMessage = (err: any) => {
+	if (!err) return null;
+	if (err.message) return err.message;
+	const firstItemErr = Object.values(err).find((e: any) => e?.message) as any;
+	return firstItemErr?.message || null;
+};
+
 export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
-	const { control, watch, setValue } = useFormContext<FlagEditorFormValues>();
+	const { control, watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
 
 	const { fields, append, remove } = useFieldArray({
 		control,
@@ -116,6 +124,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 							`rules.${ruleIndex}.conditions.conditions.${idx}.operator` as any,
 						) || "";
 					const validOperators = OPERATORS_BY_TYPE[condType] || [];
+					const condErrors = (errors?.rules as any)?.[ruleIndex]?.conditions?.conditions?.[idx];
 
 					return (
 						<div
@@ -129,7 +138,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 									}
 									control={control}
 									render={({ field: keyField }) => (
-										<TextField variant="secondary">
+										<TextField variant="secondary" isInvalid={!!condErrors?.contextKey}>
 											<InputGroup>
 												<InputGroup.Input
 													placeholder="Context key (e.g. user.email)"
@@ -138,6 +147,9 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 													className="w-full"
 												/>
 											</InputGroup>
+											{condErrors?.contextKey && (
+												<FieldError>{condErrors.contextKey.message}</FieldError>
+											)}
 										</TextField>
 									)}
 								/>
@@ -287,11 +299,18 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 												}
 												control={control}
 												render={({ field: valuesField }) => (
-													<MultiValueInput
-														values={valuesField.value || []}
-														onChange={valuesField.onChange}
-														type={condType === "number" ? "number" : "string"}
-													/>
+													<div className="flex flex-col gap-1">
+														<MultiValueInput
+															values={valuesField.value || []}
+															onChange={valuesField.onChange}
+															type={condType === "number" ? "number" : "string"}
+														/>
+														{getValuesErrorMessage(condErrors?.values) && (
+															<FieldError className="text-xs text-danger">
+																{getValuesErrorMessage(condErrors.values)}
+															</FieldError>
+														)}
+													</div>
 												)}
 											/>
 										);
@@ -341,13 +360,20 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 												}
 												control={control}
 												render={({ field: valField }) => (
-													<TextArea
-														variant="secondary"
-														placeholder='{"key": "value"}'
-														value={valField.value || ""}
-														onChange={valField.onChange}
-														className="w-full font-mono"
-													/>
+													<div className="flex flex-col gap-1 w-full">
+														<TextArea
+															variant="secondary"
+															placeholder='{"key": "value"}'
+															value={valField.value || ""}
+															onChange={valField.onChange}
+															className="w-full font-mono"
+														/>
+														{condErrors?.value && (
+															<FieldError className="text-xs text-danger">
+																{condErrors.value.message}
+															</FieldError>
+														)}
+													</div>
 												)}
 											/>
 										);
@@ -360,7 +386,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 											}
 											control={control}
 											render={({ field: valField }) => (
-												<TextField variant="secondary">
+												<TextField variant="secondary" isInvalid={!!condErrors?.value}>
 													<InputGroup>
 														<InputGroup.Input
 															type={condType === "number" ? "number" : "text"}
@@ -383,6 +409,9 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 															className="w-full"
 														/>
 													</InputGroup>
+													{condErrors?.value && (
+														<FieldError>{condErrors.value.message}</FieldError>
+													)}
 												</TextField>
 											)}
 										/>
@@ -418,7 +447,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 
 			<div className="flex items-center gap-2 pl-4 pt-2 border-t border-divider/50">
 				<span className="text-sm font-semibold text-default-600">
-					then serve
+					then resolve
 				</span>
 				<VariationSelector
 					flag={flag}

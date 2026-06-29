@@ -11,6 +11,7 @@ import {
 	EyeIcon,
 	EyeSlashIcon,
 	HexagonIcon,
+	PowerIcon,
 } from "@phosphor-icons/react";
 import { useFormContext } from "react-hook-form";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -110,7 +111,17 @@ function RuleCardComponent({
 					aria-label="Rule Settings"
 					className="group/accordion">
 					<Accordion.Heading>
-						<Accordion.Trigger className="flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0">
+						<Accordion.Trigger
+							className={cn(
+								"flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0",
+							)}>
+							{ruleType === "kill_switch" && (
+								<div className={cn("w-10 flex items-center justify-end text-danger", {
+									"text-default-foreground": !isEnabled,
+								})}>
+									<PowerIcon className="size-5" weight="bold" />
+								</div>
+							)}
 							{ruleType !== "kill_switch" &&
 								dragHandleProps &&
 								Object.keys(dragHandleProps).length > 0 && (
@@ -123,7 +134,7 @@ function RuleCardComponent({
 										)}
 										{...dragHandleProps}
 										onClick={(e) => e.stopPropagation()}>
-										<DotsSixVerticalIcon className="h-4 w-4" weight="bold" />
+										<DotsSixVerticalIcon className="size-4" weight="bold" />
 									</div>
 								)}
 
@@ -135,7 +146,7 @@ function RuleCardComponent({
 									{RULE_TYPE_LABELS[ruleType] ?? ruleType}
 								</Chip>
 								<span className="truncate flex items-center gap-2">
-									<span className="leading-tight">serves</span>
+									<span className="leading-tight">resolves</span>
 									<Chip
 										className="font-medium text-foreground"
 										size="sm"
@@ -161,11 +172,7 @@ function RuleCardComponent({
 								className="px-3 flex items-center gap-2 self-stretch shrink-0"
 								onClick={(e) => e.stopPropagation()}>
 								<Dropdown>
-									<Button
-										isIconOnly
-										variant="ghost"
-										size="sm"
-										className="text-default-500">
+									<Button isIconOnly variant="ghost" size="sm">
 										<DotsThreeIcon className="h-5 w-5" weight="bold" />
 									</Button>
 

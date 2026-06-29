@@ -12,7 +12,7 @@ export function KillSwitchContent({ flag, ruleIndex }: KillSwitchContentProps) {
 	return (
 		<div className="flex items-center gap-2 flex-wrap">
 			<span className="text-sm text-default-600">
-				When kill switch is active, serve
+				When kill switch is active, resolve
 			</span>
 			<VariationSelector
 				flag={flag}

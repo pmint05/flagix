@@ -31,7 +31,7 @@ const ADDABLE_RULE_TYPES = [
 	{
 		key: "kill_switch",
 		label: "Kill Switch",
-		description: "Immediately serve a variation to all traffic",
+		description: "Immediately resolve a variation for all traffic",
 	},
 	{
 		key: "user",
@@ -42,7 +42,7 @@ const ADDABLE_RULE_TYPES = [
 	{
 		key: "percentage",
 		label: "Percentage Rollout",
-		description: "Serve a percentage of traffic",
+		description: "Resolve variations by percentage of traffic",
 	},
 	{
 		key: "custom",
@@ -119,12 +119,25 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 			percentage: {
 				...baseRule,
 				ruleType: "percentage" as const,
-				conditions: { rollouts: [{ variationId: flag.variations?.[0]?.id ?? "", percentage: 50 }] },
+				conditions: {
+					rollouts: [
+						{ variationId: flag.variations?.[0]?.id ?? "", percentage: 50 },
+					],
+				},
 			},
 			custom: {
 				...baseRule,
 				ruleType: "custom" as const,
-				conditions: { conditions: [{ contextKey: "", type: "string", operator: "is_one_of", values: [] }] },
+				conditions: {
+					conditions: [
+						{
+							contextKey: "",
+							type: "string",
+							operator: "is_one_of",
+							values: [],
+						},
+					],
+				},
 			},
 		};
 
@@ -229,7 +242,7 @@ function SortableRuleItem({
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ 
+	} = useSortable({
 		id: rule.id,
 		disabled: rule.ruleType === "kill_switch",
 	});
@@ -273,7 +286,11 @@ function SortableRuleItem({
 				onMoveUp={onMoveUp}
 				onMoveDown={onMoveDown}
 				totalRules={fieldsLength}
-				dragHandleProps={rule.ruleType !== "kill_switch" ? { ...attributes, ...listeners } : undefined}
+				dragHandleProps={
+					rule.ruleType !== "kill_switch"
+						? { ...attributes, ...listeners }
+						: undefined
+				}
 			/>
 			<div
 				className={cn(
@@ -310,16 +327,17 @@ export function AddRuleButton({
 			<Dropdown>
 				<Button
 					isIconOnly
-					size="sm"
+					size="lg"
 					variant="secondary"
 					isDisabled={isDisabled}
-					className="bg-background hover:border-accent hover:text-accent transition-colors">
+					className="bg-background hover:border-accent border hover:text-accent transition-all">
 					<PlusIcon weight="bold" />
 				</Button>
 				<Dropdown.Popover placement="bottom">
 					<Dropdown.Menu onAction={(key) => onAdd(key as string)}>
 						{ADDABLE_RULE_TYPES.map((type) => {
-							const isKillSwitchDisabled = type.key === "kill_switch" && hasKillSwitch;
+							const isKillSwitchDisabled =
+								type.key === "kill_switch" && hasKillSwitch;
 							return (
 								<Dropdown.Item
 									key={type.key}
