@@ -4,6 +4,7 @@ import {
   userConditionsSchema,
   roleConditionsSchema,
   percentageConditionsSchema,
+  customConditionsSchema,
 } from './rule-conditions';
 
 export const createTargetingRuleSchema = z.discriminatedUnion('ruleType', [
@@ -27,14 +28,20 @@ export const createTargetingRuleSchema = z.discriminatedUnion('ruleType', [
   }),
   z.object({
     ruleType: z.literal('percentage'),
-    variationId: z.uuid(),
+    variationId: z.uuid().optional().nullable(),
     conditions: percentageConditionsSchema,
+    isEnabled: z.boolean().optional(),
+  }),
+  z.object({
+    ruleType: z.literal('custom'),
+    variationId: z.uuid(),
+    conditions: customConditionsSchema,
     isEnabled: z.boolean().optional(),
   }),
 ]);
 
 export const updateTargetingRuleSchema = z.object({
-  variationId: z.uuid().optional(),
+  variationId: z.uuid().optional().nullable(),
   conditions: z.record(z.string(), z.unknown()).optional(),
   isEnabled: z.boolean().optional(),
   priority: z.string().optional(),
