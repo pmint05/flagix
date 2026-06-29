@@ -1,7 +1,6 @@
 "use client";
 import { Controller, useFormContext } from "react-hook-form";
 import {
-	Select,
 	ListBox,
 	Autocomplete,
 	useFilter,
@@ -28,6 +27,9 @@ export function VariationSelector({
 }: VariationSelectorProps) {
 	const formContext = useFormContext(); // optional, only if name is passed
 	const { contains } = useFilter({ sensitivity: "base" });
+	const watchedVariations = formContext?.watch("variations");
+	const variations = watchedVariations || flag.variations || [];
+
 	const renderSelect = (val: string, onValChange: (v: string) => void) => (
 		<Autocomplete
 			variant="secondary"
@@ -47,14 +49,17 @@ export function VariationSelector({
 						</SearchField.Group>
 					</SearchField>
 					<ListBox>
-						{(flag.variations ?? []).map((v: any, idx: number) => (
-							<ListBox.Item id={v.id} key={v.id} textValue={v.key}>
-								<div className="flex items-center gap-2">
-									<VariationDot index={idx} className="size-3.5" />
-									<span>{v.key}</span>
-								</div>
-							</ListBox.Item>
-						))}
+						{variations.map((v: any, idx: number) => {
+							const keyText = v.key || String(v.value);
+							return (
+								<ListBox.Item id={v.id} key={v.id} textValue={keyText}>
+									<div className="flex items-center gap-2">
+										<VariationDot index={idx} className="size-3.5" />
+										<span>{keyText}</span>
+									</div>
+								</ListBox.Item>
+							);
+						})}
 					</ListBox>
 				</Autocomplete.Filter>
 			</Autocomplete.Popover>

@@ -5,7 +5,10 @@ import { Link } from "@tanstack/react-router";
 import { FlagToggle } from "./FlagToggle";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 
-const STATUS_Chip_COLOR: Record<string, "success" | "warning" | "danger" | "default"> = {
+const STATUS_Chip_COLOR: Record<
+	string,
+	"success" | "warning" | "danger" | "default"
+> = {
 	draft: "default",
 	active: "success",
 	archived: "danger",
@@ -16,7 +19,10 @@ const columnHelper = createColumnHelper<FeatureFlagListItem>();
 interface ColumnActions {
 	projectSlug: string;
 	onDelete: (flag: FeatureFlagListItem) => void;
-	onStatusChange: (flag: FeatureFlagListItem, status: "draft" | "active" | "archived") => void;
+	onStatusChange: (
+		flag: FeatureFlagListItem,
+		status: "draft" | "active" | "archived",
+	) => void;
 }
 
 export function createFlagColumns(actions: ColumnActions) {
@@ -26,7 +32,10 @@ export function createFlagColumns(actions: ColumnActions) {
 			cell: (info) => (
 				<Link
 					to="/projects/$projectSlug/flags/$flagSlug"
-					params={{ projectSlug: actions.projectSlug, flagSlug: info.getValue() }}
+					params={{
+						projectSlug: actions.projectSlug,
+						flagSlug: info.getValue(),
+					}}
 					className="text-primary hover:underline">
 					<code className="text-sm">{info.getValue()}</code>
 				</Link>
@@ -37,7 +46,10 @@ export function createFlagColumns(actions: ColumnActions) {
 			cell: (info) => (
 				<Link
 					to="/projects/$projectSlug/flags/$flagSlug"
-					params={{ projectSlug: actions.projectSlug, flagSlug: info.row.original.key }}
+					params={{
+						projectSlug: actions.projectSlug,
+						flagSlug: info.row.original.key,
+					}}
 					className="font-medium text-foreground hover:text-primary transition-colors">
 					{info.getValue()}
 				</Link>
