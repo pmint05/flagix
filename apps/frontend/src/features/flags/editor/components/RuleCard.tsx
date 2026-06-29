@@ -20,6 +20,7 @@ import { KillSwitchContent } from "./rule-contents/KillSwitchContent";
 import { UserTargetingContent } from "./rule-contents/UserTargetingContent";
 import { RoleTargetingContent } from "./rule-contents/RoleTargetingContent";
 import { PercentageContent } from "./rule-contents/PercentageContent";
+import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
 import { getVariationColor } from "#/lib/variation-colors";
 
 interface RuleCardProps {
@@ -50,11 +51,16 @@ function RuleCardComponent({
 	const isEnabled = watch(`rules.${index}.isEnabled`);
 	const ruleType = watch(`rules.${index}.ruleType`);
 	const variationId = watch(`rules.${index}.variationId`);
+	const variations = watch("variations") || [];
 
-	const selectedVariation = flag.variations?.find((v) => v.id === variationId);
-	const variationName = selectedVariation?.key ?? "unknown";
+	const selectedVariation = variations.find((v) => v.id === variationId);
+	const variationName =
+		selectedVariation?.key ||
+		(selectedVariation?.value !== undefined
+			? String(selectedVariation.value)
+			: "unknown");
 	const variationIndex =
-		flag.variations?.findIndex((v) => v.id === variationId) ?? -1;
+		variations.findIndex((v) => v.id === variationId) ?? -1;
 	const variationColor =
 		variationIndex !== -1
 			? getVariationColor(variationIndex)
@@ -74,6 +80,8 @@ function RuleCardComponent({
 				return <RoleTargetingContent flag={flag} ruleIndex={index} />;
 			case "percentage":
 				return <PercentageContent flag={flag} ruleIndex={index} />;
+			case "custom":
+				return <CustomRuleContent flag={flag} ruleIndex={index} />;
 			default:
 				return (
 					<div className="text-sm text-default-500">Unknown rule type</div>
@@ -85,9 +93,17 @@ function RuleCardComponent({
 		<div
 			id={ruleId}
 			className={cn("relative group w-full", {
-				"opacity-60": !isEnabled,
+				// "opacity-60": !isEnabled,
 			})}>
-			<Accordion className="px-0 w-full">
+			<Accordion className="px-0 w-full relative">
+				<div
+					className={cn(
+						"absolute inset-0 z-10 bg-default opacity-0 pointer-events-none",
+						{
+							"opacity-40": !isEnabled,
+						},
+					)}
+				/>
 				<Accordion.Item
 					defaultExpanded={true}
 					key="1"
@@ -95,14 +111,21 @@ function RuleCardComponent({
 					className="group/accordion">
 					<Accordion.Heading>
 						<Accordion.Trigger className="flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0">
-							{totalRules > 1 && (
-								<div
-									className="w-10 h-14 shrink-0 flex items-center justify-center border-r border-divider cursor-grab active:cursor-grabbing text-default-400 hover:bg-default-100 transition-colors"
-									{...dragHandleProps}
-									onClick={(e) => e.stopPropagation()}>
-									<DotsSixVerticalIcon className="h-4 w-4" weight="bold" />
-								</div>
-							)}
+							{ruleType !== "kill_switch" &&
+								dragHandleProps &&
+								Object.keys(dragHandleProps).length > 0 && (
+									<div
+										className={cn(
+											"pointer-events-none opacity-20 w-10 h-14 shrink-0 flex items-center justify-center border-r border-divider cursor-grab active:cursor-grabbing hover:bg-surface-secondary rounded-l-3xl transition-colors",
+											{
+												"pointer-events-auto opacity-100": totalRules > 1,
+											},
+										)}
+										{...dragHandleProps}
+										onClick={(e) => e.stopPropagation()}>
+										<DotsSixVerticalIcon className="h-4 w-4" weight="bold" />
+									</div>
+								)}
 
 							<div className="flex-1 px-4 py-3 flex items-center gap-3">
 								<Chip
@@ -167,21 +190,24 @@ function RuleCardComponent({
 													{isEnabled ? "Disable Rule" : "Enable Rule"}
 												</Label>
 											</Dropdown.Item>
-											<Dropdown.Item id="duplicate" textValue="Duplicate">
+											<Dropdown.Item
+												id="duplicate"
+												textValue="Duplicate"
+												isDisabled={ruleType === "kill_switch"}>
 												<CopyIcon className="size-4 text-default-500" />
 												<Label>Duplicate</Label>
 											</Dropdown.Item>
 											<Dropdown.Item
 												id="moveUp"
 												textValue="Move Up"
-												isDisabled={!onMoveUp}>
+												isDisabled={ruleType === "kill_switch" || !onMoveUp}>
 												<ArrowUpIcon className="size-4 text-default-500" />
 												<Label>Move Up</Label>
 											</Dropdown.Item>
 											<Dropdown.Item
 												id="moveDown"
 												textValue="Move Down"
-												isDisabled={!onMoveDown}>
+												isDisabled={ruleType === "kill_switch" || !onMoveDown}>
 												<ArrowDownIcon className="size-4 text-default-500" />
 												<Label>Move Down</Label>
 											</Dropdown.Item>

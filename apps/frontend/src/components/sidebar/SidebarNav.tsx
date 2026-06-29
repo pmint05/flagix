@@ -23,7 +23,12 @@ const PROJECT_NAV_ITEMS = [
 ];
 
 const GLOBAL_NAV_ITEMS = [
-	{ to: "/audit-logs", label: "Audit Logs", icon: ClockCounterClockwiseIcon },
+	{
+		to: "/audit-logs",
+		label: "Audit Logs",
+		icon: ClockCounterClockwiseIcon,
+		keepSearch: false,
+	},
 ];
 
 export function SidebarNav() {
@@ -48,6 +53,7 @@ export function SidebarNav() {
 							<SidebarNavItem
 								key={item.to}
 								to={to}
+								// keepSearch={item.keepSearch}
 								label={item.label}
 								icon={item.icon}
 								isCollapsed={isCollapsed}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { Tabs, toast, Button, Separator } from "@heroui/react";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -12,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { flagEditorFormSchema, type FlagEditorFormValues } from "./schema";
 import CopyButton from "#/components/ui/copy-button";
 import { useContextStore } from "#/stores";
+import { useRules } from "@/features/rules/api";
 
 const routeApi = getRouteApi(
 	"/_authenticated/projects/$projectSlug/flags/$flagSlug",
@@ -22,6 +24,7 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 	const search = routeApi.useSearch();
 	const navigate = routeApi.useNavigate();
 	const isMobile = useIsMobile();
+	const { data: rulesData } = useRules(flag.id);
 
 	const activeTab = search.tab ?? "targeting";
 
@@ -46,6 +49,82 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 			variations: flag.variations || [],
 		},
 	});
+
+	useEffect(() => {
+		if (rulesData && currentEnv) {
+			const envRules = rulesData
+				.filter((r) => r.environmentId === currentEnv.id)
+				.sort((a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority));
+
+			methods.reset({
+				isFlagOn: defaultFlagState?.isEnabled ?? false,
+				offVariationId: flag.variations?.[flag.variations.length - 1]?.id ?? "",
+				defaultVariationId: flag.variations?.[0]?.id ?? "",
+				variations: flag.variations || [],
+				rules: envRules.map((rule) => {
+					const ruleType = rule.ruleType as string;
+					if (ruleType === "percentage") {
+						const conditions: any = rule.conditions || {};
+						const rollouts = conditions.rollouts || (conditions.percentage !== undefined ? [
+							{ variationId: rule.variationId || "", percentage: conditions.percentage }
+						] : []);
+						return {
+							id: rule.id,
+							ruleType: "percentage" as const,
+							isEnabled: rule.isEnabled,
+							variationId: rule.variationId || undefined,
+							conditions: { rollouts },
+						};
+					}
+					if (ruleType === "user") {
+						const conditions: any = rule.conditions || {};
+						return {
+							id: rule.id,
+							ruleType: "user" as const,
+							isEnabled: rule.isEnabled,
+							variationId: rule.variationId || "",
+							conditions: {
+								operator: (conditions.operator as "in" | "not_in") || "in",
+								userIds: conditions.userIds || [],
+							},
+						};
+					}
+					if (ruleType === "role") {
+						const conditions: any = rule.conditions || {};
+						return {
+							id: rule.id,
+							ruleType: "role" as const,
+							isEnabled: rule.isEnabled,
+							variationId: rule.variationId || "",
+							conditions: {
+								operator: (conditions.operator as "in" | "not_in") || "in",
+								roles: conditions.roles || [],
+							},
+						};
+					}
+					if (ruleType === "custom") {
+						const conditions: any = rule.conditions || {};
+						return {
+							id: rule.id,
+							ruleType: "custom" as const,
+							isEnabled: rule.isEnabled,
+							variationId: rule.variationId || "",
+							conditions: {
+								conditions: conditions.conditions || [],
+							},
+						};
+					}
+					return {
+						id: rule.id,
+						ruleType: "kill_switch" as const,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || "",
+						conditions: {},
+					};
+				}),
+			});
+		}
+	}, [rulesData, currentEnv, defaultFlagState, flag, methods]);
 
 	const {
 		handleSubmit,

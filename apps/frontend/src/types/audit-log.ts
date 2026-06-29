@@ -13,6 +13,7 @@ export const auditLogSchema = z.object({
 		"environment",
 		"feature_flag",
 		"targeting_rule",
+		"flag_state",
 		"variation",
 		"sdk_key",
 	]),

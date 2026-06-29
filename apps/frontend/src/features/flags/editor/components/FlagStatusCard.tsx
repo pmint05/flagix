@@ -7,24 +7,26 @@ import {
 	Autocomplete,
 	useFilter,
 	SearchField,
+	Button,
 } from "@heroui/react";
 import { Controller, useFormContext } from "react-hook-form";
 import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
-import type { FlagEditorFormValues } from "../schema";
+import type { FlagEditorFormValues, Variation } from "../schema";
 import { getVariationColor } from "@/lib/variation-colors";
 
 interface FlagStatusCardProps {
 	flag: FeatureFlag;
 }
 
-export function FlagStatusCard({ flag }: FlagStatusCardProps) {
+export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 	const { control, watch } = useFormContext<FlagEditorFormValues>();
 	const isFlagOn = watch("isFlagOn");
+	const variations = watch("variations") || [];
 
 	return (
-		<Card className="flex flex-row items-center justify-start px-4 py-3 rounded-3xl border border-divider min-h-14 mb-0">
-			<div className="flex items-center gap-2">
+		<Card className="flex flex-wrap flex-row items-center justify-start px-4 py-3 rounded-3xl border border-divider min-h-14 mb-0">
+			<div className="flex items-center gap-2 flex-wrap">
 				<span className="">Flag is</span>
 				<Controller
 					name="isFlagOn"
@@ -50,7 +52,7 @@ export function FlagStatusCard({ flag }: FlagStatusCardProps) {
 				) : (
 					<>
 						<span className="">serving</span>
-						<OffVariationSelect variations={flag.variations ?? []} />
+						<OffVariationSelect variations={variations} />
 						<span className="">to all traffic</span>
 					</>
 				)}
@@ -60,7 +62,7 @@ export function FlagStatusCard({ flag }: FlagStatusCardProps) {
 }
 
 interface OffVariationSelectProps {
-	variations: { id: string; key: string; value: unknown }[];
+	variations: Variation[];
 }
 
 function OffVariationSelect({ variations }: OffVariationSelectProps) {
@@ -74,6 +76,7 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 			render={({ field }) => (
 				<Autocomplete
 					variant="secondary"
+					placeholder="None"
 					value={field.value}
 					onChange={(v) => field.onChange(v)}
 					aria-label="Select off variation"
@@ -92,20 +95,32 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 							</SearchField>
 							<ListBox>
 								<ListBox.Section>
-									<Header>Off Variations</Header>
-									{variations.map((v) => (
-										<ListBox.Item id={v.id} textValue={v.key}>
-											<div className="flex items-center gap-2">
-												<HexagonIcon
-													weight="fill"
-													className={`${getVariationColor(variations.findIndex((x) => x.id === v.id))} size-3.5 shrink-0`}
-												/>
-												<span className="truncate flex-1 text-left">
-													{v.key}
-												</span>
-											</div>
-										</ListBox.Item>
-									))}
+									<Header className="flex items-center gap-2 justify-between">
+										<p>Off Variations</p>
+										<Button
+											size="sm"
+											variant="ghost"
+											className={"min-h-4 h-6 py-0 px-1.5 text-xs rounded-xl"}
+											onPress={() => field.onChange("")}>
+											Clear
+										</Button>
+									</Header>
+									{variations.map((v) => {
+										const keyText = v.key || String(v.value);
+										return (
+											<ListBox.Item id={v.id} key={v.id} textValue={keyText}>
+												<div className="flex items-center gap-2">
+													<HexagonIcon
+														weight="fill"
+														className={`${getVariationColor(variations.findIndex((x) => x.id === v.id))} size-3.5 shrink-0`}
+													/>
+													<span className="truncate flex-1 text-left">
+														{keyText}
+													</span>
+												</div>
+											</ListBox.Item>
+										);
+									})}
 								</ListBox.Section>
 							</ListBox>
 						</Autocomplete.Filter>

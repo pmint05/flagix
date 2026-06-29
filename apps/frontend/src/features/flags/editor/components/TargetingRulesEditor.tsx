@@ -1,6 +1,6 @@
 "use client";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { Button, Dropdown, Label, Description, cn } from "@heroui/react";
+import { Button, Dropdown, Label, Description, cn, toast } from "@heroui/react";
 import { PlusIcon } from "@phosphor-icons/react";
 import { RuleCard } from "./RuleCard";
 import type { FeatureFlag } from "@/types/feature-flag";
@@ -44,6 +44,11 @@ const ADDABLE_RULE_TYPES = [
 		label: "Percentage Rollout",
 		description: "Serve a percentage of traffic",
 	},
+	{
+		key: "custom",
+		label: "Custom Rule",
+		description: "Match custom criteria on user context",
+	},
 ] as const;
 
 export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
@@ -54,6 +59,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 	});
 
 	const fieldIds = fields.map((f) => f.id);
+	const hasKillSwitch = fields.some((f) => f.ruleType === "kill_switch");
 
 	// ---- dnd-kit sensors ----
 	const sensors = useSensors(
@@ -74,6 +80,14 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 			const newIndex = fieldIds.indexOf(over.id as string);
 
 			if (oldIndex !== -1 && newIndex !== -1) {
+				// Block movement if the first rule is a kill switch and we try to drag it or move onto it
+				const isFirstKillSwitch = fields[0]?.ruleType === "kill_switch";
+				if (isFirstKillSwitch) {
+					if (oldIndex === 0 || newIndex === 0) {
+						toast.warning("Kill switch rule must always remain at the top.");
+						return;
+					}
+				}
 				move(oldIndex, newIndex);
 			}
 		}
@@ -95,20 +109,30 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 			user: {
 				...baseRule,
 				ruleType: "user" as const,
-				conditions: { userIds: [] },
+				conditions: { operator: "in", userIds: [] },
 			},
 			role: {
 				...baseRule,
 				ruleType: "role" as const,
-				conditions: { roles: [] },
+				conditions: { operator: "in", roles: [] },
 			},
 			percentage: {
 				...baseRule,
 				ruleType: "percentage" as const,
-				conditions: { percentage: 0 },
+				conditions: { rollouts: [{ variationId: flag.variations?.[0]?.id ?? "", percentage: 50 }] },
+			},
+			custom: {
+				...baseRule,
+				ruleType: "custom" as const,
+				conditions: { conditions: [{ contextKey: "", type: "string", operator: "is_one_of", values: [] }] },
 			},
 		};
-		insert(index, ruleByType[ruleType] ?? ruleByType.user);
+
+		if (ruleType === "kill_switch") {
+			insert(0, ruleByType.kill_switch);
+		} else {
+			insert(index, ruleByType[ruleType] ?? ruleByType.user);
+		}
 	};
 
 	const isFlagOn = watch("isFlagOn");
@@ -126,12 +150,13 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 					<SortableContext
 						items={fieldIds}
 						strategy={verticalListSortingStrategy}>
-						{/* Top add-rule button (only when items exist) */}
-						{fields.length > 0 && (
+						{/* Top add-rule button (only when items exist and the first rule is not a kill switch) */}
+						{fields.length > 0 && fields[0]?.ruleType !== "kill_switch" && (
 							<div className="pb-4 w-full flex justify-center">
 								<AddRuleButton
 									onAdd={(type) => handleAddRule(0, type)}
 									isDisabled={!isFlagOn}
+									hasKillSwitch={hasKillSwitch}
 								/>
 							</div>
 						)}
@@ -148,6 +173,8 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 								fieldsLength={fields.length}
 								handleAddRule={handleAddRule}
 								isFlagOn={isFlagOn}
+								hasKillSwitch={hasKillSwitch}
+								firstRuleType={fields[0]?.ruleType}
 							/>
 						))}
 					</SortableContext>
@@ -159,6 +186,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 						<AddRuleButton
 							onAdd={(type) => handleAddRule(0, type)}
 							isDisabled={!isFlagOn}
+							hasKillSwitch={hasKillSwitch}
 						/>
 					</div>
 				)}
@@ -177,6 +205,8 @@ interface SortableRuleItemProps {
 	fieldsLength: number;
 	handleAddRule: (index: number, ruleType: string) => void;
 	isFlagOn: boolean;
+	hasKillSwitch: boolean;
+	firstRuleType?: string;
 }
 
 function SortableRuleItem({
@@ -189,6 +219,8 @@ function SortableRuleItem({
 	fieldsLength,
 	handleAddRule,
 	isFlagOn,
+	hasKillSwitch,
+	firstRuleType,
 }: SortableRuleItemProps) {
 	const {
 		attributes,
@@ -197,7 +229,10 @@ function SortableRuleItem({
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ id: rule.id });
+	} = useSortable({ 
+		id: rule.id,
+		disabled: rule.ruleType === "kill_switch",
+	});
 
 	const style = {
 		// Use CSS.Translate to avoid scale distortions (stretching/skewing)
@@ -207,6 +242,20 @@ function SortableRuleItem({
 		position: "relative" as const,
 		zIndex: isDragging ? 50 : undefined,
 	};
+
+	const isFirstKillSwitch = firstRuleType === "kill_switch";
+
+	const onMoveUp = (() => {
+		if (formIndex === 0) return undefined;
+		if (isFirstKillSwitch && formIndex === 1) return undefined;
+		return () => move(formIndex, formIndex - 1);
+	})();
+
+	const onMoveDown = (() => {
+		if (formIndex === fieldsLength - 1) return undefined;
+		if (rule.ruleType === "kill_switch") return undefined;
+		return () => move(formIndex, formIndex + 1);
+	})();
 
 	return (
 		<div ref={setNodeRef} style={style} className="relative w-full">
@@ -221,16 +270,10 @@ function SortableRuleItem({
 						id: crypto.randomUUID(),
 					});
 				}}
-				onMoveUp={
-					formIndex > 0 ? () => move(formIndex, formIndex - 1) : undefined
-				}
-				onMoveDown={
-					formIndex < fieldsLength - 1
-						? () => move(formIndex, formIndex + 1)
-						: undefined
-				}
+				onMoveUp={onMoveUp}
+				onMoveDown={onMoveDown}
 				totalRules={fieldsLength}
-				dragHandleProps={{ ...attributes, ...listeners }}
+				dragHandleProps={rule.ruleType !== "kill_switch" ? { ...attributes, ...listeners } : undefined}
 			/>
 			<div
 				className={cn(
@@ -242,6 +285,7 @@ function SortableRuleItem({
 				<AddRuleButton
 					onAdd={(type) => handleAddRule(formIndex + 1, type)}
 					isDisabled={!isFlagOn}
+					hasKillSwitch={hasKillSwitch}
 				/>
 			</div>
 		</div>
@@ -252,12 +296,14 @@ interface AddRuleButtonProps {
 	onAdd: (type: string) => void;
 	isDisabled?: boolean;
 	isLast?: boolean;
+	hasKillSwitch?: boolean;
 }
 
 export function AddRuleButton({
 	onAdd,
 	isDisabled,
 	isLast,
+	hasKillSwitch,
 }: AddRuleButtonProps) {
 	return (
 		<div className={`flex justify-center py-1 ${isLast ? "pt-2" : ""}`}>
@@ -272,17 +318,21 @@ export function AddRuleButton({
 				</Button>
 				<Dropdown.Popover placement="bottom">
 					<Dropdown.Menu onAction={(key) => onAdd(key as string)}>
-						{ADDABLE_RULE_TYPES.map((type) => (
-							<Dropdown.Item
-								key={type.key}
-								id={type.key}
-								textValue={type.label}>
-								<div className="flex flex-col gap-0.5">
-									<Label>{type.label}</Label>
-									<Description>{type.description}</Description>
-								</div>
-							</Dropdown.Item>
-						))}
+						{ADDABLE_RULE_TYPES.map((type) => {
+							const isKillSwitchDisabled = type.key === "kill_switch" && hasKillSwitch;
+							return (
+								<Dropdown.Item
+									key={type.key}
+									id={type.key}
+									textValue={type.label}
+									isDisabled={isKillSwitchDisabled}>
+									<div className="flex flex-col gap-0.5">
+										<Label>{type.label}</Label>
+										<Description>{type.description}</Description>
+									</div>
+								</Dropdown.Item>
+							);
+						})}
 					</Dropdown.Menu>
 				</Dropdown.Popover>
 			</Dropdown>

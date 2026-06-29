@@ -60,6 +60,8 @@ function VariationSelect({
 	isDisabled,
 }: VariationSelectProps) {
 	const { contains } = useFilter({ sensitivity: "base" });
+	const { watch } = useFormContext<FlagEditorFormValues>();
+	const variations = watch("variations") || flag.variations || [];
 
 	return (
 		<Autocomplete
@@ -82,17 +84,20 @@ function VariationSelect({
 						</SearchField.Group>
 					</SearchField>
 					<ListBox>
-						{(flag.variations ?? []).map((v, idx) => (
-							<ListBox.Item id={v.id} key={v.id} textValue={v.key}>
-								<div className="flex items-center gap-2">
-									<HexagonIcon
-										weight="fill"
-										className={`${getVariationColor(idx)} size-3.5`}
-									/>
-									<span>{v.key}</span>
-								</div>
-							</ListBox.Item>
-						))}
+						{variations.map((v, idx) => {
+							const keyText = v.key || String(v.value);
+							return (
+								<ListBox.Item id={v.id} key={v.id} textValue={keyText}>
+									<div className="flex items-center gap-2">
+										<HexagonIcon
+											weight="fill"
+											className={`${getVariationColor(idx)} size-3.5`}
+										/>
+										<span>{keyText}</span>
+									</div>
+								</ListBox.Item>
+							);
+						})}
 					</ListBox>
 				</Autocomplete.Filter>
 			</Autocomplete.Popover>

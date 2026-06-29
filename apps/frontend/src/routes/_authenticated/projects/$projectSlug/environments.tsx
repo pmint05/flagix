@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button, Skeleton, Select, ListBox, SearchField } from "@heroui/react";
+import { Button, Select, ListBox, SearchField } from "@heroui/react";
 import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
 	useEnvironments,
@@ -34,7 +34,6 @@ function EnvironmentsIndex() {
 	const {
 		data: environments,
 		isLoading,
-		isPending,
 		isError,
 	} = useEnvironments();
 	const toggleActive = useToggleEnvironmentActive();
@@ -191,13 +190,7 @@ function EnvironmentsIndex() {
 				</Button>
 			</div>
 
-			{isPending ? (
-				<div className="space-y-3">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<Skeleton key={i} className="h-14 w-full rounded-lg" />
-					))}
-				</div>
-			) : isError ? (
+			{isError ? (
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load environments. Please try again.
 				</div>
@@ -227,8 +220,8 @@ function EnvironmentsIndex() {
 						</SearchField>
 						<div className="flex items-center gap-3 w-full sm:w-auto">
 							<Select
-								selectedKey={typeFilter}
-								onSelectionChange={(key) =>
+								value={typeFilter}
+								onChange={(key) =>
 									updateTableState({
 										filters: {
 											...tableState.filters,
@@ -260,8 +253,8 @@ function EnvironmentsIndex() {
 							</Select>
 
 							<Select
-								selectedKey={activeFilter}
-								onSelectionChange={(key) =>
+								value={activeFilter}
+								onChange={(key) =>
 									updateTableState({
 										filters: {
 											...tableState.filters,
@@ -295,6 +288,7 @@ function EnvironmentsIndex() {
 					</div>
 
 					<DataTable
+						isLoading={isLoading}
 						data={filteredEnvs}
 						columns={columns}
 						state={tableState}

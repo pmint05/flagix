@@ -1,4 +1,3 @@
-"use client";
 import {
 	Button,
 	Table,
@@ -6,16 +5,16 @@ import {
 	Tooltip,
 	TextField,
 	InputGroup,
+	FieldError,
 	cn,
+	TextArea,
 } from "@heroui/react";
-import {
-	PlusIcon,
-	TrashIcon,
-	DotsSixVerticalIcon,
-} from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import type { FlagEditorFormValues } from "./schema";
+
+import { VariationDot } from "@/components/ui/VariationDot";
 
 interface VariationsTabProps {
 	flag: FeatureFlag;
@@ -46,7 +45,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 	};
 
 	return (
-		<div className="py-4 space-y-6">
+		<div className="py-6 space-y-6">
 			<div>
 				<div className="flex items-center gap-2">
 					<h2 className="text-lg font-semibold text-foreground">Variations</h2>
@@ -60,42 +59,42 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 				</p>
 			</div>
 
-			<div className="border border-divider rounded-xl overflow-hidden bg-content1">
+			<div>
 				<Table
 					aria-label="Variations table"
-					className="[&_th]:bg-default-100 [&_th]:text-default-600 [&_th]:font-semibold [&_td]:py-3">
+					className="[&_th]:bg-default-100 [&_th]:text-default-600 [&_th]:font-semibold [&_td]:py-3 rounded-3xl">
 					<Table.ScrollContainer>
 						<Table.Content>
 							<Table.Header>
-								<Table.Column className="w-10" isRowHeader></Table.Column>
-								<Table.Column>Key / Name</Table.Column>
+								<Table.Column isRowHeader>Key / Name</Table.Column>
 								<Table.Column>Value</Table.Column>
-								<Table.Column>Description</Table.Column>
+								<Table.Column>Description (Optional)</Table.Column>
 								<Table.Column className="w-20 text-right">Actions</Table.Column>
 							</Table.Header>
-							<Table.Body items={fields}>
-								{flag.variations?.map((variation) => {
-									const index = fields.findIndex((f) => f.id === variation.id);
+							<Table.Body>
+								{fields.map((field, index) => {
 									return (
 										<Table.Row
-											key={variation.id}
+											key={field.id}
 											className="border-b border-divider last:border-b-0">
-											<Table.Cell>
-												<div className="flex items-center justify-center cursor-grab text-default-400 hover:text-foreground">
-													<DotsSixVerticalIcon className="h-5 w-5" />
-												</div>
-											</Table.Cell>
 											<Table.Cell>
 												<Controller
 													name={`variations.${index}.key` as const}
 													control={control}
-													render={({ field }) => (
-														<TextField>
+													render={({ field: keyField }) => (
+														<TextField variant="secondary">
 															<InputGroup>
+																<InputGroup.Prefix>
+																	<VariationDot
+																		index={index}
+																		className="size-4"
+																	/>
+																</InputGroup.Prefix>
 																<InputGroup.Input
-																	value={field.value}
+																	value={keyField.value || ""}
 																	readOnly={isBoolean}
-																	onChange={field.onChange}
+																	onChange={keyField.onChange}
+																	placeholder="Key (Optional)"
 																	className={
 																		isBoolean
 																			? "bg-default-100 border-none w-full"
@@ -108,36 +107,66 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 												/>
 											</Table.Cell>
 											<Table.Cell>
-												<div className="flex items-center gap-2">
-													<Chip
-														variant="soft"
-														className={cn("", {
-															"bg-success/20 text-success":
-																variation.value === true,
-															"bg-danger/20 text-danger":
-																variation.value === false,
-															"bg-default/20 text-default-foreground":
-																variation.value !== true &&
-																variation.value !== false,
-														})}>
-														{String(variation.value)}
-													</Chip>
-												</div>
+												{isBoolean ? (
+													<div className="flex items-center gap-2">
+														<Chip
+															variant="soft"
+															className={cn("", {
+																"bg-success/20 text-success":
+																	field.value === true ||
+																	field.value === "true",
+																"bg-danger/20 text-danger":
+																	field.value === false ||
+																	field.value === "false",
+															})}>
+															{String(field.value)}
+														</Chip>
+													</div>
+												) : (
+													<Controller
+														name={`variations.${index}.value` as const}
+														control={control}
+														render={({ field: valField, fieldState }) => (
+															<TextField
+																isInvalid={!!fieldState.error}
+																variant="secondary">
+																<InputGroup>
+																	<InputGroup.Input
+																		value={
+																			valField.value !== undefined
+																				? String(valField.value)
+																				: ""
+																		}
+																		onChange={(e) =>
+																			valField.onChange(e.target.value)
+																		}
+																		placeholder="Value"
+																		className="w-full"
+																	/>
+																</InputGroup>
+																{fieldState.error && (
+																	<FieldError>
+																		{fieldState.error.message}
+																	</FieldError>
+																)}
+															</TextField>
+														)}
+													/>
+												)}
 											</Table.Cell>
 											<Table.Cell>
 												<Controller
 													name={`variations.${index}.description` as const}
 													control={control}
-													render={({ field }) => (
-														<TextField>
-															<InputGroup>
-																<InputGroup.Input
-																	placeholder="Optional description"
-																	value={field.value || ""}
-																	onChange={field.onChange}
-																	className="w-full"
-																/>
-															</InputGroup>
+													render={({ field: descField }) => (
+														<TextField variant="secondary">
+															<TextArea
+																placeholder="Description"
+																value={descField.value || ""}
+																onChange={descField.onChange}
+																className="w-full min-h-9!"
+																rows={1}
+															/>
 														</TextField>
 													)}
 												/>
@@ -149,8 +178,9 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 															<Tooltip.Trigger>
 																<Button
 																	isIconOnly
-																	variant="danger-soft"
+																	variant="ghost"
 																	size="sm"
+																	className="hover:bg-danger/10 text-danger hover:text-danger"
 																	onPress={() => handleRemove(index)}>
 																	<TrashIcon className="h-4 w-4" />
 																</Button>
@@ -165,18 +195,26 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 										</Table.Row>
 									);
 								})}
+								{!isBoolean && (
+									<Table.Row>
+										<Table.Cell colSpan={4} className="p-0">
+											<div className="p-3 bg-default-50/50 flex justify-center border-t border-divider">
+												<Button
+													variant="ghost"
+													size="sm"
+													onPress={handleAdd}
+													className="w-full">
+													<PlusIcon className="h-4 w-4 mr-2" />
+													Add Variation
+												</Button>
+											</div>
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 						</Table.Content>
 					</Table.ScrollContainer>
 				</Table>
-				{!isBoolean && (
-					<div className="p-3 bg-default-50 border-t border-divider">
-						<Button variant="primary" size="sm" onPress={handleAdd}>
-							<PlusIcon className="h-4 w-4 mr-2" />
-							Add Variation
-						</Button>
-					</div>
-				)}
 			</div>
 
 			{isBoolean && (
