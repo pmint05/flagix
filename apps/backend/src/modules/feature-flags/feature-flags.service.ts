@@ -39,7 +39,6 @@ export class FeatureFlagsService {
   async create(
     orgId: string,
     projectId: string,
-    envId: string,
     dto: CreateFeatureFlagDto,
   ) {
     const existing = await this.flagRepo.findByKey(projectId, dto.key);
@@ -100,21 +99,14 @@ export class FeatureFlagsService {
       });
     }
 
-    if (this.flagChangePublisher) {
-      this.flagChangePublisher.publish(envId, {
-        type: 'flag.created',
-        flagKey: flag.key,
-        environmentId: envId,
-        timestamp: new Date().toISOString(),
-        metadata: { version: flag.version },
-      });
-    }
+    // We skip publishing to redis on create since no envId is tied to the action
+    // If needed, we could publish to all environments.
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId,
-        environmentId: envId,
+        environmentId: undefined,
         entityType: 'feature_flag',
         entityId: flag.id,
         before: null,
@@ -138,6 +130,17 @@ export class FeatureFlagsService {
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flagId);
     const flagStates = await this.flagRepo.findFlagStatesForFlag(flagId);
+    return { ...flag, variations: flagVariations, states: flagStates };
+  }
+
+  async findByKey(orgId: string, projectId: string, key: string) {
+    const flag = await this.flagRepo.findByKey(projectId, key);
+    console.log(flag)
+    if (!flag || flag.organizationId !== orgId)
+      throw new NotFoundException('Feature flag not found');
+
+    const flagVariations = await this.flagRepo.findVariationsForFlag(flag.id);
+    const flagStates = await this.flagRepo.findFlagStatesForFlag(flag.id);
     return { ...flag, variations: flagVariations, states: flagStates };
   }
 
