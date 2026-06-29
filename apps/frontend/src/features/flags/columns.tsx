@@ -1,10 +1,11 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Badge, Button, Tooltip } from "@heroui/react";
+import { Chip, Button, Tooltip } from "@heroui/react";
 import { TrashIcon, WarningIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { FlagToggle } from "./FlagToggle";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 
-const STATUS_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "default"> = {
+const STATUS_Chip_COLOR: Record<string, "success" | "warning" | "danger" | "default"> = {
 	draft: "default",
 	active: "success",
 	archived: "danger",
@@ -13,6 +14,7 @@ const STATUS_BADGE_COLOR: Record<string, "success" | "warning" | "danger" | "def
 const columnHelper = createColumnHelper<FeatureFlagListItem>();
 
 interface ColumnActions {
+	projectSlug: string;
 	onDelete: (flag: FeatureFlagListItem) => void;
 	onStatusChange: (flag: FeatureFlagListItem, status: "draft" | "active" | "archived") => void;
 }
@@ -21,26 +23,38 @@ export function createFlagColumns(actions: ColumnActions) {
 	return [
 		columnHelper.accessor("key", {
 			header: "Key",
-			cell: (info) => <code className="text-sm">{info.getValue()}</code>,
+			cell: (info) => (
+				<Link
+					to="/projects/$projectSlug/flags/$flagSlug"
+					params={{ projectSlug: actions.projectSlug, flagSlug: info.getValue() }}
+					className="text-primary hover:underline">
+					<code className="text-sm">{info.getValue()}</code>
+				</Link>
+			),
 		}),
 		columnHelper.accessor("name", {
 			header: "Name",
 			cell: (info) => (
-				<span className="font-medium text-foreground">{info.getValue()}</span>
+				<Link
+					to="/projects/$projectSlug/flags/$flagSlug"
+					params={{ projectSlug: actions.projectSlug, flagSlug: info.row.original.key }}
+					className="font-medium text-foreground hover:text-primary transition-colors">
+					{info.getValue()}
+				</Link>
 			),
 		}),
 		columnHelper.accessor("flagType", {
 			header: "Type",
-			cell: (info) => <Badge variant="soft">{info.getValue()}</Badge>,
+			cell: (info) => <Chip variant="soft">{info.getValue()}</Chip>,
 		}),
 		columnHelper.accessor("status", {
 			header: "Status",
 			cell: (info) => {
 				const status = info.getValue();
 				return (
-					<Badge color={STATUS_BADGE_COLOR[status] ?? "default"} variant="soft">
+					<Chip color={STATUS_Chip_COLOR[status] ?? "default"} variant="soft">
 						{status}
-					</Badge>
+					</Chip>
 				);
 			},
 		}),

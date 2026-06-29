@@ -16,12 +16,15 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 
 export const Route = createFileRoute(
-	"/_authenticated/projects/$projectSlug/flags",
+	"/_authenticated/projects/$projectSlug/flags/",
 )({
 	component: FlagsIndex,
 });
 
 function FlagsIndex() {
+	const match = Route.useMatch();
+	const { projectSlug } = match.params;
+
 	const { tableState, updateTableState } = useDataTableUrlSync({
 		defaultPageSize: 20,
 		whitelist: ["status"],
@@ -41,6 +44,7 @@ function FlagsIndex() {
 	const columns = useMemo(
 		() =>
 			createFlagColumns({
+				projectSlug,
 				onDelete: (flag) => deleteFlag.mutate(flag.id),
 				onStatusChange: (flag, status) =>
 					updateFlagState.mutate({ flagId: flag.id, status }),

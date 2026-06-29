@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
 	Button,
 	Form,
@@ -17,11 +18,10 @@ import {
 	SelectIndicator,
 	ListBox,
 	ListBoxItem,
-	Drawer,
+	Modal,
 	toast,
 } from "@heroui/react";
-import { useCreateFlag, useUpdateFlag } from "./api";
-import type { FeatureFlagListItem } from "@/types/feature-flag";
+import { useCreateFlag } from "./api";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 
 const flagFormSchema = z.object({
@@ -48,15 +48,14 @@ const FLAG_TYPES = [
 interface FlagModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	flag?: FeatureFlagListItem;
 }
 
-export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
-	const isEditing = !!flag;
+export function FlagModal({ isOpen, onClose }: FlagModalProps) {
+	const navigate = useNavigate();
+	const { projectSlug } = useParams({ strict: false }) as {
+		projectSlug: string;
+	};
 	const createFlag = useCreateFlag();
-	const updateFlag = useUpdateFlag();
-
-	const isPending = isEditing ? updateFlag.isPending : createFlag.isPending;
 
 	const {
 		register,
@@ -67,63 +66,52 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 	} = useForm<FlagFormData>({
 		resolver: zodResolver(flagFormSchema),
 		defaultValues: {
-			key: flag?.key ?? "",
-			name: flag?.name ?? "",
-			description: flag?.description ?? "",
-			flagType: flag?.flagType ?? "boolean",
+			key: "",
+			name: "",
+			description: "",
+			flagType: "boolean",
 		},
 	});
 
 	useEffect(() => {
 		if (isOpen) {
 			reset({
-				key: flag?.key ?? "",
-				name: flag?.name ?? "",
-				description: flag?.description ?? "",
-				flagType: flag?.flagType ?? "boolean",
+				key: "",
+				name: "",
+				description: "",
+				flagType: "boolean",
 			});
 		}
-	}, [isOpen, flag, reset]);
+	}, [isOpen, reset]);
 
 	const onSubmit = async (data: FlagFormData) => {
 		try {
-			if (isEditing && flag) {
-				await updateFlag.mutateAsync({
-					flagId: flag.id,
-					name: data.name,
-					description: data.description,
-				});
-				toast.success("Feature flag updated successfully");
-			} else {
-				await createFlag.mutateAsync({
-					...data,
-					flagType: data.flagType as "boolean" | "multivariate",
-				});
-				toast.success("Feature flag created successfully");
-			}
+			const result = await createFlag.mutateAsync({
+				...data,
+				flagType: data.flagType as "boolean" | "multivariate",
+			});
+			toast.success("Feature flag created successfully");
 			onClose();
+			navigate({
+				to: "/projects/$projectSlug/flags/$flagSlug",
+				params: { projectSlug, flagSlug: result.key },
+			});
 		} catch {
-			toast.danger(
-				isEditing
-					? "Failed to update feature flag"
-					: "Failed to create feature flag",
-			);
+			toast.danger("Failed to create feature flag");
 		}
 	};
 
 	return (
-		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Drawer.Backdrop>
-				<Drawer.Content placement="right">
-					<Drawer.Dialog>
-						<Drawer.Header>
-							<Drawer.Heading>
-								{isEditing ? "Edit Feature Flag" : "Create Feature Flag"}
-							</Drawer.Heading>
-						</Drawer.Header>
-						<Drawer.Body>
+		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Modal.Backdrop>
+				<Modal.Container>
+					<Modal.Dialog>
+						<Modal.Header>
+							<Modal.Heading>Create Feature Flag</Modal.Heading>
+						</Modal.Header>
+						<Modal.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField isDisabled={isEditing}>
+								<TextField>
 									<Label>Key</Label>
 									<Input
 										{...register("key")}
@@ -167,12 +155,12 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 												<SelectIndicator />
 											</SelectTrigger>
 											<SelectPopover>
-												<ListBox>
-													{FLAG_TYPES.map((t) => (
+												<ListBox items={FLAG_TYPES}>
+													{(t: any) => (
 														<ListBoxItem id={t.key} key={t.key}>
 															{t.label}
 														</ListBoxItem>
-													))}
+													)}
 												</ListBox>
 											</SelectPopover>
 											{errors.flagType && (
@@ -182,26 +170,24 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									)}
 								/>
 
-								<Drawer.Footer>
+								<Modal.Footer>
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
-									<PermissionGuard
-										permission={(isEditing ? "flag:edit" : "flag:create")}
-										mode="disable">
+									<PermissionGuard permission="flag:create" mode="disable">
 										<Button
 											type="submit"
 											variant="primary"
-											isDisabled={isPending}>
-											{isEditing ? "Save Changes" : "Create Flag"}
+											isDisabled={createFlag.isPending}>
+											Create Flag
 										</Button>
 									</PermissionGuard>
-								</Drawer.Footer>
+								</Modal.Footer>
 							</Form>
-						</Drawer.Body>
-					</Drawer.Dialog>
-				</Drawer.Content>
-			</Drawer.Backdrop>
-		</Drawer>
+						</Modal.Body>
+					</Modal.Dialog>
+				</Modal.Container>
+			</Modal.Backdrop>
+		</Modal.Root>
 	);
 }

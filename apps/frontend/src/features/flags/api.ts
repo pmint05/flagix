@@ -36,14 +36,13 @@ export interface UpdateFlagStateInput {
 export const createFlagsApi = (
 	orgId: string,
 	projectId: string,
-	envId: string,
 ) => {
-	const basePath = `organizations/${orgId}/projects/${projectId}/environments/${envId}/flags`;
+	const basePath = `organizations/${orgId}/projects/${projectId}/flags`;
 	return {
-		list: (status?: string): Promise<FeatureFlagListItem[]> =>
+		list: (envId: string, status?: string): Promise<FeatureFlagListItem[]> =>
 			api
 				.get(basePath, {
-					searchParams: status ? { status } : undefined,
+					searchParams: status ? { envId, status } : { envId },
 					schema: z.object({
 						flags: z.array(featureFlagListItemSchema),
 						total: z.number(),
@@ -54,6 +53,13 @@ export const createFlagsApi = (
 			api.get(`organizations/${orgId}/flags/${flagId}`, {
 				schema: featureFlagSchema,
 			}),
+		getByKey: (key: string): Promise<FeatureFlag> =>
+			api.get(
+				`${basePath}/by-key/${key}`,
+				{
+					schema: featureFlagSchema,
+				},
+			),
 		create: (input: CreateFlagInput): Promise<FeatureFlag> =>
 			api.post(basePath, {
 				json: input,
@@ -64,7 +70,7 @@ export const createFlagsApi = (
 				json: input,
 				schema: featureFlagSchema,
 			}),
-		updateState: (flagId: string, input: UpdateFlagStateInput) =>
+		updateState: (flagId: string, envId: string, input: UpdateFlagStateInput) =>
 			api.patch(
 				`organizations/${orgId}/flags/${flagId}/environments/${envId}/state`,
 				{
@@ -87,23 +93,23 @@ export function useFlags(status?: string) {
 
 	return useQuery({
 		queryKey: [...FLAGS_KEY, orgId, projectId, envId, { status }],
-		queryFn: () => createFlagsApi(orgId!, projectId!, envId!).list(status),
+		queryFn: () => createFlagsApi(orgId!, projectId!).list(envId!, status),
 		enabled: !!orgId && !!projectId && !!envId,
 	});
 }
 
-export function useFlag(flagId: string) {
+export function useFlagByKey(key: string) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	const projectId = useCurrentProject()?.id;
+	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useQuery({
-		queryKey: [...FLAGS_KEY, "detail", orgId, flagId],
+		queryKey: [...FLAGS_KEY, "detail", orgId, projectId, envId, key],
 		queryFn: () => {
-			if (!orgId) throw new Error("No organization selected");
-			return api.get(`organizations/${orgId}/flags/${flagId}`, {
-				schema: featureFlagSchema,
-			});
+			if (!orgId || !projectId) throw new Error("Missing context");
+			return createFlagsApi(orgId, projectId).getByKey(key);
 		},
-		enabled: !!orgId && !!flagId,
+		enabled: !!orgId && !!projectId && !!key,
 	});
 }
 
@@ -115,8 +121,8 @@ export function useCreateFlag() {
 
 	return useMutation({
 		mutationFn: (input: CreateFlagInput) => {
-			if (!orgId || !projectId || !envId) throw new Error("Missing context");
-			return createFlagsApi(orgId, projectId, envId).create(input);
+			if (!orgId || !projectId) throw new Error("Missing context");
+			return createFlagsApi(orgId, projectId).create(input);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -138,7 +144,7 @@ export function useUpdateFlagState() {
 			...input
 		}: UpdateFlagStateInput & { flagId: string }) => {
 			if (!orgId || !projectId || !envId) throw new Error("Missing context");
-			return createFlagsApi(orgId, projectId, envId).updateState(flagId, input);
+			return createFlagsApi(orgId, projectId).updateState(flagId, envId, input);
 		},
 		onMutate: async ({ flagId, isEnabled }) => {
 			await queryClient.cancelQueries({
@@ -213,8 +219,8 @@ export function useDeleteFlag() {
 
 	return useMutation({
 		mutationFn: (flagId: string) => {
-			if (!orgId || !projectId || !envId) throw new Error("Missing context");
-			return createFlagsApi(orgId, projectId, envId).delete(flagId);
+			if (!orgId || !projectId) throw new Error("Missing context");
+			return createFlagsApi(orgId, projectId).delete(flagId);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
