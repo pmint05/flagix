@@ -1,7 +1,6 @@
 import { Link, useMatches } from "@tanstack/react-router";
-import { CaretRightIcon } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
-import { useFlag } from "#/features/flags/api";
+import { useFlagByKey } from "#/features/flags/api";
 import {
 	BREADCRUMB_CONFIG,
 	resolveLabel,
@@ -9,6 +8,7 @@ import {
 } from "./breadcrumb-config";
 import { Breadcrumbs as BRH } from "@heroui/react";
 import { useIsMobile } from "#/hooks/useIsMobile";
+import { Skeleton } from "@heroui/react";
 
 export function Breadcrumbs() {
 	const matches = useMatches();
@@ -23,6 +23,7 @@ export function Breadcrumbs() {
 
 	const segments = BREADCRUMB_CONFIG[routeId];
 	const selectedProject = useContextStore((s) => s.selectedProject);
+	const isMobile = useIsMobile();
 
 	if (!segments) {
 		return (
@@ -32,63 +33,52 @@ export function Breadcrumbs() {
 		);
 	}
 
-	const isMobile = useIsMobile();
-
 	return (
-		<BRH aria-label="Breadcrumb">
-			{isMobile ? (
-				<BRH.Item>
-					<span className="font-medium text-foreground">
-						{segments[segments.length - 1]
-							? resolveLabel(segments[segments.length - 1].label, params)
-							: "Dashboard"}
-					</span>
-				</BRH.Item>
-			) : (
-				segments.map((segment, index) => {
-					const isLast = index === segments.length - 1;
-					const rawLabel = resolveLabel(segment.label, params);
-					const href = resolveHref(segment.href, params);
+		<BRH aria-label="Breadcrumb" items={isMobile ? (segments[segments.length - 1] ? [{ ...segments[segments.length - 1], id: "mobile-0" }] : []) : segments.map((s, i) => ({ ...s, id: i.toString() }))}>
+			{(segment: any) => {
+				const index = isMobile ? segments.length - 1 : parseInt(segment.id, 10);
+				const isLast = isMobile ? true : index === segments.length - 1;
+				const originalSegment = segments[index] || segment;
+				const rawLabel = resolveLabel(originalSegment.label, params);
+				const href = resolveHref(originalSegment.href, params);
 
-					let displayLabel = rawLabel;
-					let isLoading = false;
+				let displayLabel = rawLabel;
+				let isLoading = false;
 
-					// Resolve project name synchronously from store
-					if (segment.resolveParam === "projectId") {
-						if (selectedProject) {
-							displayLabel = selectedProject.name;
-						} else {
-							isLoading = true;
-						}
+				if (originalSegment.resolveParam === "projectId") {
+					if (selectedProject) {
+						displayLabel = selectedProject.name;
+					} else {
+						isLoading = true;
 					}
+				}
 
-					return (
-						<BRH.Item key={index} className="flex items-center gap-1">
-							{segment.resolveParam === "flagId" ? (
-								<FlagNameResolver
-									flagId={params.flagId}
-									fallback={rawLabel}
-									isLast={isLast}
-									href={href}
-								/>
-							) : isLast ? (
-								<span
-									className={`font-medium text-foreground ${
-										isLoading ? "opacity-60" : ""
-									}`}>
-									{displayLabel}
-								</span>
-							) : (
-								<Link
-									to={href as string}
-									className="transition-colors hover:text-foreground">
-									{displayLabel}
-								</Link>
-							)}
-						</BRH.Item>
-					);
-				})
-			)}
+				return (
+					<BRH.Item key={segment.id} className="flex items-center gap-1">
+						{originalSegment.resolveParam === "flagSlug" ? (
+							<FlagNameResolver
+								flagSlug={params.flagSlug}
+								fallback={rawLabel}
+								isLast={isLast}
+								href={href}
+							/>
+						) : isLast ? (
+							<span
+								className={`font-medium text-foreground ${
+									isLoading ? "opacity-60" : ""
+								}`}>
+								{isMobile ? (segment ? displayLabel : "Dashboard") : displayLabel}
+							</span>
+						) : (
+							<Link
+								to={href as string}
+								className="transition-colors hover:text-foreground">
+								{displayLabel}
+							</Link>
+						)}
+					</BRH.Item>
+				);
+			}}
 		</BRH>
 	);
 }
@@ -98,25 +88,27 @@ export function Breadcrumbs() {
  * using TanStack Query, respecting Hook rules.
  */
 function FlagNameResolver({
-	flagId,
+	flagSlug,
 	fallback,
 	isLast,
 	href,
 }: {
-	flagId: string;
+	flagSlug: string;
 	fallback: string;
 	isLast: boolean;
 	href?: string;
 }) {
-	const { data: flag, isLoading } = useFlag(flagId);
+	const { data: flag, isPending } = useFlagByKey(flagSlug);
 	const displayLabel = flag?.name || fallback;
+
+	if (isPending) {
+		return <Skeleton className="h-4 w-24 rounded-lg" />;
+	}
 
 	if (isLast) {
 		return (
 			<span
-				className={`font-medium text-foreground ${
-					isLoading ? "opacity-60" : ""
-				}`}>
+				className={`font-medium text-foreground`}>
 				{displayLabel}
 			</span>
 		);

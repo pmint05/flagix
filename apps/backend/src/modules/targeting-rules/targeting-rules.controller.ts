@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
@@ -42,10 +43,14 @@ export class TargetingRulesController {
 
   @Get()
   @ApiOperation({ summary: 'List targeting rules' })
-  async findAll(@CurrentContext() ctx: OrgContext) {
+  async findAll(
+    @CurrentContext() ctx: OrgContext,
+    @Query('envId') envId?: string,
+  ) {
     const rules = await this.rulesService.findAllForFlag(
       ctx.organizationId,
       ctx.flagId!,
+      envId,
     );
     return { rules, total: rules.length };
   }

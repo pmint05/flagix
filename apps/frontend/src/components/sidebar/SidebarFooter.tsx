@@ -1,9 +1,10 @@
-import { Button, cn, Tooltip } from "@heroui/react";
+import { Button, cn } from "@heroui/react";
 import { useAuthStore, useSidebarStore } from "#/stores";
 import { generateAvatarColor } from "#/lib/color-from-string";
-import { getInitials, truncateText } from "#/lib/string-utils";
+import { getInitials } from "#/lib/string-utils";
 import { UserMenu } from "./UserMenu";
 import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
+import { maskEmail } from "@/lib/masking";
 
 export function SidebarFooter() {
 	const user = useAuthStore((s) => s.user);
@@ -45,7 +46,7 @@ export function SidebarFooter() {
 					)}>
 					<span className="truncate text-sm font-medium">{user.name}</span>
 					<span className="truncate text-xs text-muted">
-						{truncateText(user.email, 24)}
+						{maskEmail(user.email)}
 					</span>
 				</div>
 			</div>

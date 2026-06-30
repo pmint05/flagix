@@ -8,7 +8,7 @@ import { z } from "zod";
 import { useContextStore } from "@/stores";
 
 export interface CreateRuleInput {
-	ruleType: "kill_switch" | "user" | "role" | "percentage";
+	ruleType: "kill_switch" | "user" | "role" | "percentage" | "custom";
 	environmentId: string;
 	variationId?: string;
 	conditions: Record<string, unknown>;
@@ -25,8 +25,9 @@ export interface UpdateRuleInput {
 export const createRulesApi = (orgId: string, flagId: string) => {
 	const basePath = `organizations/${orgId}/flags/${flagId}/rules`;
 	return {
-		list: (): Promise<TargetingRule[]> =>
+		list: (envId?: string): Promise<TargetingRule[]> =>
 			api.get(basePath, {
+				searchParams: envId ? { envId } : {},
 				schema: z.object({
 					rules: z.array(targetingRuleSchema),
 					total: z.number(),
@@ -55,16 +56,16 @@ export const createRulesApi = (orgId: string, flagId: string) => {
 
 export const RULES_KEY = ["rules"] as const;
 
-export function useRules(flagId: string) {
+export function useRules(flagId: string, envId?: string) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 
 	return useQuery({
-		queryKey: [...RULES_KEY, orgId, flagId],
+		queryKey: [...RULES_KEY, orgId, flagId, envId],
 		queryFn: () => {
 			if (!orgId) throw new Error("No organization selected");
-			return createRulesApi(orgId, flagId).list();
+			return createRulesApi(orgId, flagId).list(envId);
 		},
-		enabled: !!orgId && !!flagId,
+		enabled: !!orgId && !!flagId && !!envId,
 	});
 }
 

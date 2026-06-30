@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import type { QueryClient } from "@tanstack/react-query";
 import { ErrorPage } from "@/components/feedback/error-page";
 import { NotFoundPage } from "@/components/feedback/not-found-page";
+import { GlobalLoadingScreen } from "@/components/ui/GlobalLoadingScreen";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -89,6 +90,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 			</head>
 			<body>
+				<GlobalLoadingScreen />
 				<Toast.Provider placement="bottom" />
 				{children}
 				<TanStackDevtools

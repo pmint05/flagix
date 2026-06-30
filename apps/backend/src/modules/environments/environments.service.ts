@@ -63,6 +63,13 @@ export class EnvironmentsService {
     return env;
   }
 
+  async findBySlug(orgId: string, projectId: string, slug: string) {
+    const env = await this.envRepo.findByProjectAndSlug(projectId, slug);
+    if (!env || env.organizationId !== orgId)
+      throw new NotFoundException('Environment not found');
+    return env;
+  }
+
   async update(
     orgId: string,
     projectId: string,

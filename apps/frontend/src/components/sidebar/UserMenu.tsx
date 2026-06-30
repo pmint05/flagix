@@ -19,8 +19,9 @@ import {
 import { useAuthStore, useThemeStore } from "#/stores";
 import { authClient } from "#/lib/auth-client";
 import type React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useIsMobile } from "#/hooks/useIsMobile";
+import { maskEmail } from "#/lib/masking";
 
 interface UserMenuProps {
 	children: React.ReactNode;
@@ -221,7 +222,7 @@ export function UserMenu({ children }: UserMenuProps) {
 							<span className="truncate text-sm font-semibold">
 								{user?.name}
 							</span>
-							<span className="truncate text-xs">{user?.email}</span>
+							<span className="truncate text-xs">{maskEmail(user?.email)}</span>
 						</div>
 
 						<Separator className="my-1" />

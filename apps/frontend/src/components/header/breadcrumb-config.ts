@@ -22,24 +22,24 @@ export interface BreadcrumbSegment {
 export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 	"/_authenticated/": [{ label: "Dashboard" }],
 	"/_authenticated/projects/": [{ label: "Projects", href: "/projects" }],
-	"/_authenticated/projects/$projectSlug/flags": [
+	"/_authenticated/projects/$projectSlug/flags/": [
 		// { label: "Projects", href: "/projects" },
 		{
 			label: (p) => p.projectSlug,
 			href: (p) => `/projects/${p.projectSlug}/flags`,
 			resolveParam: "projectSlug",
 		},
-		{ label: "Feature Flags" },
+		{ label: "Flags" },
 	],
-	"/_authenticated/projects/$projectSlug/flags/$flagId": [
+	"/_authenticated/projects/$projectSlug/flags/$flagSlug": [
 		// { label: "Projects", href: "/projects" },
 		{
 			label: (p) => p.projectSlug,
 			href: (p) => `/projects/${p.projectSlug}/flags`,
 			resolveParam: "projectSlug",
 		},
-		{ label: "Feature Flags", href: (p) => `/projects/${p.projectSlug}/flags` },
-		{ label: (p) => p.flagId, resolveParam: "flagId" },
+		{ label: "Flags", href: (p) => `/projects/${p.projectSlug}/flags` },
+		{ label: (p) => p.flagSlug, resolveParam: "flagSlug" },
 	],
 	"/_authenticated/projects/$projectSlug/environments": [
 		// { label: "Projects", href: "/projects" },
@@ -50,7 +50,7 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 		},
 		{ label: "Environments" },
 	],
-	"/_authenticated/projects/$projectSlug/sdk-keys": [
+	"/_authenticated/projects/$projectSlug/_admin/sdk-keys": [
 		// { label: "Projects", href: "/projects" },
 		{
 			label: (p) => p.projectSlug,
@@ -58,6 +58,9 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 			resolveParam: "projectSlug",
 		},
 		{ label: "SDK Keys" },
+	],
+	"/_authenticated/audit-logs": [
+		{ label: "Audit Logs", href: "/_authenticated/audit-logs" },
 	],
 };
 

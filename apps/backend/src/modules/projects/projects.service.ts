@@ -62,6 +62,13 @@ export class ProjectsService {
     return project;
   }
 
+  async findBySlug(orgId: string, slug: string) {
+    const project = await this.projectRepo.findByOrgAndSlug(orgId, slug);
+    if (!project || project.organizationId !== orgId)
+      throw new NotFoundException('Project not found');
+    return project;
+  }
+
   async update(orgId: string, projectId: string, dto: UpdateProjectDto) {
     const project = await this.projectRepo.findById(projectId);
     if (!project || project.organizationId !== orgId)

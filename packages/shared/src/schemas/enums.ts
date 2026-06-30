@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const flagTypeEnum = z.enum(['boolean', 'multivariate']);
 export const flagStatusEnum = z.enum(['draft', 'active', 'archived']);
-export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage']);
+export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage', 'custom']);
 export const memberRoleEnum = z.enum(['admin', 'editor', 'viewer']);
 export const actionTypeEnum = z.enum([
   'ORG_CREATE',

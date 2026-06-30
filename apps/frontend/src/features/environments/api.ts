@@ -32,6 +32,8 @@ export const createEnvironmentsApi = (orgId: string, projectId: string) => {
 				.then((res) => res.environments),
 		get: (id: string): Promise<Environment> =>
 			api.get(`${basePath}/${id}`, { schema: environmentSchema }),
+		getBySlug: (slug: string): Promise<Environment> =>
+			api.get(`${basePath}/by-slug/${slug}`, { schema: environmentSchema }),
 		create: (input: CreateEnvironmentInput): Promise<Environment> =>
 			api.post(basePath, { json: input, schema: environmentSchema }),
 		update: (id: string, input: UpdateEnvironmentInput): Promise<Environment> =>
@@ -57,6 +59,7 @@ export function useEnvironments() {
 		queryKey: [...ENVIRONMENTS_KEY, orgId, projectId],
 		queryFn: () => createEnvironmentsApi(orgId!, projectId!).list(),
 		enabled: isHydrated && !!orgId && !!projectId,
+		staleTime: 1000 * 60 * 5,
 	});
 }
 
@@ -68,6 +71,17 @@ export function useEnvironment(id: string) {
 		queryKey: [...ENVIRONMENTS_KEY, "detail", orgId, projectId, id],
 		queryFn: () => createEnvironmentsApi(orgId!, projectId!).get(id),
 		enabled: !!orgId && !!projectId && !!id,
+	});
+}
+
+export function useEnvironmentBySlug(slug: string | undefined) {
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	const projectId = useCurrentProject()?.id;
+
+	return useQuery({
+		queryKey: [...ENVIRONMENTS_KEY, "detail", orgId, projectId, "by-slug", slug],
+		queryFn: () => createEnvironmentsApi(orgId!, projectId!).getBySlug(slug!),
+		enabled: !!orgId && !!projectId && !!slug,
 	});
 }
 

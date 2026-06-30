@@ -15,6 +15,7 @@ interface SidebarNavItemProps {
 	}>;
 	isCollapsed: boolean;
 	isActive: boolean;
+	keepSearch?: boolean;
 }
 
 export function SidebarNavItem({
@@ -23,12 +24,14 @@ export function SidebarNavItem({
 	icon: Icon,
 	isCollapsed,
 	isActive,
+	keepSearch: _keepSearch = false,
 }: SidebarNavItemProps) {
 	const closeDrawer = useSidebarStore((s) => s.closeDrawer);
 
 	const content = (
 		<Link
 			to={to}
+			// search={keepSearch ? (prev) => ({ ...prev }) : {}}
 			onClick={closeDrawer}
 			className={cn(
 				"group flex items-center rounded-3xl py-2 transition-all duration-200 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-accent w-full",
@@ -36,8 +39,7 @@ export function SidebarNavItem({
 					"justify-center px-0": isCollapsed,
 					"gap-3 px-3": !isCollapsed,
 					"bg-accent/10 text-accent font-medium": isActive,
-					"text-default-foreground hover:bg-default":
-						!isActive,
+					"text-default-foreground hover:bg-default": !isActive,
 				},
 			)}>
 			<Icon

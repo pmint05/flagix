@@ -355,4 +355,46 @@ describe('evaluation.engine', () => {
       expect(result.resolvedValue).toBe('red');
     });
   });
+
+  describe('environment-specific fallback values', () => {
+    it('should return environment-specific offVariationId when flag is disabled', () => {
+      const flag = createFlag({
+        isEnabled: false,
+        offVariationId: 'var-true',
+      });
+      const result = evaluate(flag, { userId: 'user-1' });
+      expect(result.variationKey).toBe('true');
+      expect(result.resolvedValue).toBe(true);
+      expect(result.evaluationReason).toBe('FLAG_DISABLED');
+    });
+
+    it('should fall back to global default variation when environment-specific offVariationId is missing or invalid', () => {
+      const flag = createFlag({
+        isEnabled: false,
+        offVariationId: 'invalid-id',
+      });
+      const result = evaluate(flag, { userId: 'user-1' });
+      expect(result.variationKey).toBe('false');
+      expect(result.resolvedValue).toBe(false);
+    });
+
+    it('should return environment-specific defaultVariationId when no rules match', () => {
+      const flag = createFlag({
+        defaultVariationId: 'var-true',
+      });
+      const result = evaluate(flag, { userId: 'user-1' });
+      expect(result.variationKey).toBe('true');
+      expect(result.resolvedValue).toBe(true);
+      expect(result.evaluationReason).toBe('DEFAULT');
+    });
+
+    it('should fall back to global default variation when defaultVariationId is missing or invalid', () => {
+      const flag = createFlag({
+        defaultVariationId: 'invalid-id',
+      });
+      const result = evaluate(flag, { userId: 'user-1' });
+      expect(result.variationKey).toBe('false');
+      expect(result.resolvedValue).toBe(false);
+    });
+  });
 });

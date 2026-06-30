@@ -1,5 +1,5 @@
-import { Switch } from "@heroui/react";
 import { useUpdateFlagState } from "./api";
+import { AsyncSwitch } from "#/components/ui/async-switch";
 
 interface FlagToggleProps {
 	flagId: string;
@@ -9,18 +9,12 @@ interface FlagToggleProps {
 export function FlagToggle({ flagId, isEnabled }: FlagToggleProps) {
 	const updateFlagState = useUpdateFlagState();
 
-	const handleChange = () => {
-		updateFlagState.mutate({
+	const handleChange = async () => {
+		await updateFlagState.mutateAsync({
 			flagId,
 			isEnabled: !isEnabled,
 		});
 	};
 
-	return (
-		<Switch
-			isSelected={isEnabled}
-			onChange={handleChange}
-			size="sm"
-		/>
-	);
+	return <AsyncSwitch action={handleChange} showToast isSelected={isEnabled} />;
 }

@@ -3,6 +3,7 @@ import type { EvaluationContext, EvaluationResult } from '@flagix/shared';
 import { FlagLoader } from './flag-loader';
 import { evaluate } from './evaluation.engine';
 import { buildSafeDefault } from './safe-default.util';
+import { simulate, SimulationResult } from './evaluation.simulator';
 
 @Injectable()
 export class EvaluationService {
@@ -53,6 +54,70 @@ export class EvaluationService {
         error instanceof Error ? error.stack : String(error),
       );
       return [];
+    }
+  }
+
+  async simulateFlag(
+    environmentId: string,
+    flagKey: string,
+    context: EvaluationContext,
+    flagConfig?: {
+      isEnabled?: boolean;
+      status?: string;
+      defaultVariationId?: string | null;
+      offVariationId?: string | null;
+      variations?: any[];
+      rules?: any[];
+      bypassDraft?: boolean;
+    },
+  ): Promise<SimulationResult> {
+    try {
+      const flag = await this.flagLoader.loadFlag(environmentId, flagKey);
+      if (!flag) {
+        throw new Error(`Flag ${flagKey} not found`);
+      }
+
+      // If draft config is passed, merge/override the LoadedFlag values
+      if (flagConfig) {
+        if (flagConfig.isEnabled !== undefined) {
+          flag.isEnabled = flagConfig.isEnabled;
+        }
+        if (flagConfig.status !== undefined) {
+          flag.status = flagConfig.status as any;
+        }
+        if (flagConfig.defaultVariationId !== undefined) {
+          flag.defaultVariationId = flagConfig.defaultVariationId;
+        }
+        if (flagConfig.offVariationId !== undefined) {
+          flag.offVariationId = flagConfig.offVariationId;
+        }
+        if (flagConfig.variations !== undefined) {
+          flag.variations = flagConfig.variations.map((v) => ({
+            id: v.id,
+            key: v.key,
+            value: v.value,
+            isDefault: v.isDefault || false,
+          }));
+        }
+        if (flagConfig.rules !== undefined) {
+          flag.rules = flagConfig.rules.map((r, idx) => ({
+            id: r.id || `draft_rule_${idx}`,
+            ruleType: r.ruleType,
+            priority: String(idx).padStart(4, '0'),
+            variationId: r.variationId || null,
+            conditions: r.conditions || {},
+            isEnabled: r.isEnabled ?? true,
+          }));
+        }
+      }
+
+      return simulate(flag, context, { bypassDraft: flagConfig?.bypassDraft });
+    } catch (error) {
+      this.logger.error(
+        `Simulation error for flag "${flagKey}" in env "${environmentId}"`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw error;
     }
   }
 }

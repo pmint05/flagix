@@ -18,7 +18,7 @@ export interface LoadedFlagRule {
   id: string;
   ruleType: RuleType;
   priority: string;
-  variationId: string;
+  variationId: string | null;
   conditions: Record<string, unknown>;
   isEnabled: boolean;
 }
@@ -31,6 +31,8 @@ export interface LoadedFlag {
   status: FlagStatus;
   isEnabled: boolean;
   version: number;
+  offVariationId?: string | null;
+  defaultVariationId?: string | null;
   variations: LoadedFlagVariation[];
   rules: LoadedFlagRule[];
 }
@@ -50,8 +52,13 @@ export function buildSafeDefault(
     };
   }
 
-  const defaultVariation = flag.variations.find((v) => v.isDefault);
-  if (!defaultVariation) {
+  // Resolve environment-specific offVariationId first, fall back to global default variation
+  let variation = flag.offVariationId ? flag.variations.find((v) => v.id === flag.offVariationId) : undefined;
+  if (!variation) {
+    variation = flag.variations.find((v) => v.isDefault);
+  }
+
+  if (!variation) {
     return {
       flagKey,
       enabled: false,
@@ -64,8 +71,8 @@ export function buildSafeDefault(
   return {
     flagKey,
     enabled: false,
-    variationKey: defaultVariation.key,
-    resolvedValue: defaultVariation.value,
+    variationKey: variation.key,
+    resolvedValue: variation.value,
     evaluationReason: reason,
   };
 }

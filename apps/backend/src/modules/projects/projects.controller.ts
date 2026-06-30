@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
@@ -43,6 +44,15 @@ export class ProjectsController {
   async findAll(@CurrentContext() ctx: OrgContext) {
     const projects = await this.projectsService.findAll(ctx.organizationId);
     return { projects, total: projects.length };
+  }
+
+  @Get('by-slug/:slug')
+  @ApiOperation({ summary: 'Get project by slug' })
+  async findBySlug(
+    @CurrentContext() ctx: OrgContext,
+    @Param('slug') slug: string,
+  ) {
+    return this.projectsService.findBySlug(ctx.organizationId, slug);
   }
 
   @Get(':projectId')

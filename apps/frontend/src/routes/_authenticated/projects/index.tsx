@@ -1,34 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	Button,
-	Skeleton,
-	Table,
-	Tooltip,
-} from "@heroui/react";
-import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { Button, Skeleton } from "@heroui/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useProjects, useDeleteProject } from "@/features/projects/api";
 import { ProjectModal } from "@/features/projects/ProjectModal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Project } from "@/types/project";
+import { createProjectColumns } from "@/features/projects/columns";
+import { DataTable } from "@/components/ui/data-table/DataTable";
+import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
+import type { ColumnDef } from "@tanstack/react-table";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
 	component: ProjectsIndex,
 });
 
 function ProjectsIndex() {
-	const [page, setPage] = useState(1);
-	const pageSize = 10;
-
 	const { data, isLoading, isError } = useProjects();
 	const deleteProject = useDeleteProject();
 
 	const projects = data ?? [];
-	const total = data?.length ?? 0;
-	const totalPages = Math.ceil(total / pageSize);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<Project | undefined>();
+
+	const { tableState, updateTableState } = useDataTableUrlSync({
+		defaultPageSize: 10,
+	});
 
 	const handleCreate = () => {
 		setEditingProject(undefined);
@@ -40,14 +38,21 @@ function ProjectsIndex() {
 		setModalOpen(true);
 	};
 
+	const columns = useMemo(
+		() =>
+			createProjectColumns({
+				onEdit: handleEdit,
+				onDelete: (id) => deleteProject.mutate(id),
+			}) as ColumnDef<Project, unknown>[],
+		[],
+	);
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-foreground">Projects</h1>
-					<p className="mt-1 text-sm">
-						Manage your feature flag projects
-					</p>
+					<p className="mt-1 text-sm">Manage your feature flag projects</p>
 				</div>
 				<Button variant="primary" className="gap-2" onPress={handleCreate}>
 					<PlusIcon className="h-4 w-4" />
@@ -73,92 +78,13 @@ function ProjectsIndex() {
 					onAction={handleCreate}
 				/>
 			) : (
-				<>
-					<Table aria-label="Projects list">
-						<Table.ScrollContainer>
-							<Table.Content>
-								<Table.Header>
-									<Table.Column>Name</Table.Column>
-									<Table.Column>Description</Table.Column>
-									<Table.Column>Flags</Table.Column>
-									<Table.Column>Actions</Table.Column>
-								</Table.Header>
-								<Table.Body items={projects}>
-									{(project: Project) => (
-										<Table.Row key={project.id}>
-											<Table.Cell>
-												<span className="font-medium text-primary">
-													{project.name}
-												</span>
-											</Table.Cell>
-											<Table.Cell>
-												<span>
-													{project.description || "—"}
-												</span>
-											</Table.Cell>
-											<Table.Cell>
-												<span>
-													{project.flagCount ?? 0}
-												</span>
-											</Table.Cell>
-											<Table.Cell>
-												<div className="flex items-center gap-1">
-													<Tooltip>
-														<Tooltip.Trigger>
-															<Button
-																isIconOnly
-																variant="ghost"
-																size="sm"
-																onPress={() => handleEdit(project)}>
-																<PencilIcon className="h-4 w-4" />
-															</Button>
-														</Tooltip.Trigger>
-														<Tooltip.Content>Edit</Tooltip.Content>
-													</Tooltip>
-													<Tooltip>
-														<Tooltip.Trigger>
-															<Button
-																isIconOnly
-																variant="ghost"
-																size="sm"
-																className="text-danger"
-																onPress={() =>
-																	deleteProject.mutate(project.id)
-																}>
-																<TrashIcon className="h-4 w-4" />
-															</Button>
-														</Tooltip.Trigger>
-														<Tooltip.Content>Delete</Tooltip.Content>
-													</Tooltip>
-												</div>
-											</Table.Cell>
-										</Table.Row>
-									)}
-								</Table.Body>
-							</Table.Content>
-						</Table.ScrollContainer>
-					</Table>
-
-					{totalPages > 1 && (
-						<div className="flex items-center justify-center gap-2">
-							<Button
-								variant="outline"
-								isDisabled={page === 1}
-								onPress={() => setPage(page - 1)}>
-								Previous
-							</Button>
-							<span className="text-sm">
-								Page {page} of {totalPages}
-							</span>
-							<Button
-								variant="outline"
-								isDisabled={page === totalPages}
-								onPress={() => setPage(page + 1)}>
-								Next
-							</Button>
-						</div>
-					)}
-				</>
+				<DataTable
+					data={projects}
+					columns={columns}
+					state={tableState}
+					onStateChange={updateTableState}
+					rowCount={projects.length}
+				/>
 			)}
 
 			<ProjectModal

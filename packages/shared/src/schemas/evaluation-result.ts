@@ -11,6 +11,7 @@ export const evaluationResultSchema = z.object({
     'USER_TARGETING',
     'ROLE_TARGETING',
     'PERCENTAGE_ROLLOUT',
+    'CUSTOM_RULE',
     'DEFAULT',
     'FLAG_NOT_FOUND',
     'FLAG_ARCHIVED',

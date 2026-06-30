@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,6 +18,7 @@ import { useCreateEnvironment, useUpdateEnvironment } from "./api";
 import { useContextStore } from "@/stores";
 import type { Environment } from "@/types/environment";
 import { ApiError } from "#/lib/errors";
+import { ENV_TYPES } from "./constants";
 
 const envFormSchema = z.object({
 	name: z.string().trim().min(1, "Name is required").max(255),
@@ -27,7 +27,6 @@ const envFormSchema = z.object({
 });
 
 type EnvFormData = z.infer<typeof envFormSchema>;
-import { ENV_TYPES } from "./constants";
 
 interface EnvironmentModalProps {
 	isOpen: boolean;
@@ -46,29 +45,17 @@ export function EnvironmentModal({
 	const selectedProject = useContextStore((s) => s.selectedProject);
 
 	const {
-		register,
 		handleSubmit,
-		reset,
 		control,
 		formState: { errors },
 	} = useForm<EnvFormData>({
 		resolver: zodResolver(envFormSchema),
-		defaultValues: {
+		values: {
 			name: environment?.name ?? "",
 			type: environment?.type ?? "development",
 			description: environment?.description ?? "",
 		},
 	});
-
-	useEffect(() => {
-		if (isOpen) {
-			reset({
-				name: environment?.name ?? "",
-				type: environment?.type ?? "development",
-				description: environment?.description ?? "",
-			});
-		}
-	}, [isOpen, environment, reset]);
 
 	const onSubmit = async (data: EnvFormData) => {
 		try {
@@ -153,15 +140,15 @@ export function EnvironmentModal({
 												<Select.Indicator />
 											</Select.Trigger>
 											<Select.Popover>
-												<ListBox>
-													{ENV_TYPES.map((t) => (
+												<ListBox items={ENV_TYPES}>
+													{(t: any) => (
 														<ListBox.Item
 															textValue={t.label}
 															id={t.key}
 															key={t.key}>
 															{t.label}
 														</ListBox.Item>
-													))}
+													)}
 												</ListBox>
 											</Select.Popover>
 											{errors.type && (

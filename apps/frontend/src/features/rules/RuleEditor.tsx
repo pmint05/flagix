@@ -166,12 +166,12 @@ export function RuleEditor({
 													<SelectIndicator />
 												</SelectTrigger>
 												<SelectPopover>
-													<ListBox>
-														{RULE_TYPES.map((t) => (
+													<ListBox items={RULE_TYPES}>
+														{(t: any) => (
 															<ListBoxItem id={t.key} key={t.key}>
 																{t.label}
 															</ListBoxItem>
-														))}
+														)}
 													</ListBox>
 												</SelectPopover>
 												{errors.ruleType && (
@@ -200,12 +200,12 @@ export function RuleEditor({
 												<SelectIndicator />
 											</SelectTrigger>
 											<SelectPopover>
-												<ListBox>
-													{environments.map((env) => (
+												<ListBox items={environments}>
+													{(env: any) => (
 														<ListBoxItem id={env.id} key={env.id}>
 															{env.name}
 														</ListBoxItem>
-													))}
+													)}
 												</ListBox>
 											</SelectPopover>
 											{errors.environmentId && (
@@ -317,12 +317,12 @@ function KillSwitchRuleEditor({
 						<SelectIndicator />
 					</SelectTrigger>
 					<SelectPopover>
-						<ListBox>
-							{variations.map((v) => (
+						<ListBox items={variations}>
+							{(v: any) => (
 								<ListBoxItem id={v.id} key={v.id}>
 									{v.key}
 								</ListBoxItem>
-							))}
+							)}
 						</ListBox>
 					</SelectPopover>
 					{errors.variationId && (
@@ -361,12 +361,12 @@ function UserRuleEditor({
 							<SelectIndicator />
 						</SelectTrigger>
 						<SelectPopover>
-							<ListBox>
-								{variations.map((v) => (
+							<ListBox items={variations}>
+								{(v: any) => (
 									<ListBoxItem id={v.id} key={v.id}>
 										{v.key}
 									</ListBoxItem>
-								))}
+								)}
 							</ListBox>
 						</SelectPopover>
 						{errors.variationId && (
@@ -428,12 +428,12 @@ function RoleRuleEditor({
 							<SelectIndicator />
 						</SelectTrigger>
 						<SelectPopover>
-							<ListBox>
-								{variations.map((v) => (
+							<ListBox items={variations}>
+								{(v: any) => (
 									<ListBoxItem id={v.id} key={v.id}>
 										{v.key}
 									</ListBoxItem>
-								))}
+								)}
 							</ListBox>
 						</SelectPopover>
 						{errors.variationId && (

@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
@@ -46,6 +47,19 @@ export class EnvironmentsController {
       ctx.projectId!,
     );
     return { environments, total: environments.length };
+  }
+
+  @Get('by-slug/:slug')
+  @ApiOperation({ summary: 'Get environment by slug' })
+  async findBySlug(
+    @CurrentContext() ctx: OrgContext,
+    @Param('slug') slug: string,
+  ) {
+    return this.envService.findBySlug(
+      ctx.organizationId,
+      ctx.projectId!,
+      slug,
+    );
   }
 
   @Get(':envId')

@@ -6,6 +6,7 @@ import { useEnvironments } from "@/features/environments/api";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RuleEditor } from "./RuleEditor";
 import { RulesList } from "./RulesList";
+import { useContextStore } from "@/stores";
 import type { Variation } from "@/types/feature-flag";
 import type { TargetingRule } from "@/types/targeting-rule";
 
@@ -15,7 +16,8 @@ interface TargetingRulesProps {
 }
 
 export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
-	const { data: rules, isLoading } = useRules(flagId);
+	const currentEnv = useContextStore((s) => s.selectedEnvironment);
+	const { data: rules, isPending } = useRules(flagId, currentEnv?.id);
 	const { data: environments } = useEnvironments();
 	const updateRule = useUpdateRule();
 	const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -54,7 +56,7 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 		[flagId, updateRule],
 	);
 
-	if (isLoading) {
+	if (isPending) {
 		return (
 			<div className="space-y-3">
 				<div className="flex items-center justify-between">
@@ -84,7 +86,7 @@ export function TargetingRules({ flagId, variations }: TargetingRulesProps) {
 			{sortedRules.length === 0 ? (
 				<EmptyState
 					title="No targeting rules"
-					description="Create rules to control how this flag is served to different users"
+					description="Create rules to control how this flag is evaluated for different users"
 					actionLabel="Add Rule"
 					onAction={() => setCreateModalOpen(true)}
 				/>

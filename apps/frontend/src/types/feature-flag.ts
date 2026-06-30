@@ -3,10 +3,11 @@ import { uuidSchema, timestampSchema, nonEmptyString } from "./base";
 
 export const variationSchema = z.object({
 	id: uuidSchema,
-	flagId: uuidSchema,
+	featureFlagId: uuidSchema,
 	key: z.string().min(1).max(100),
 	value: z.union([z.boolean(), z.string(), z.record(z.string(), z.unknown())]),
-	description: z.string().optional(),
+	description: z.string().nullable().optional(),
+	isDefault: z.boolean().optional(),
 });
 
 export const flagStateSchema = z.object({
@@ -16,6 +17,8 @@ export const flagStateSchema = z.object({
 	isEnabled: z.boolean(),
 	status: z.enum(["draft", "active", "archived"]),
 	version: z.number(),
+	defaultVariationId: uuidSchema.nullable().optional(),
+	offVariationId: uuidSchema.nullable().optional(),
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
 });
@@ -26,7 +29,7 @@ export const featureFlagSchema = z.object({
 	organizationId: uuidSchema,
 	key: z.string().regex(/^[a-zA-Z0-9_-]+$/).min(1).max(255),
 	name: nonEmptyString,
-	description: z.string().optional(),
+	description: z.string().nullable().optional(),
 	flagType: z.enum(["boolean", "multivariate"]),
 	version: z.number(),
 	variations: z.array(variationSchema).optional(),

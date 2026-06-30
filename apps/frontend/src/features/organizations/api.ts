@@ -42,6 +42,7 @@ export function useOrganizations() {
 	return useQuery({
 		queryKey: ORGANIZATIONS_KEY,
 		queryFn: () => organizationsApi.list(),
+		staleTime: 1000 * 60 * 5,
 	});
 }
 

@@ -11,3 +11,4 @@ export const organizationSchema = z.object({
 });
 
 export type Organization = z.infer<typeof organizationSchema>;
+export type Role = z.infer<typeof organizationSchema.shape.role>;

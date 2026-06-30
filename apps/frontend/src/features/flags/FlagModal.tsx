@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useEffect, useState, useRef } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
 	Button,
 	Form,
@@ -17,11 +18,16 @@ import {
 	SelectIndicator,
 	ListBox,
 	ListBoxItem,
-	Drawer,
+	Modal,
 	toast,
+	Popover,
+	PopoverTrigger,
+	PopoverContent,
 } from "@heroui/react";
-import { useCreateFlag, useUpdateFlag } from "./api";
-import type { FeatureFlagListItem } from "@/types/feature-flag";
+import { PlusIcon } from "@phosphor-icons/react";
+import { useCreateFlag } from "./api";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { VariationDot } from "@/components/ui/VariationDot";
 
 const flagFormSchema = z.object({
 	key: z
@@ -35,6 +41,13 @@ const flagFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().optional(),
 	flagType: z.enum(["boolean", "multivariate"]),
+	variations: z.array(
+		z.object({
+			key: z.string().optional(),
+			value: z.string().min(1, "Value is required"),
+			description: z.string().optional(),
+		}),
+	),
 });
 
 type FlagFormData = z.infer<typeof flagFormSchema>;
@@ -44,85 +57,210 @@ const FLAG_TYPES = [
 	{ key: "multivariate", label: "Multivariate" },
 ] as const;
 
+interface EditVariationDialogProps {
+	variation: { key?: string; value: string; description?: string };
+	onSave: (data: { key?: string; value: string; description?: string }) => void;
+	onCancel: () => void;
+	showDelete: boolean;
+	onDelete?: () => void;
+}
+
+function EditVariationDialog({
+	variation,
+	onSave,
+	onCancel,
+	showDelete,
+	onDelete,
+}: EditVariationDialogProps) {
+	const [key, setKey] = useState(variation.key || "");
+	const [value, setValue] = useState(variation.value);
+	const [description, setDescription] = useState(variation.description || "");
+
+	return (
+		<Popover.Dialog className="p-3 w-64 space-y-3">
+			<div className="text-xs font-semibold text-foreground/80 border-b border-divider pb-1.5">
+				Edit Variation
+			</div>
+			<TextField variant="secondary">
+				<Label>Key / Name (Optional)</Label>
+				<Input
+					value={key}
+					onChange={(e) => setKey(e.target.value)}
+					placeholder="Optional name"
+				/>
+			</TextField>
+			<TextField variant="secondary" isRequired>
+				<Label>Value</Label>
+				<Input
+					value={value}
+					onChange={(e) => setValue(e.target.value)}
+					placeholder="Value"
+				/>
+			</TextField>
+			<TextField variant="secondary">
+				<Label>Description</Label>
+				<Input
+					value={description}
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="Optional description"
+				/>
+			</TextField>
+			<div className="flex gap-2 justify-end pt-1">
+				{showDelete && onDelete && (
+					<Button
+						variant="danger-soft"
+						size="sm"
+						className="mr-auto"
+						onPress={onDelete}>
+						Delete
+					</Button>
+				)}
+				<Button variant="ghost" size="sm" onPress={onCancel}>
+					Cancel
+				</Button>
+				<Button
+					variant="primary"
+					size="sm"
+					onPress={() => {
+						if (!value.trim()) {
+							toast.danger("Value is required");
+							return;
+						}
+						onSave({
+							key: key.trim(),
+							value: value.trim(),
+							description: description.trim(),
+						});
+					}}>
+					Save
+				</Button>
+			</div>
+		</Popover.Dialog>
+	);
+}
+
 interface FlagModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	flag?: FeatureFlagListItem;
 }
 
-export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
-	const isEditing = !!flag;
+export function FlagModal({ isOpen, onClose }: FlagModalProps) {
+	const navigate = useNavigate();
+	const { projectSlug } = useParams({ strict: false }) as {
+		projectSlug: string;
+	};
 	const createFlag = useCreateFlag();
-	const updateFlag = useUpdateFlag();
 
-	const isPending = isEditing ? updateFlag.isPending : createFlag.isPending;
+	// State for the new variation popover form
+	const [newKey, setNewKey] = useState("");
+	const [newValue, setNewValue] = useState("");
+	const [newDesc, setNewDesc] = useState("");
+	const [isAddOpen, setIsAddOpen] = useState(false);
+
+	// Track which popover index is open for editing
+	const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
 	const {
 		register,
 		handleSubmit,
 		reset,
 		control,
+		watch,
+		setValue,
 		formState: { errors },
 	} = useForm<FlagFormData>({
 		resolver: zodResolver(flagFormSchema),
 		defaultValues: {
-			key: flag?.key ?? "",
-			name: flag?.name ?? "",
-			description: flag?.description ?? "",
-			flagType: flag?.flagType ?? "boolean",
+			key: "",
+			name: "",
+			description: "",
+			flagType: "boolean",
+			variations: [
+				{ key: "true", value: "true", description: "" },
+				{ key: "false", value: "false", description: "" },
+			],
 		},
 	});
+
+	const { fields, append, remove, update } = useFieldArray({
+		control,
+		name: "variations",
+	});
+
+	const flagType = watch("flagType");
+	const lastFlagTypeRef = useRef(flagType);
 
 	useEffect(() => {
 		if (isOpen) {
 			reset({
-				key: flag?.key ?? "",
-				name: flag?.name ?? "",
-				description: flag?.description ?? "",
-				flagType: flag?.flagType ?? "boolean",
+				key: "",
+				name: "",
+				description: "",
+				flagType: "boolean",
+				variations: [
+					{ key: "true", value: "true", description: "" },
+					{ key: "false", value: "false", description: "" },
+				],
 			});
+			setNewKey("");
+			setNewValue("");
+			setNewDesc("");
+			setIsAddOpen(false);
+			setOpenPopoverIndex(null);
+			lastFlagTypeRef.current = "boolean";
 		}
-	}, [isOpen, flag, reset]);
+	}, [isOpen, reset]);
+
+	useEffect(() => {
+		if (flagType !== lastFlagTypeRef.current) {
+			if (flagType === "boolean") {
+				setValue("variations", [
+					{ key: "true", value: "true", description: "" },
+					{ key: "false", value: "false", description: "" },
+				]);
+			} else if (flagType === "multivariate") {
+				setValue("variations", [
+					{ key: "variation-1", value: "value-1", description: "" },
+					{ key: "variation-2", value: "value-2", description: "" },
+				]);
+			}
+			lastFlagTypeRef.current = flagType;
+		}
+	}, [flagType, setValue]);
 
 	const onSubmit = async (data: FlagFormData) => {
 		try {
-			if (isEditing && flag) {
-				await updateFlag.mutateAsync({
-					flagId: flag.id,
-					name: data.name,
-					description: data.description,
-				});
-				toast.success("Feature flag updated successfully");
-			} else {
-				await createFlag.mutateAsync({
-					...data,
-					flagType: data.flagType as "boolean" | "multivariate",
-				});
-				toast.success("Feature flag created successfully");
-			}
+			const payload = {
+				...data,
+				variations: data.variations.map((v) => ({
+					key: v.key || v.value,
+					value: v.value,
+					description: v.description,
+				})),
+			};
+			const result = await createFlag.mutateAsync(payload as any);
+			toast.success("Feature flag created successfully");
 			onClose();
+			navigate({
+				to: "/projects/$projectSlug/flags/$flagSlug",
+				params: { projectSlug, flagSlug: result.key },
+			});
 		} catch {
-			toast.danger(
-				isEditing
-					? "Failed to update feature flag"
-					: "Failed to create feature flag",
-			);
+			toast.danger("Failed to create feature flag");
 		}
 	};
 
 	return (
-		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Drawer.Backdrop>
-				<Drawer.Content placement="right">
-					<Drawer.Dialog>
-						<Drawer.Header>
-							<Drawer.Heading>
-								{isEditing ? "Edit Feature Flag" : "Create Feature Flag"}
-							</Drawer.Heading>
-						</Drawer.Header>
-						<Drawer.Body>
+		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Modal.Backdrop>
+				<Modal.Container>
+					<Modal.Dialog>
+						<Modal.Header>
+							<Modal.Heading>Create Feature Flag</Modal.Heading>
+						</Modal.Header>
+						<Modal.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField isDisabled={isEditing}>
+								<TextField variant="secondary" isRequired>
 									<Label>Key</Label>
 									<Input
 										{...register("key")}
@@ -131,7 +269,7 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									{errors.key && <FieldError>{errors.key.message}</FieldError>}
 								</TextField>
 
-								<TextField>
+								<TextField variant="secondary" isRequired>
 									<Label>Name</Label>
 									<Input
 										{...register("name")}
@@ -142,7 +280,7 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									)}
 								</TextField>
 
-								<TextField>
+								<TextField variant="secondary">
 									<Label>Description</Label>
 									<TextArea
 										{...register("description")}
@@ -156,8 +294,9 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											variant="secondary"
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
 											}}>
 											<Label>Flag Type</Label>
@@ -166,12 +305,12 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 												<SelectIndicator />
 											</SelectTrigger>
 											<SelectPopover>
-												<ListBox>
-													{FLAG_TYPES.map((t) => (
+												<ListBox items={FLAG_TYPES}>
+													{(t: any) => (
 														<ListBoxItem id={t.key} key={t.key}>
 															{t.label}
 														</ListBoxItem>
-													))}
+													)}
 												</ListBox>
 											</SelectPopover>
 											{errors.flagType && (
@@ -181,22 +320,169 @@ export function FlagModal({ isOpen, onClose, flag }: FlagModalProps) {
 									)}
 								/>
 
-								<Drawer.Footer>
+								<div className="space-y-3 pt-2">
+									<div className="flex items-center justify-between">
+										<span className="text-sm font-semibold text-foreground">
+											Variations
+										</span>
+										{errors.variations && (
+											<span className="text-xs text-danger">
+												{errors.variations.message}
+											</span>
+										)}
+									</div>
+
+									<div className="flex flex-wrap gap-2 items-center">
+										{fields.map((field, idx) => {
+											const varKey = watch(`variations.${idx}.key`);
+											const varVal = watch(`variations.${idx}.value`);
+											const label = varKey || varVal || `variation-${idx + 1}`;
+											const isOpen = openPopoverIndex === idx;
+
+											return (
+												<Popover
+													key={field.id}
+													isOpen={isOpen}
+													onOpenChange={(open) =>
+														setOpenPopoverIndex(open ? idx : null)
+													}>
+													<PopoverTrigger>
+														<Button
+															variant="outline"
+															size="sm"
+															className="flex items-center gap-1.5 border border-divider hover:bg-default-100">
+															<VariationDot index={idx} className="size-3" />
+															<span className="font-medium text-xs max-w-30 truncate">
+																{label}
+															</span>
+														</Button>
+													</PopoverTrigger>
+													<PopoverContent>
+														<EditVariationDialog
+															variation={field}
+															showDelete={
+																flagType === "multivariate" && fields.length > 2
+															}
+															onSave={(data) => {
+																update(idx, {
+																	key: data.key,
+																	value: data.value,
+																	description: data.description,
+																});
+																setOpenPopoverIndex(null);
+															}}
+															onCancel={() => setOpenPopoverIndex(null)}
+															onDelete={() => {
+																remove(idx);
+																setOpenPopoverIndex(null);
+															}}
+														/>
+													</PopoverContent>
+												</Popover>
+											);
+										})}
+
+										{/* Add Variation Button with Popover (Only for Multivariate) */}
+										{flagType === "multivariate" && (
+											<Popover isOpen={isAddOpen} onOpenChange={setIsAddOpen}>
+												<PopoverTrigger>
+													<Button
+														isIconOnly
+														variant="outline"
+														size="sm"
+														className="border border-dashed border-divider hover:bg-default-100"
+														aria-label="Add Variation">
+														<PlusIcon className="size-4" />
+													</Button>
+												</PopoverTrigger>
+												<PopoverContent>
+													<Popover.Dialog className="p-3 w-64 space-y-3">
+														<div className="text-xs font-semibold text-foreground/80 border-b border-divider pb-1.5">
+															Add Variation
+														</div>
+														<TextField variant="secondary">
+															<Label>Key / Name (Optional)</Label>
+															<Input
+																value={newKey}
+																onChange={(e) => setNewKey(e.target.value)}
+																placeholder={`variation-${fields.length + 1}`}
+															/>
+														</TextField>
+														<TextField variant="secondary" isRequired>
+															<Label>Value</Label>
+															<Input
+																value={newValue}
+																onChange={(e) => setNewValue(e.target.value)}
+																placeholder={`value-${fields.length + 1}`}
+															/>
+														</TextField>
+														<TextField variant="secondary">
+															<Label>Description (Optional)</Label>
+															<Input
+																value={newDesc}
+																onChange={(e) => setNewDesc(e.target.value)}
+																placeholder="Optional description"
+															/>
+														</TextField>
+														<div className="flex gap-2 justify-end pt-1">
+															<Button
+																variant="ghost"
+																size="sm"
+																onPress={() => {
+																	setNewKey("");
+																	setNewValue("");
+																	setNewDesc("");
+																	setIsAddOpen(false);
+																}}>
+																Cancel
+															</Button>
+															<Button
+																variant="primary"
+																size="sm"
+																onPress={() => {
+																	const val =
+																		newValue.trim() ||
+																		`value-${fields.length + 1}`;
+																	append({
+																		key:
+																			newKey.trim() ||
+																			`variation-${fields.length + 1}`,
+																		value: val,
+																		description: newDesc.trim() || "",
+																	});
+																	setNewKey("");
+																	setNewValue("");
+																	setNewDesc("");
+																	setIsAddOpen(false);
+																}}>
+																Add
+															</Button>
+														</div>
+													</Popover.Dialog>
+												</PopoverContent>
+											</Popover>
+										)}
+									</div>
+								</div>
+
+								<Modal.Footer>
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button
-										type="submit"
-										variant="primary"
-										isDisabled={isPending}>
-										{isEditing ? "Save Changes" : "Create Flag"}
-									</Button>
-								</Drawer.Footer>
+									<PermissionGuard permission="flag:create" mode="disable">
+										<Button
+											type="submit"
+											variant="primary"
+											isDisabled={createFlag.isPending}>
+											Create Flag
+										</Button>
+									</PermissionGuard>
+								</Modal.Footer>
 							</Form>
-						</Drawer.Body>
-					</Drawer.Dialog>
-				</Drawer.Content>
-			</Drawer.Backdrop>
-		</Drawer>
+						</Modal.Body>
+					</Modal.Dialog>
+				</Modal.Container>
+			</Modal.Backdrop>
+		</Modal.Root>
 	);
 }

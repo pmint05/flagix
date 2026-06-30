@@ -1,6 +1,11 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
-import { useAuthStore, useSidebarStore, useIsHydrated } from "@/stores";
+import {
+	useAuthStore,
+	useSidebarStore,
+	useContextStore,
+	useIsHydrated,
+} from "@/stores";
 import { cn, Skeleton } from "@heroui/react";
 import {
 	Sidebar,
@@ -19,8 +24,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { Panel, Group as PanelGroup } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useNavigate } from "@tanstack/react-router";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	const headers = getRequestHeaders();
@@ -34,10 +40,18 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	return session;
 });
 
+const authSessionQueryOptions = () => ({
+	queryKey: ["auth-session"],
+	queryFn: () => getAuthSession(),
+	staleTime: 1000 * 60 * 5,
+});
+
 export const Route = createFileRoute("/_authenticated")({
 	component: AuthenticatedLayout,
-	beforeLoad: async () => {
-		const session = await getAuthSession();
+	beforeLoad: async ({ context }) => {
+		const session = await context.queryClient.ensureQueryData(
+			authSessionQueryOptions(),
+		);
 
 		if (!session.data?.session) {
 			throw redirect({ to: "/login" });
@@ -50,8 +64,18 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
 	const isHydrated = useIsHydrated();
 	const isMobile = useIsMobile();
+	const selectedOrganization = useContextStore((s) => s.selectedOrganization);
 	const { isCollapsed, size, setCollapsed, setSize } = useSidebarStore();
 	const panelRef = useRef<PanelImperativeHandle>(null);
+	const navigate = useNavigate();
+
+	// Check org selection - redirect if no org selected (after hydration)
+	useEffect(() => {
+		if (!isHydrated) return;
+		if (!selectedOrganization) {
+			void navigate({ to: "/orgSelect", replace: true });
+		}
+	}, [isHydrated, selectedOrganization, navigate]);
 
 	// Sync imperative panel API when toggle buttons are clicked
 	useEffect(() => {
@@ -68,17 +92,9 @@ function AuthenticatedLayout() {
 		}
 	}, [isCollapsed, size]);
 
-	const [windowWidth, setWindowWidth] = useState(0);
-
-	useEffect(() => {
-		const handleResize = () => setWindowWidth(window.innerWidth);
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
-
 	if (!isHydrated) {
 		return (
-			<div className="h-screen w-full bg-background overflow-hidden flex">
+			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex">
 				<div
 					className={cn(
 						"shrink-0 border-r h-full w-62.5 p-2 sm:flex flex-col gap-4 hidden",
@@ -122,10 +138,10 @@ function AuthenticatedLayout() {
 	// Mobile layout: no PanelGroup, sidebar in Drawer
 	if (isMobile) {
 		return (
-			<div className="h-screen w-full bg-background overflow-hidden flex flex-col">
+			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex flex-col">
 				<Header />
-				<main className="flex-1">
-					<div className="h-full p-6 bg-surface overflow-auto border">
+				<main className="flex-1 overflow-auto">
+					<div className="h-full p-6 bg-surface dark:bg-background-secondary overflow-auto border">
 						<Outlet />
 					</div>
 				</main>
@@ -137,7 +153,7 @@ function AuthenticatedLayout() {
 	// Desktop layout: PanelGroup with resizable sidebar
 	return (
 		<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden">
-			<PanelGroup key={windowWidth} orientation="horizontal">
+			<PanelGroup orientation="horizontal">
 				<Panel
 					panelRef={panelRef}
 					defaultSize={
@@ -174,7 +190,7 @@ function AuthenticatedLayout() {
 					minSize={50}
 					className="flex flex-col bg-background dark:bg-background-tertiary">
 					<Header />
-					<main className="flex-1">
+					<main className="flex-1 overflow-auto">
 						<div className="h-full p-6 bg-surface dark:bg-background-secondary rounded-tl-3xl overflow-auto border">
 							<Outlet />
 						</div>
