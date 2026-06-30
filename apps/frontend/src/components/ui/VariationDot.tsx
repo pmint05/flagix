@@ -1,17 +1,18 @@
 "use client";
 import { HexagonIcon } from "@phosphor-icons/react";
-import { getVariationColor } from "@/lib/variation-colors";
+import { getVariationColorClass } from "@/lib/variation-colors";
 
 interface VariationDotProps {
-	index: number;
+	index?: number;
+	color?: string | null;
 	className?: string;
 }
 
-export function VariationDot({ index, className }: VariationDotProps) {
+export function VariationDot({ index = 0, color, className }: VariationDotProps) {
 	return (
 		<HexagonIcon
 			weight="fill"
-			className={`${getVariationColor(index)} ${className ?? ""}`}
+			className={`${getVariationColorClass(color, index)} ${className ?? ""}`}
 		/>
 	);
 }

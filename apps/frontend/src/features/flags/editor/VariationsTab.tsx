@@ -9,8 +9,10 @@ import {
 	FieldError,
 	cn,
 	TextArea,
+	Popover,
 } from "@heroui/react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { COLOR_KEYS, TAILWIND_COLORS_500 } from "@/lib/variation-colors";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import type { FlagEditorFormValues } from "./schema";
@@ -167,6 +169,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 			key: `variation-${fields.length + 1}`,
 			value: "new-value",
 			description: "",
+			color: COLOR_KEYS[fields.length % COLOR_KEYS.length],
 		});
 	};
 
@@ -224,10 +227,66 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																	: "w-full"
 															}
 															prefix={
-																<VariationDot
-																	index={index}
-																	className="size-4"
-																/>
+																isBoolean ? (
+																	<VariationDot
+																		color={field.color}
+																		index={index}
+																		className="size-4"
+																	/>
+																) : (
+																	<Controller
+																		name={`variations.${index}.color` as const}
+																		control={control}
+																		render={({ field: colorField }) => (
+																			<Popover>
+																				<Popover.Trigger>
+																					<button
+																						type="button"
+																						className="p-1 -ml-1.5 rounded-full hover:bg-default-100 flex items-center justify-center focus:outline-hidden"
+																						aria-label="Change color"
+																					>
+																						<VariationDot
+																							color={colorField.value}
+																							index={index}
+																							className="size-4 cursor-pointer hover:scale-110 transition-transform shrink-0"
+																						/>
+																					</button>
+																				</Popover.Trigger>
+																				<Popover.Content className="p-3 w-48">
+																					<div className="text-xs font-semibold mb-2 text-default-500">Choose Color</div>
+																					<div className="grid grid-cols-6 gap-2">
+																						{COLOR_KEYS.map((colorName) => {
+																							const colorDetails = TAILWIND_COLORS_500[colorName];
+																							return (
+																								<Tooltip key={colorName}>
+																									<Tooltip.Trigger>
+																										<button
+																											type="button"
+																											onClick={() => {
+																												colorField.onChange(colorName);
+																											}}
+																											className={cn(
+																												"size-6 rounded-full border-2 transition-all hover:scale-110 focus:outline-hidden",
+																												colorField.value === colorName
+																													? "border-foreground scale-105"
+																													: "border-transparent"
+																											)}
+																											style={{ backgroundColor: colorDetails.hex }}
+																											aria-label={colorName}
+																										/>
+																									</Tooltip.Trigger>
+																									<Tooltip.Content className="capitalize">
+																										{colorName}
+																									</Tooltip.Content>
+																								</Tooltip>
+																							);
+																						})}
+																					</div>
+																				</Popover.Content>
+																			</Popover>
+																		)}
+																	/>
+																)
 															}
 														/>
 													)}

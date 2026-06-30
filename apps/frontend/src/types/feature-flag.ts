@@ -8,6 +8,7 @@ export const variationSchema = z.object({
 	value: z.union([z.boolean(), z.string(), z.record(z.string(), z.unknown())]),
 	description: z.string().nullable().optional(),
 	isDefault: z.boolean().optional(),
+	color: z.string().nullable().optional(),
 });
 
 export const flagStateSchema = z.object({

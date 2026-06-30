@@ -11,7 +11,7 @@ import {
 import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../schema";
-import { getVariationColor } from "@/lib/variation-colors";
+import { getVariationColorClass } from "@/lib/variation-colors";
 
 interface DefaultRuleCardProps {
 	flag: FeatureFlag;
@@ -103,7 +103,7 @@ function VariationSelect({
 									<div className="flex items-center gap-2">
 										<HexagonIcon
 											weight="fill"
-											className={`${getVariationColor(idx)} size-3.5`}
+											className={`${getVariationColorClass(v.color, idx)} size-3.5`}
 										/>
 										<span>{keyText}</span>
 									</div>

@@ -13,7 +13,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues, Variation } from "../schema";
-import { getVariationColor } from "@/lib/variation-colors";
+import { getVariationColorClass } from "@/lib/variation-colors";
 
 interface FlagStatusCardProps {
 	flag: FeatureFlag;
@@ -112,7 +112,7 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 												<div className="flex items-center gap-2">
 													<HexagonIcon
 														weight="fill"
-														className={`${getVariationColor(variations.findIndex((x) => x.id === v.id))} size-3.5 shrink-0`}
+														className={`${getVariationColorClass(v.color, variations.findIndex((x) => x.id === v.id))} size-3.5 shrink-0`}
 													/>
 													<span className="truncate flex-1 text-left">
 														{keyText}

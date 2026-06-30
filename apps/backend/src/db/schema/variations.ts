@@ -27,6 +27,7 @@ export const variations = pgTable(
     key: varchar('key', { length: 100 }).notNull(),
     value: jsonb('value').notNull(),
     description: text('description'),
+    color: varchar('color', { length: 50 }),
     isDefault: boolean('is_default').notNull().default(false),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')

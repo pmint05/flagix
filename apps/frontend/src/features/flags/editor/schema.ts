@@ -190,6 +190,7 @@ export const flagEditorFormSchema = z
 						"Value is required",
 					),
 				isDefault: z.boolean().optional(),
+				color: z.string().nullable().optional(),
 			}),
 		),
 	})

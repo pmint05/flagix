@@ -36,6 +36,13 @@
       "when": 1782742026310,
       "tag": "0004_useful_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782810353487,
+      "tag": "0005_mean_prodigy",
+      "breakpoints": true
     }
   ]
 }

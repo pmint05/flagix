@@ -22,7 +22,7 @@ import { UserTargetingContent } from "./rule-contents/UserTargetingContent";
 import { RoleTargetingContent } from "./rule-contents/RoleTargetingContent";
 import { PercentageContent } from "./rule-contents/PercentageContent";
 import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
-import { getVariationColor } from "#/lib/variation-colors";
+import { getVariationColorClass } from "#/lib/variation-colors";
 import { RolloutBar } from "./RolloutBar";
 
 interface RuleCardProps {
@@ -68,7 +68,7 @@ function RuleCardComponent({
 		variations.findIndex((v) => v.id === variationId) ?? -1;
 	const variationColor =
 		variationIndex !== -1
-			? getVariationColor(variationIndex)
+			? getVariationColorClass(selectedVariation?.color, variationIndex)
 			: "text-default-400";
 
 	const toggleEnabled = () => {

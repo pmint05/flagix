@@ -24,6 +24,21 @@ import type {
   PatchFeatureFlagConfigDto,
 } from './dto/feature-flag.dto';
 
+export const COLOR_KEYS = [
+  'red',
+  'blue',
+  'amber',
+  'green',
+  'purple',
+  'sky',
+  'pink',
+  'lime',
+  'indigo',
+  'yellow',
+  'teal',
+  'fuchsia',
+];
+
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['active'],
   active: ['archived'],
@@ -54,6 +69,7 @@ export class FeatureFlagsService {
       value: unknown;
       description?: string;
       isDefault: boolean;
+      color?: string;
     }>;
 
     if (
@@ -61,16 +77,17 @@ export class FeatureFlagsService {
       (!dto.variations || dto.variations.length === 0)
     ) {
       variationData = [
-        { key: 'true', value: true, isDefault: false },
-        { key: 'false', value: false, isDefault: true },
+        { key: 'true', value: true, isDefault: false, color: 'green' },
+        { key: 'false', value: false, isDefault: true, color: 'red' },
       ];
     } else if (dto.variations && dto.variations.length > 0) {
       const defaultKey = dto.defaultVariationKey ?? dto.variations[0]?.key;
-      variationData = dto.variations.map((v) => ({
+      variationData = dto.variations.map((v, index) => ({
         key: v.key,
         value: v.value,
         description: v.description,
         isDefault: v.key === defaultKey,
+        color: v.color ?? COLOR_KEYS[index % 12],
       }));
 
       const defaultCount = variationData.filter((v) => v.isDefault).length;

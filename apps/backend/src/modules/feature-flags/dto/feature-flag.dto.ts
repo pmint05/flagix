@@ -38,6 +38,15 @@ class VariationDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @ApiPropertyOptional({ example: 'red' })
+  @IsOptional()
+  @IsString()
+  @IsEnum([
+    'red', 'blue', 'amber', 'green', 'purple', 'sky', 'pink',
+    'lime', 'indigo', 'yellow', 'teal', 'fuchsia'
+  ])
+  color?: string;
 }
 
 export class CreateFeatureFlagDto {

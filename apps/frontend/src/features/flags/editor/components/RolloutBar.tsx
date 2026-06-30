@@ -1,11 +1,11 @@
 "use client";
 import { cn, Tooltip } from "@heroui/react";
-import { getVariationBgColor } from "@/lib/variation-colors";
+import { getVariationBgColorClass } from "@/lib/variation-colors";
 
 
 interface RolloutBarProps {
 	rollouts: Array<{ variationId: string; percentage: number }>;
-	variations: Array<{ id: string; key: string; value?: any }>;
+	variations: Array<{ id: string; key: string; value?: any; color?: string | null }>;
 	className?: string;
 }
 
@@ -32,7 +32,7 @@ export function RolloutBar({
 
 			const label =
 				v?.key || (v?.value !== undefined ? String(v.value) : "unknown");
-			const bgColor = getVariationBgColor(vIndex);
+			const bgColor = getVariationBgColorClass(v?.color, vIndex);
 
 			return {
 				id: `${rollout.variationId}-${rIdx}`,

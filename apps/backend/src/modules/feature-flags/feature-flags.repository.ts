@@ -10,6 +10,11 @@ import type {
 } from './dto/feature-flag.dto';
 import * as crypto from 'crypto';
 
+const COLOR_KEYS = [
+  'red', 'blue', 'amber', 'green', 'purple', 'sky', 'pink',
+  'lime', 'indigo', 'yellow', 'teal', 'fuchsia'
+];
+
 @Injectable()
 export class FeatureFlagsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
@@ -160,6 +165,7 @@ export class FeatureFlagsRepository {
       value: unknown;
       description?: string;
       isDefault: boolean;
+      color?: string;
     }>,
     actorId?: string,
   ) {
@@ -186,6 +192,7 @@ export class FeatureFlagsRepository {
             value: v.value,
             description: v.description ?? null,
             isDefault: v.isDefault,
+            color: v.color ?? null,
           })),
         );
       }
@@ -353,7 +360,7 @@ export class FeatureFlagsRepository {
       // A. Variations updates (insert / update)
       if (variationsUpdated) {
         const currentIds = new Set(currentVariations.map((cv) => cv.id));
-        for (const tv of targetVariations) {
+        for (const [index, tv] of targetVariations.entries()) {
           if (currentIds.has(tv.id)) {
             await tx
               .update(variations)
@@ -362,6 +369,7 @@ export class FeatureFlagsRepository {
                 value: tv.value,
                 description: tv.description,
                 isDefault: tv.isDefault,
+                color: tv.color ?? currentVariations.find((v) => v.id === tv.id)?.color ?? COLOR_KEYS[index % 12],
                 updatedAt: new Date(),
               })
               .where(eq(variations.id, tv.id));
@@ -374,6 +382,7 @@ export class FeatureFlagsRepository {
               value: tv.value,
               description: tv.description,
               isDefault: tv.isDefault,
+              color: tv.color ?? COLOR_KEYS[index % 12],
             });
           }
         }
