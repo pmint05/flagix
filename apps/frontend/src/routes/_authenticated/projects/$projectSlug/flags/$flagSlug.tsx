@@ -10,7 +10,7 @@ export const Route = createFileRoute(
 )({
 	validateSearch: z.object({
 		tab: z
-			.enum(["targeting", "variations", "preview", "monitoring"])
+			.enum(["targeting", "variations", "simulation", "monitoring", "settings"])
 			.optional(),
 	}),
 	component: FlagEditorPage,

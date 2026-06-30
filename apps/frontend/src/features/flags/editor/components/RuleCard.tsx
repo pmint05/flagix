@@ -23,6 +23,7 @@ import { RoleTargetingContent } from "./rule-contents/RoleTargetingContent";
 import { PercentageContent } from "./rule-contents/PercentageContent";
 import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
 import { getVariationColor } from "#/lib/variation-colors";
+import { RolloutBar } from "./RolloutBar";
 
 interface RuleCardProps {
 	ruleId: string;
@@ -53,6 +54,7 @@ function RuleCardComponent({
 	const ruleType = watch(`rules.${index}.ruleType`);
 	const variationId = watch(`rules.${index}.variationId`);
 	const variations = watch("variations") || [];
+	const rollouts = watch(`rules.${index}.conditions.rollouts` as any) || [];
 
 	const selectedVariation = variations.find((v) => v.id === variationId);
 	const variationName =
@@ -116,9 +118,13 @@ function RuleCardComponent({
 								"flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0",
 							)}>
 							{ruleType === "kill_switch" && (
-								<div className={cn("w-10 flex items-center justify-end text-danger", {
-									"text-default-foreground": !isEnabled,
-								})}>
+								<div
+									className={cn(
+										"w-10 flex items-center justify-end text-danger",
+										{
+											"text-default-foreground": !isEnabled,
+										},
+									)}>
 									<PowerIcon className="size-5" weight="bold" />
 								</div>
 							)}
@@ -145,21 +151,28 @@ function RuleCardComponent({
 									variant="soft">
 									{RULE_TYPE_LABELS[ruleType] ?? ruleType}
 								</Chip>
-								<span className="truncate flex items-center gap-2">
-									<span className="leading-tight">resolves</span>
-									<Chip
-										className="font-medium text-foreground"
-										size="sm"
-										variant="soft">
-										<div className="flex items-center gap-1">
-											<HexagonIcon
-												weight="fill"
-												className={cn("size-3 shrink-0", variationColor)}
-											/>
-											<span>{variationName}</span>
-										</div>
-									</Chip>
-								</span>
+								{ruleType === "percentage" ? (
+									<div className="flex items-center gap-2 flex-1 min-w-40 max-w-70">
+										<span className="shrink-0 select-none">rollouts</span>
+										<RolloutBar rollouts={rollouts} variations={variations} />
+									</div>
+								) : (
+									<span className="truncate flex items-center gap-2">
+										<span className="leading-tight">resolves</span>
+										<Chip
+											className="font-medium text-foreground"
+											size="sm"
+											variant="soft">
+											<div className="flex items-center gap-1">
+												<HexagonIcon
+													weight="fill"
+													className={cn("size-3 shrink-0", variationColor)}
+												/>
+												<span>{variationName}</span>
+											</div>
+										</Chip>
+									</span>
+								)}
 								{!isEnabled && (
 									<Chip size="sm" variant="soft">
 										Disabled
@@ -172,9 +185,11 @@ function RuleCardComponent({
 								className="px-3 flex items-center gap-2 self-stretch shrink-0"
 								onClick={(e) => e.stopPropagation()}>
 								<Dropdown>
-									<Button isIconOnly variant="ghost" size="sm">
-										<DotsThreeIcon className="h-5 w-5" weight="bold" />
-									</Button>
+									<Dropdown.Trigger>
+										<Button isIconOnly variant="ghost" size="sm">
+											<DotsThreeIcon className="h-5 w-5" weight="bold" />
+										</Button>
+									</Dropdown.Trigger>
 
 									<Dropdown.Popover>
 										<Dropdown.Menu

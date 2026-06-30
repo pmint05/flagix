@@ -196,6 +196,9 @@ export function useUpdateFlagState() {
 			queryClient.invalidateQueries({
 				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
 			});
+			queryClient.invalidateQueries({
+				queryKey: [...FLAGS_KEY, "detail", orgId, projectId, envId],
+			});
 		},
 	});
 }
@@ -225,7 +228,7 @@ export function useDeleteFlag() {
 	const queryClient = useQueryClient();
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const projectId = useCurrentProject()?.id;
-	const envId = useContextStore((s) => s.selectedEnvironment?.id);
+
 
 	return useMutation({
 		mutationFn: (flagId: string) => {
@@ -234,7 +237,7 @@ export function useDeleteFlag() {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
+				queryKey: [...FLAGS_KEY],
 			});
 		},
 	});
@@ -264,6 +267,30 @@ export function usePatchFlagConfig() {
 			queryClient.invalidateQueries({
 				queryKey: ["rules", orgId, data.id, envId],
 			});
+		},
+	});
+}
+
+export function useSimulateFlag() {
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+
+	return useMutation({
+		mutationFn: async ({
+			flagId,
+			envId,
+			context,
+			flagConfig,
+		}: {
+			flagId: string;
+			envId: string;
+			context: any;
+			flagConfig?: any;
+		}) => {
+			if (!orgId) throw new Error("Missing context");
+			return api
+				.post<any>(`organizations/${orgId}/flags/${flagId}/environments/${envId}/simulate`, {
+					json: { context, flagConfig },
+				});
 		},
 	});
 }

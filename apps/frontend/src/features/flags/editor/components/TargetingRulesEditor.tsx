@@ -153,7 +153,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 	return (
 		<div className="relative pt-4 pb-4">
 			{/* vertical timeline line */}
-			<div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-separator z-0" />
+			<div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-border z-0" />
 
 			<div className="relative z-10 w-full flex flex-col">
 				<DndContext

@@ -17,60 +17,21 @@ import {
 	Switch,
 	FieldError,
 } from "@heroui/react";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+	PlusIcon,
+	TrashIcon,
+	InfoIcon,
+	ArrowRightIcon,
+} from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../../schema";
 import { VariationSelector } from "../VariationSelector";
+import { TYPE_OPTIONS, OPERATORS_BY_TYPE } from "../../constants";
 
 interface CustomRuleContentProps {
 	flag: FeatureFlag;
 	ruleIndex: number;
 }
-
-const TYPE_OPTIONS = [
-	{ key: "string", label: "String" },
-	{ key: "number", label: "Number" },
-	{ key: "boolean", label: "Boolean" },
-	{ key: "object", label: "Object (JSON)" },
-	{ key: "array", label: "Array" },
-];
-
-const OPERATORS_BY_TYPE: Record<string, { key: string; label: string }[]> = {
-	string: [
-		{ key: "is_one_of", label: "Is one of" },
-		{ key: "is_not_one_of", label: "Is not one of" },
-		{ key: "contains", label: "Contains" },
-		{ key: "not_contains", label: "Does not contain" },
-		{ key: "starts_with", label: "Starts with" },
-		{ key: "ends_with", label: "Ends with" },
-		{ key: "matches_regex", label: "Matches regex" },
-	],
-	number: [
-		{ key: "equals", label: "=" },
-		{ key: "not_equals", label: "≠" },
-		{ key: "gt", label: ">" },
-		{ key: "gte", label: ">=" },
-		{ key: "lt", label: "<" },
-		{ key: "lte", label: "<=" },
-		{ key: "is_one_of", label: "Is one of" },
-		{ key: "is_not_one_of", label: "Is not one of" },
-	],
-	boolean: [
-		{ key: "equals", label: "Is" },
-		{ key: "not_equals", label: "Is not" },
-	],
-	object: [
-		{ key: "has_key", label: "Has key" },
-		{ key: "not_has_key", label: "Does not have key" },
-		{ key: "equals_json", label: "Equals JSON" },
-	],
-	array: [
-		{ key: "contains", label: "Contains" },
-		{ key: "not_contains", label: "Does not contain" },
-		{ key: "is_empty", label: "Is empty" },
-		{ key: "is_not_empty", label: "Is not empty" },
-	],
-};
 
 const getValuesErrorMessage = (err: any) => {
 	if (!err) return null;
@@ -80,7 +41,12 @@ const getValuesErrorMessage = (err: any) => {
 };
 
 export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
-	const { control, watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const {
+		control,
+		watch,
+		setValue,
+		formState: { errors },
+	} = useFormContext<FlagEditorFormValues>();
 
 	const { fields, append, remove } = useFieldArray({
 		control,
@@ -106,7 +72,47 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 
 				{fields.length > 0 && (
 					<div className="hidden md:flex items-center gap-4 p-4 pl-5 py-1.5 pb-0 text-[10px] font-bold uppercase tracking-wider border border-transparent">
-						<div className="min-w-36 flex-1 max-w-xs">Context Key</div>
+						<div className="min-w-36 flex-1 max-w-xs flex items-center gap-1">
+							<span>Context Key</span>
+							<Tooltip delay={0} closeDelay={0}>
+								<Tooltip.Trigger>
+									<InfoIcon className="size-3.5 relative -top-px" />
+								</Tooltip.Trigger>
+								<Tooltip.Content className={"w-fit max-w-fit"}>
+									<div className="max-w-xs p-1.5 space-y-1">
+										<p className="font-semibold text-foreground">
+											Context Key Notation
+										</p>
+										<p className="break-normal">
+											Supports dot-notation to match properties of nested
+											objects.
+										</p>
+										<div className="flex items-center gap-1 whitespace-nowrap">
+											<p className="font-mono p-1 rounded-xl bg-default w-fit">
+												user.email
+											</p>
+											<ArrowRightIcon />
+											<p className="font-mono p-1 rounded-xl bg-default w-fit">
+												attributes.user.email
+											</p>
+										</div>
+										<p className="break-normal">
+											To use a literal dot in the key, escape it with a
+											backslash:
+										</p>
+										<div className="flex items-center gap-1 whitespace-nowrap">
+											<p className="font-mono p-1 rounded bg-default w-fit">
+												region\.code
+											</p>
+											<ArrowRightIcon />
+											<p className="font-mono p-1 rounded bg-default w-fit">
+												attributes["region.code"]
+											</p>
+										</div>
+									</div>
+								</Tooltip.Content>
+							</Tooltip>
+						</div>
 						<div className="w-36 shrink-0">Type</div>
 						<div className="w-40 shrink-0">Operator</div>
 						<div className="flex-1 min-w-48">Value</div>
@@ -124,7 +130,8 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 							`rules.${ruleIndex}.conditions.conditions.${idx}.operator` as any,
 						) || "";
 					const validOperators = OPERATORS_BY_TYPE[condType] || [];
-					const condErrors = (errors?.rules as any)?.[ruleIndex]?.conditions?.conditions?.[idx];
+					const condErrors = (errors?.rules as any)?.[ruleIndex]?.conditions
+						?.conditions?.[idx];
 
 					return (
 						<div
@@ -138,7 +145,9 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 									}
 									control={control}
 									render={({ field: keyField }) => (
-										<TextField variant="secondary" isInvalid={!!condErrors?.contextKey}>
+										<TextField
+											variant="secondary"
+											isInvalid={!!condErrors?.contextKey}>
 											<InputGroup>
 												<InputGroup.Input
 													placeholder="Context key (e.g. user.email)"
@@ -282,9 +291,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 										condOperator === "is_not_empty"
 									) {
 										return (
-											<div className="text-sm text-default-400 mt-2">
-												No value required
-											</div>
+											<div className="text-sm  mt-2">No value required</div>
 										);
 									}
 
@@ -386,7 +393,9 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 											}
 											control={control}
 											render={({ field: valField }) => (
-												<TextField variant="secondary" isInvalid={!!condErrors?.value}>
+												<TextField
+													variant="secondary"
+													isInvalid={!!condErrors?.value}>
 													<InputGroup>
 														<InputGroup.Input
 															type={condType === "number" ? "number" : "text"}
@@ -446,9 +455,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 			</Button>
 
 			<div className="flex items-center gap-2 pl-4 pt-2 border-t border-divider/50">
-				<span className="text-sm font-semibold text-default-600">
-					then resolve
-				</span>
+				<span className="text-sm font-semibold ">then resolve</span>
 				<VariationSelector
 					flag={flag}
 					name={`rules.${ruleIndex}.variationId`}

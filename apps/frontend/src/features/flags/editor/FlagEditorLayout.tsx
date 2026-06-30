@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { getRouteApi } from "@tanstack/react-router";
-import { Tabs, toast, Button, Separator } from "@heroui/react";
+import { Tabs, toast, Button, Separator, Chip } from "@heroui/react";
 import {
 	Panel,
 	Group as PanelGroup,
@@ -9,8 +9,9 @@ import {
 import type { FeatureFlag } from "@/types/feature-flag";
 import { TargetingTab } from "./TargetingTab";
 import { VariationsTab } from "./VariationsTab";
-import { PreviewTab } from "./PreviewTab";
+import { SimulationTab } from "./SimulationTab";
 import { MonitoringTab } from "./MonitoringTab";
+import { SettingsTab } from "./SettingsTab";
 import { FlagEditorProvider } from "./FlagEditorContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useForm, FormProvider } from "react-hook-form";
@@ -26,7 +27,7 @@ const routeApi = getRouteApi(
 	"/_authenticated/projects/$projectSlug/flags/$flagSlug",
 );
 
-function EditorContent({ flag }: FlagEditorLayoutProps) {
+function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 	const currentEnv = useContextStore((s) => s.selectedEnvironment);
 	const search = routeApi.useSearch();
 	const navigate = routeApi.useNavigate();
@@ -51,7 +52,10 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 		defaultValues: {
 			isFlagOn: defaultFlagState?.isEnabled ?? false,
 			offVariationId: defaultFlagState?.offVariationId ?? "",
-			defaultVariationId: defaultFlagState?.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "",
+			defaultVariationId:
+				defaultFlagState?.defaultVariationId ??
+				flag.variations?.find((v) => v.isDefault)?.id ??
+				"",
 			rules: [],
 			variations: flag.variations || [],
 		},
@@ -68,7 +72,10 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 			methods.reset({
 				isFlagOn: defaultFlagState?.isEnabled ?? false,
 				offVariationId: defaultFlagState?.offVariationId ?? "",
-				defaultVariationId: defaultFlagState?.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "",
+				defaultVariationId:
+					defaultFlagState?.defaultVariationId ??
+					flag.variations?.find((v) => v.isDefault)?.id ??
+					"",
 				variations: flag.variations || [],
 				rules: envRules.map((rule) => {
 					const ruleType = rule.ruleType as string;
@@ -149,79 +156,83 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 		formState: { isDirty: isFormDirty, dirtyFields },
 	} = methods;
 
-	const handleSave = handleSubmit((data) => {
-		const payload: any = {};
+	const handleSave = handleSubmit(
+		(data) => {
+			const payload: any = {};
 
-		if (dirtyFields.isFlagOn) {
-			payload.isEnabled = data.isFlagOn;
-		}
-		payload.offVariationId = data.offVariationId || null;
-		payload.defaultVariationId = data.defaultVariationId || null;
-		if (dirtyFields.variations) {
-			payload.variations = data.variations.map((v) => ({
-				id: v.id,
-				key: v.key,
-				value: v.value,
-				description: v.description,
-				isDefault: v.id === data.defaultVariationId,
-			}));
-		}
-		if (dirtyFields.rules) {
-			payload.rules = data.rules.map((rule) => {
-				const baseRule: any = {
-					id: rule.id,
-					ruleType: rule.ruleType,
-					isEnabled: rule.isEnabled,
-					variationId: rule.variationId || undefined,
-					conditions: {},
-				};
-				if (rule.ruleType === "percentage") {
-					baseRule.conditions = {
-						rollouts:
-							rule.conditions?.rollouts?.map((r: any) => ({
-								variationId: r.variationId,
-								percentage: Number(r.percentage),
-							})) || [],
+			if (dirtyFields.isFlagOn) {
+				payload.isEnabled = data.isFlagOn;
+			}
+			payload.offVariationId = data.offVariationId || null;
+			payload.defaultVariationId = data.defaultVariationId || null;
+			if (dirtyFields.variations) {
+				payload.variations = data.variations.map((v) => ({
+					id: v.id,
+					key: v.key,
+					value: v.value,
+					description: v.description,
+					isDefault: v.id === data.defaultVariationId,
+				}));
+			}
+			if (dirtyFields.rules) {
+				payload.rules = data.rules.map((rule) => {
+					const baseRule: any = {
+						id: rule.id,
+						ruleType: rule.ruleType,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || undefined,
+						conditions: {},
 					};
-				} else if (rule.ruleType === "user") {
-					baseRule.conditions = {
-						operator: rule.conditions.operator,
-						userIds: rule.conditions.userIds,
-					};
-				} else if (rule.ruleType === "role") {
-					baseRule.conditions = {
-						operator: rule.conditions.operator,
-						roles: rule.conditions.roles,
-					};
-				} else if (rule.ruleType === "custom") {
-					baseRule.conditions = {
-						conditions: rule.conditions.conditions,
-					};
-				}
-				return baseRule;
+					if (rule.ruleType === "percentage") {
+						baseRule.conditions = {
+							rollouts:
+								rule.conditions?.rollouts?.map((r: any) => ({
+									variationId: r.variationId,
+									percentage: Number(r.percentage),
+								})) || [],
+						};
+					} else if (rule.ruleType === "user") {
+						baseRule.conditions = {
+							operator: rule.conditions.operator,
+							userIds: rule.conditions.userIds,
+						};
+					} else if (rule.ruleType === "role") {
+						baseRule.conditions = {
+							operator: rule.conditions.operator,
+							roles: rule.conditions.roles,
+						};
+					} else if (rule.ruleType === "custom") {
+						baseRule.conditions = {
+							conditions: rule.conditions.conditions,
+						};
+					}
+					return baseRule;
+				});
+			}
+
+			patchConfig(
+				{ flagId: flag.id, ...payload },
+				{
+					onSuccess: () => {
+						toast.success("Flag configuration saved successfully");
+						methods.reset(data);
+					},
+					onError: (err: any) => {
+						toast.danger("Failed to save changes", {
+							description: err.message || "An unexpected error occurred.",
+						});
+					},
+				},
+			);
+		},
+		(errors) => {
+			console.warn("Validation failed:", errors);
+			toast.danger("Validation failed", {
+				description:
+					"Please check all fields and fix any errors before saving.",
 			});
-		}
-
-		patchConfig(
-			{ flagId: flag.id, ...payload },
-			{
-				onSuccess: () => {
-					toast.success("Flag configuration saved successfully");
-					methods.reset(data);
-				},
-				onError: (err: any) => {
-					toast.danger("Failed to save changes", {
-						description: err.message || "An unexpected error occurred.",
-					});
-				},
-			},
-		);
-	}, (errors) => {
-		console.warn("Validation failed:", errors);
-		toast.danger("Validation failed", {
-			description: "Please check all fields and fix any errors before saving.",
-		});
-	});
+		},
+	);
 
 	const handleDiscard = () => {
 		if (isFormDirty) {
@@ -246,14 +257,26 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 								<h1 className="text-xl font-bold text-foreground">
 									{flag.name}
 								</h1>
+								<Chip
+									variant="soft"
+									color={
+										defaultFlagState?.status === "active"
+											? "success"
+											: defaultFlagState?.status === "archived"
+												? "default"
+												: "warning"
+									}
+									className="capitalize font-semibold">
+									{defaultFlagState?.status ?? "draft"}
+								</Chip>
 							</div>
-							<div className="mt-1 flex items-center gap-2 text-sm text-default-500">
-								<code className="rounded bg-default-100 px-1 py-0.5">
+							<div className="mt-1 flex items-center gap-0.5">
+								<code className="leading-tight">
 									{flag.key}
 								</code>
 								<CopyButton
 									text={flag.key}
-									buttonProps={{ className: "size-8", isIconOnly: true }}
+									buttonProps={{ className: "size-6 rounded-2xl", isIconOnly: true }}
 								/>
 							</div>
 						</div>
@@ -282,8 +305,9 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 								title: isMobile ? "Targeting" : "Targeting & Variations",
 							},
 							...(isMobile ? [{ id: "variations", title: "Variations" }] : []),
-							{ id: "preview", title: "Preview / Emulation" },
+							{ id: "simulation", title: "Simulation" },
 							{ id: "monitoring", title: "Monitoring" },
+							{ id: "settings", title: "Settings" },
 						];
 
 						return (
@@ -338,11 +362,14 @@ function EditorContent({ flag }: FlagEditorLayoutProps) {
 									className={!isMobile ? "hidden" : ""}>
 									<VariationsTab flag={flag} />
 								</Tabs.Panel>
-								<Tabs.Panel id="preview">
-									<PreviewTab flag={flag} />
+								<Tabs.Panel id="simulation">
+									<SimulationTab flag={flag} />
 								</Tabs.Panel>
 								<Tabs.Panel id="monitoring">
 									<MonitoringTab flag={flag} />
+								</Tabs.Panel>
+								<Tabs.Panel id="settings">
+									<SettingsTab flag={flag} projectSlug={projectSlug} />
 								</Tabs.Panel>
 							</Tabs>
 						);
