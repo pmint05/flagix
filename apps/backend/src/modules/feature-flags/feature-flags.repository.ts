@@ -78,6 +78,7 @@ export class FeatureFlagsRepository {
     const conditions = [
       eq(flagStates.environmentId, envId),
       isNull(flagStates.deletedAt),
+      isNull(featureFlags.deletedAt),
     ];
 
     if (statusFilter) {

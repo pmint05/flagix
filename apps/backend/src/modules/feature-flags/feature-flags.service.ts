@@ -11,6 +11,8 @@ import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
+import { EvaluationService } from '../evaluation/evaluation.service';
+import type { EvaluationContext } from '@flagix/shared';
 import {
   resolveFlagAction,
   resolveFlagStateAction,
@@ -25,7 +27,7 @@ import type {
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['active'],
   active: ['archived'],
-  archived: [],
+  archived: ['draft'],
 };
 
 @Injectable()
@@ -33,6 +35,7 @@ export class FeatureFlagsService {
   constructor(
     private readonly flagRepo: FeatureFlagsRepository,
     private readonly envRepo: EnvironmentsRepository,
+    private readonly evaluationService: EvaluationService,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
     @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
@@ -136,7 +139,6 @@ export class FeatureFlagsService {
 
   async findByKey(orgId: string, projectId: string, key: string, envId?: string) {
     const flag = await this.flagRepo.findByKey(projectId, key);
-    console.log(flag)
     if (!flag || flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
@@ -312,6 +314,21 @@ export class FeatureFlagsService {
     }
 
     return this.findOne(orgId, flagId, envId);
+  }
+
+  async simulate(
+    orgId: string,
+    flagId: string,
+    envId: string,
+    context: EvaluationContext,
+    flagConfig?: any,
+  ) {
+    const flag = await this.flagRepo.findById(flagId);
+    if (!flag || flag.organizationId !== orgId) {
+      throw new NotFoundException('Feature flag not found');
+    }
+
+    return this.evaluationService.simulateFlag(envId, flag.key, context, flagConfig);
   }
 
   async remove(orgId: string, flagId: string) {

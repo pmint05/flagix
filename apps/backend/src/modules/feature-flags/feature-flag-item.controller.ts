@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  Post,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
@@ -73,6 +74,21 @@ export class FeatureFlagItemController {
       ctx.flagId!,
       ctx.envId!,
       dto,
+    );
+  }
+
+  @Post('environments/:envId/simulate')
+  @ApiOperation({ summary: 'Simulate flag evaluation' })
+  async simulate(
+    @CurrentContext() ctx: OrgContext,
+    @Body() dto: { context: any; flagConfig?: any },
+  ) {
+    return this.flagsService.simulate(
+      ctx.organizationId,
+      ctx.flagId!,
+      ctx.envId!,
+      dto.context,
+      dto.flagConfig,
     );
   }
 

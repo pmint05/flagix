@@ -251,5 +251,155 @@ describe('rule-matcher', () => {
         }).isMatched,
       ).toBe(false);
     });
+
+    it('should support dot-notation path lookup in nested attributes object', () => {
+      const rule: RuleForMatching = {
+        ...baseRule,
+        ruleType: 'custom',
+        conditions: {
+          conditions: [
+            { contextKey: 'user.email', type: 'string', operator: 'equals', value: 'test@gmail.com' },
+          ],
+        },
+      };
+
+      expect(
+        matchesCustomRule(rule, 'flag', {
+          userId: 'user-1',
+          attributes: { user: { email: 'test@gmail.com' } },
+        }).isMatched,
+      ).toBe(true);
+
+      expect(
+        matchesCustomRule(rule, 'flag', {
+          userId: 'user-1',
+          attributes: { user: { email: 'other@gmail.com' } },
+        }).isMatched,
+      ).toBe(false);
+    });
+
+    it('should support escaped dots for literal dot keys', () => {
+      const rule: RuleForMatching = {
+        ...baseRule,
+        ruleType: 'custom',
+        conditions: {
+          conditions: [
+            { contextKey: 'region\\.code', type: 'string', operator: 'equals', value: 'us-east' },
+          ],
+        },
+      };
+
+      expect(
+        matchesCustomRule(rule, 'flag', {
+          userId: 'user-1',
+          attributes: { 'region.code': 'us-east' },
+        }).isMatched,
+      ).toBe(true);
+
+      expect(
+        matchesCustomRule(rule, 'flag', {
+          userId: 'user-1',
+          attributes: { region: { code: 'us-east' } },
+        }).isMatched,
+      ).toBe(false); // Should not match nested object since it expects a literal dot key
+    });
+
+    it('should safely return false when nested key does not exist or matches non-object node', () => {
+      const rule: RuleForMatching = {
+        ...baseRule,
+        ruleType: 'custom',
+        conditions: {
+          conditions: [
+            { contextKey: 'user.address.street', type: 'string', operator: 'equals', value: 'Main St' },
+          ],
+        },
+      };
+
+      expect(
+        matchesCustomRule(rule, 'flag', {
+          userId: 'user-1',
+          attributes: { user: 'not-an-object' },
+        }).isMatched,
+      ).toBe(false);
+    });
+
+    describe('operator types', () => {
+      it('should evaluate string operators starts_with, ends_with, matches_regex', () => {
+        const rule = (op: string, val: string): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [{ contextKey: 'str', type: 'string', operator: op, value: val }]
+          }
+        });
+
+        expect(matchesCustomRule(rule('starts_with', 'hello'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('starts_with', 'world'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(false);
+        expect(matchesCustomRule(rule('ends_with', 'world'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('matches_regex', '^hello.*'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('matches_regex', '^world.*'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(false);
+      });
+
+      it('should evaluate number operators equals, gt, gte, lt, lte', () => {
+        const rule = (op: string, val: number): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [{ contextKey: 'num', type: 'number', operator: op, value: val }]
+          }
+        });
+
+        expect(matchesCustomRule(rule('equals', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('gt', 5), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('gte', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('lt', 20), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('lte', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+      });
+
+      it('should evaluate boolean operators equals, not_equals', () => {
+        const rule = (op: string, val: boolean): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [{ contextKey: 'bool', type: 'boolean', operator: op, value: val }]
+          }
+        });
+
+        expect(matchesCustomRule(rule('equals', true), 'flag', { attributes: { bool: true } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('not_equals', false), 'flag', { attributes: { bool: true } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('equals', false), 'flag', { attributes: { bool: true } }).isMatched).toBe(false);
+      });
+
+      it('should evaluate object operators has_key, not_has_key, equals_json', () => {
+        const rule = (op: string, val: any): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [{ contextKey: 'obj', type: 'object', operator: op, value: val }]
+          }
+        });
+
+        const ctx = { attributes: { obj: { k1: 'v1', k2: 123 } } };
+        expect(matchesCustomRule(rule('has_key', 'k1'), 'flag', ctx).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('not_has_key', 'k3'), 'flag', ctx).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('equals_json', { k1: 'v1', k2: 123 }), 'flag', ctx).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('equals_json', { k1: 'v1' }), 'flag', ctx).isMatched).toBe(false);
+      });
+
+      it('should evaluate array operators contains, not_contains, is_empty, is_not_empty', () => {
+        const rule = (op: string, val?: any): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [{ contextKey: 'arr', type: 'array', operator: op, value: val }]
+          }
+        });
+
+        expect(matchesCustomRule(rule('contains', 'a'), 'flag', { attributes: { arr: ['a', 'b'] } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('not_contains', 'c'), 'flag', { attributes: { arr: ['a', 'b'] } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('is_empty'), 'flag', { attributes: { arr: [] } }).isMatched).toBe(true);
+        expect(matchesCustomRule(rule('is_not_empty'), 'flag', { attributes: { arr: ['a'] } }).isMatched).toBe(true);
+      });
+    });
   });
 });

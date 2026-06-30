@@ -74,12 +74,14 @@ export function matchesPercentageRule(
   context: EvaluationContext,
 ): MatchResult {
   if (!context.userId) return { isMatched: false };
-  
+
   // Use salted hash key: flagKey + ruleId + userId
   const bucketValue = bucket(flagKey + rule.id, context.userId);
 
   // Check for the new rollouts array structure
-  const rollouts = rule.conditions.rollouts as Array<{ variationId: string, percentage: number }> | undefined;
+  const rollouts = rule.conditions.rollouts as
+    | Array<{ variationId: string; percentage: number }>
+    | undefined;
   if (rollouts && Array.isArray(rollouts)) {
     let cumulative = 0;
     for (const r of rollouts) {
@@ -103,84 +105,230 @@ export function matchesPercentageRule(
   return { isMatched: false };
 }
 
+export function getNestedValue(obj: any, path: string): any {
+  if (obj == null) return undefined;
+  const parts = path.split(/(?<!\\)\./).map((p) => p.replace(/\\\./g, '.'));
+  let current = obj;
+  for (const part of parts) {
+    if (current == null || typeof current !== 'object') {
+      return undefined;
+    }
+    current = current[part];
+  }
+  return current;
+}
+
+function isDeepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (typeof a !== typeof b) return false;
+  if (typeof a !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!isDeepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!keysB.includes(key)) return false;
+    if (!isDeepEqual(a[key], b[key])) return false;
+  }
+  return true;
+}
+
+export function matchClause(
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array',
+  operator: string,
+  contextValue: any,
+  clauseValue: any,
+): boolean {
+  if (contextValue === undefined) return false;
+
+  switch (type) {
+    case 'string': {
+      const strVal = String(contextValue);
+      switch (operator) {
+        case 'equals':
+          return strVal === String(clauseValue);
+        case 'not_equals':
+          return strVal !== String(clauseValue);
+        case 'is_one_of':
+        case 'in':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.map(String).includes(strVal)
+          );
+        case 'is_not_one_of':
+        case 'not_in':
+          return (
+            Array.isArray(clauseValue) &&
+            !clauseValue.map(String).includes(strVal)
+          );
+        case 'contains':
+          return strVal.includes(String(clauseValue));
+        case 'not_contains':
+          return !strVal.includes(String(clauseValue));
+        case 'starts_with':
+          return strVal.startsWith(String(clauseValue));
+        case 'ends_with':
+          return strVal.endsWith(String(clauseValue));
+        case 'matches_regex':
+          try {
+            return new RegExp(String(clauseValue)).test(strVal);
+          } catch {
+            return false;
+          }
+        default:
+          return false;
+      }
+    }
+
+    case 'number': {
+      const numVal = Number(contextValue);
+      const clauseNum = Number(clauseValue);
+      switch (operator) {
+        case 'equals':
+          return numVal === clauseNum;
+        case 'not_equals':
+          return numVal !== clauseNum;
+        case 'gt':
+        case 'greater_than':
+          return numVal > clauseNum;
+        case 'gte':
+          return numVal >= clauseNum;
+        case 'lt':
+        case 'less_than':
+          return numVal < clauseNum;
+        case 'lte':
+          return numVal <= clauseNum;
+        case 'is_one_of':
+        case 'in':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.map(Number).includes(numVal)
+          );
+        case 'is_not_one_of':
+        case 'not_in':
+          return (
+            Array.isArray(clauseValue) &&
+            !clauseValue.map(Number).includes(numVal)
+          );
+        default:
+          return false;
+      }
+    }
+
+    case 'boolean': {
+      const boolVal = String(contextValue) === 'true' || contextValue === true;
+      const clauseBool = String(clauseValue) === 'true' || clauseValue === true;
+      switch (operator) {
+        case 'equals':
+          return boolVal === clauseBool;
+        case 'not_equals':
+          return boolVal !== clauseBool;
+        default:
+          return false;
+      }
+    }
+
+    case 'object': {
+      switch (operator) {
+        case 'has_key':
+          return (
+            contextValue != null &&
+            typeof contextValue === 'object' &&
+            String(clauseValue) in contextValue
+          );
+        case 'not_has_key':
+          return (
+            contextValue == null ||
+            typeof contextValue !== 'object' ||
+            !(String(clauseValue) in contextValue)
+          );
+        case 'equals_json':
+          try {
+            const parsedClause =
+              typeof clauseValue === 'string'
+                ? JSON.parse(clauseValue)
+                : clauseValue;
+            return isDeepEqual(contextValue, parsedClause);
+          } catch {
+            return false;
+          }
+        default:
+          return false;
+      }
+    }
+
+    case 'array': {
+      if (!Array.isArray(contextValue)) return false;
+      switch (operator) {
+        case 'contains':
+          return contextValue.map(String).includes(String(clauseValue));
+        case 'not_contains':
+          return !contextValue.map(String).includes(String(clauseValue));
+        case 'is_empty':
+          return contextValue.length === 0;
+        case 'is_not_empty':
+          return contextValue.length > 0;
+        default:
+          return false;
+      }
+    }
+
+    default:
+      return false;
+  }
+}
+
 export function matchesCustomRule(
   rule: RuleForMatching,
   _flagKey: string,
   context: EvaluationContext,
 ): MatchResult {
-  const customConditions = rule.conditions.conditions as Array<{
-    contextKey: string;
-    type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-    operator: string;
-    value?: any;
-    values?: any[];
-  }> | undefined;
+  const customConditions = rule.conditions.conditions as
+    | Array<{
+        contextKey: string;
+        type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+        operator: string;
+        value?: any;
+        values?: any[];
+      }>
+    | undefined;
 
   if (!customConditions || !Array.isArray(customConditions)) {
     return { isMatched: false };
   }
 
   for (const clause of customConditions) {
-    const { contextKey, operator } = clause;
-    
+    const { contextKey, operator, type } = clause;
+
     let contextValue: any = undefined;
     if (contextKey === 'userId') {
       contextValue = context.userId;
     } else if (contextKey === 'role') {
       contextValue = context.role;
-    } else if (context.attributes && contextKey in context.attributes) {
-      contextValue = context.attributes[contextKey];
+    } else {
+      contextValue = getNestedValue(context.attributes, contextKey);
     }
 
     if (contextValue === undefined) {
       return { isMatched: false };
     }
 
-    let matched = false;
-    const clauseValue = clause.value !== undefined ? clause.value : clause.values;
+    const clauseValue =
+      clause.value !== undefined && clause.value !== null
+        ? clause.value
+        : clause.values;
 
-    switch (operator) {
-      case 'equals':
-        matched = String(contextValue) === String(clauseValue);
-        break;
-      case 'not_equals':
-        matched = String(contextValue) !== String(clauseValue);
-        break;
-      case 'greater_than':
-        matched = Number(contextValue) > Number(clauseValue);
-        break;
-      case 'less_than':
-        matched = Number(contextValue) < Number(clauseValue);
-        break;
-      case 'contains':
-        if (typeof contextValue === 'string') {
-          matched = contextValue.includes(String(clauseValue));
-        } else if (Array.isArray(contextValue)) {
-          matched = contextValue.includes(clauseValue);
-        }
-        break;
-      case 'not_contains':
-        if (typeof contextValue === 'string') {
-          matched = !contextValue.includes(String(clauseValue));
-        } else if (Array.isArray(contextValue)) {
-          matched = !contextValue.includes(clauseValue);
-        }
-        break;
-      case 'is_one_of':
-      case 'in':
-        if (Array.isArray(clauseValue)) {
-          matched = clauseValue.map(String).includes(String(contextValue));
-        }
-        break;
-      case 'is_not_one_of':
-      case 'not_in':
-        if (Array.isArray(clauseValue)) {
-          matched = !clauseValue.map(String).includes(String(contextValue));
-        }
-        break;
-      default:
-        matched = false;
-    }
+    const matched = matchClause(type, operator, contextValue, clauseValue);
 
     if (!matched) {
       return { isMatched: false };
