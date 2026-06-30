@@ -1,5 +1,5 @@
 "use client";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
 	ListBox,
 	Card,
@@ -18,8 +18,8 @@ interface DefaultRuleCardProps {
 }
 
 export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
-	const { control, watch, formState: { errors } } = useFormContext<FlagEditorFormValues>();
-	const isFlagOn = watch("isFlagOn");
+	const { control, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const isFlagOn = useWatch({ name: "isFlagOn", control });
 
 	return (
 		<Card className="border border-divider shadow-sm">
@@ -71,8 +71,8 @@ function VariationSelect({
 	isInvalid,
 }: VariationSelectProps) {
 	const { contains } = useFilter({ sensitivity: "base" });
-	const { watch } = useFormContext<FlagEditorFormValues>();
-	const variations = watch("variations") || flag.variations || [];
+	const { control } = useFormContext<FlagEditorFormValues>();
+	const variations = useWatch({ name: "variations", control }) || flag.variations || [];
 
 	return (
 		<Autocomplete

@@ -1,5 +1,5 @@
 "use client";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
 	ListBox,
 	Autocomplete,
@@ -28,7 +28,10 @@ export function VariationSelector({
 }: VariationSelectorProps) {
 	const formContext = useFormContext(); // optional, only if name is passed
 	const { contains } = useFilter({ sensitivity: "base" });
-	const watchedVariations = formContext?.watch("variations");
+	const watchedVariations = useWatch({
+		name: "variations",
+		control: formContext?.control,
+	});
 	const variations = watchedVariations || flag.variations || [];
 
 	const getFieldError = () => {

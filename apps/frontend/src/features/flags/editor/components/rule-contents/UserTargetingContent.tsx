@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Key } from "@heroui/react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import {
 	Button,
 	Input,
@@ -24,9 +24,9 @@ export function UserTargetingContent({
 	flag,
 	ruleIndex,
 }: UserTargetingContentProps) {
-	const { watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
-	const userIds: string[] =
-		watch(`rules.${ruleIndex}.conditions.userIds`) ?? [];
+	const { control, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const userIds =
+		useWatch({ name: `rules.${ruleIndex}.conditions.userIds`, control }) ?? [];
 	const userIdsError = (errors?.rules as any)?.[ruleIndex]?.conditions?.userIds;
 
 	const onRemoveUserIds = (keys: Set<Key>) => {

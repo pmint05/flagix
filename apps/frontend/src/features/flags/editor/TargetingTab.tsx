@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button, Surface } from "@heroui/react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "./schema";
 import { FlagStatusCard } from "./components/FlagStatusCard";
@@ -13,8 +13,8 @@ interface TargetingTabProps {
 }
 
 export function TargetingTab({ flag }: TargetingTabProps) {
-	const { watch } = useFormContext<FlagEditorFormValues>();
-	const isFlagOn = watch("isFlagOn");
+	const { control } = useFormContext<FlagEditorFormValues>();
+	const isFlagOn = useWatch({ name: "isFlagOn", control });
 	const [showRulesWhenOff, setShowRulesWhenOff] = useState(false);
 
 	const shouldShowRules = isFlagOn || showRulesWhenOff;

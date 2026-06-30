@@ -1,5 +1,5 @@
 "use client";
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { Button, Dropdown, Label, Description, cn, toast } from "@heroui/react";
 import { PlusIcon } from "@phosphor-icons/react";
 import { RuleCard } from "./RuleCard";
@@ -52,7 +52,7 @@ const ADDABLE_RULE_TYPES = [
 ] as const;
 
 export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
-	const { control, watch } = useFormContext<FlagEditorFormValues>();
+	const { control } = useFormContext<FlagEditorFormValues>();
 	const { fields, insert, remove, move } = useFieldArray({
 		control,
 		name: "rules",
@@ -148,7 +148,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 		}
 	};
 
-	const isFlagOn = watch("isFlagOn");
+	const isFlagOn = useWatch({ name: "isFlagOn", control });
 
 	return (
 		<div className="relative pt-4 pb-4">

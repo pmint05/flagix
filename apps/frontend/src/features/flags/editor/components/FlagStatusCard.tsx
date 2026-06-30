@@ -9,7 +9,7 @@ import {
 	SearchField,
 	Button,
 } from "@heroui/react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues, Variation } from "../schema";
@@ -20,9 +20,9 @@ interface FlagStatusCardProps {
 }
 
 export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
-	const { control, watch } = useFormContext<FlagEditorFormValues>();
-	const isFlagOn = watch("isFlagOn");
-	const variations = watch("variations") || [];
+	const { control } = useFormContext<FlagEditorFormValues>();
+	const isFlagOn = useWatch({ name: "isFlagOn", control });
+	const variations = useWatch({ name: "variations", control }) || [];
 
 	return (
 		<Card className="flex flex-wrap flex-row items-center justify-start px-4 py-3 rounded-3xl border border-divider min-h-14 mb-0">
