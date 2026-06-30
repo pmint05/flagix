@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Param,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
@@ -9,6 +17,11 @@ import {
 import { FeatureFlagsService } from './feature-flags.service';
 import { CreateFeatureFlagDto } from './dto/feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import {
+  featureFlagListQuerySchema,
+  type FeatureFlagListQuery,
+} from '@flagix/shared';
 
 @ApiTags('Feature Flags')
 @Controller('organizations/:organizationId/projects/:projectId/flags')
@@ -24,26 +37,22 @@ export class FeatureFlagsController {
     @CurrentContext() ctx: OrgContext,
     @Body() dto: CreateFeatureFlagDto,
   ) {
-    return this.flagsService.create(
-      ctx.organizationId,
-      ctx.projectId!,
-      dto,
-    );
+    return this.flagsService.create(ctx.organizationId, ctx.projectId!, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List feature flags' })
   async findAll(
     @CurrentContext() ctx: OrgContext,
-    @Query('envId') envId: string,
-    @Query('status') status?: string,
+    @Query(new ZodValidationPipe(featureFlagListQuerySchema))
+    query: FeatureFlagListQuery,
   ) {
-    const flags = await this.flagsService.findAllForEnv(
+    return this.flagsService.findAllForEnv(
       ctx.organizationId,
-      envId,
-      status,
+      ctx.projectId!,
+      query.envId,
+      query,
     );
-    return { flags, total: flags.length };
   }
 
   @Get('by-key/:key')
@@ -53,6 +62,11 @@ export class FeatureFlagsController {
     @Param('key') key: string,
     @Query('envId') envId?: string,
   ) {
-    return this.flagsService.findByKey(ctx.organizationId, ctx.projectId!, key, envId);
+    return this.flagsService.findByKey(
+      ctx.organizationId,
+      ctx.projectId!,
+      key,
+      envId,
+    );
   }
 }

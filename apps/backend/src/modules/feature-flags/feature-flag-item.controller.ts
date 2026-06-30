@@ -18,7 +18,10 @@ import {
   OrgContext,
 } from '@/common/decorators/current-context.decorator';
 import { FeatureFlagsService } from './feature-flags.service';
-import { UpdateFeatureFlagDto, PatchFeatureFlagConfigDto } from './dto/feature-flag.dto';
+import {
+  UpdateFeatureFlagDto,
+  PatchFeatureFlagConfigDto,
+} from './dto/feature-flag.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Feature Flags')
@@ -64,7 +67,9 @@ export class FeatureFlagItemController {
 
   @Patch('environments/:envId/config')
   @PlatformOrgRoles(['admin', 'editor'])
-  @ApiOperation({ summary: 'Patch feature flag config (variations, rules, etc.)' })
+  @ApiOperation({
+    summary: 'Patch feature flag config (variations, rules, etc.)',
+  })
   async patchConfig(
     @CurrentContext() ctx: OrgContext,
     @Body() dto: PatchFeatureFlagConfigDto,

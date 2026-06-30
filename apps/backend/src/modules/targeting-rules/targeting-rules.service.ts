@@ -56,7 +56,9 @@ export class TargetingRulesService {
         throw new BadRequestException('Variation does not belong to this flag');
       }
     } else if (dto.ruleType !== 'percentage') {
-      throw new BadRequestException('variationId is required for this rule type');
+      throw new BadRequestException(
+        'variationId is required for this rule type',
+      );
     }
 
     const lastRule = await this.rulesRepo.findLastRuleForFlag(flagId);

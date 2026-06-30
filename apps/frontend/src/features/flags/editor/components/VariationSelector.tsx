@@ -73,7 +73,7 @@ export function VariationSelector({
 								return (
 									<ListBox.Item id={v.id} key={v.id} textValue={keyText}>
 										<div className="flex items-center gap-2">
-											<VariationDot index={idx} className="size-3.5" />
+											<VariationDot index={idx} color={v.color} className="size-3.5" />
 											<span>{keyText}</span>
 										</div>
 									</ListBox.Item>

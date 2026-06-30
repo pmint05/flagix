@@ -43,7 +43,7 @@ export class ProjectsController {
   @ApiOperation({ summary: 'List projects' })
   async findAll(@CurrentContext() ctx: OrgContext) {
     const projects = await this.projectsService.findAll(ctx.organizationId);
-    return { projects, total: projects.length };
+    return { data: projects, total: projects.length };
   }
 
   @Get('by-slug/:slug')

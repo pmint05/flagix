@@ -21,6 +21,7 @@ import {
 	Radio,
 	Description,
 	cn,
+	Checkbox,
 } from "@heroui/react";
 import {
 	TrashIcon,
@@ -44,6 +45,7 @@ const flagMetadataSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().optional(),
 	visibility: z.enum(["all", "client_only", "server_only"]),
+	isTemporary: z.boolean().default(false),
 });
 
 const visibilityOptions = [
@@ -99,6 +101,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 			name: flag.name || "",
 			description: flag.description || "",
 			visibility: flag.visibility || "all",
+			isTemporary: flag.isTemporary || false,
 		},
 	});
 
@@ -108,6 +111,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 			name: flag.name || "",
 			description: flag.description || "",
 			visibility: flag.visibility || "all",
+			isTemporary: flag.isTemporary || false,
 		});
 	}, [flag, reset]);
 
@@ -118,6 +122,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 				name: data.name,
 				description: data.description,
 				visibility: data.visibility,
+				isTemporary: data.isTemporary,
 			},
 			{
 				onSuccess: () => {
@@ -251,6 +256,29 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 									<FieldError>{errors.description.message}</FieldError>
 								)}
 							</TextField>
+						)}
+					/>
+
+					<Controller
+						name="isTemporary"
+						control={control}
+						render={({ field }) => (
+							<Checkbox
+								isSelected={field.value}
+								onChange={field.onChange}
+								variant="secondary">
+								<Checkbox.Content>
+									<Checkbox.Control>
+										<Checkbox.Indicator />
+									</Checkbox.Control>
+									<div className="flex flex-col gap-0.5">
+										<span className="text-sm font-medium text-foreground">Temporary flag</span>
+										<span className="text-xs text-muted-foreground">
+											Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
+										</span>
+									</div>
+								</Checkbox.Content>
+							</Checkbox>
 						)}
 					/>
 

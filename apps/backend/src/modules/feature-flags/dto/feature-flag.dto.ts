@@ -13,7 +13,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CreateTargetingRuleDto } from '../../targeting-rules/dto/create-targeting-rule.dto';
 
-
 class VariationDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -43,8 +42,18 @@ class VariationDto {
   @IsOptional()
   @IsString()
   @IsEnum([
-    'red', 'blue', 'amber', 'green', 'purple', 'sky', 'pink',
-    'lime', 'indigo', 'yellow', 'teal', 'fuchsia'
+    'red',
+    'blue',
+    'amber',
+    'green',
+    'purple',
+    'sky',
+    'pink',
+    'lime',
+    'indigo',
+    'yellow',
+    'teal',
+    'fuchsia',
   ])
   color?: string;
 }
@@ -86,6 +95,11 @@ export class CreateFeatureFlagDto {
   @IsOptional()
   @IsString()
   defaultVariationKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }
 
 export class UpdateFeatureFlagDto {
@@ -117,6 +131,11 @@ export class UpdateFeatureFlagDto {
   @ApiPropertyOptional()
   @IsOptional()
   version?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }
 
 export class PatchFeatureFlagConfigDto {
@@ -169,4 +188,9 @@ export class PatchFeatureFlagConfigDto {
   @IsOptional()
   @IsString()
   offVariationId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }

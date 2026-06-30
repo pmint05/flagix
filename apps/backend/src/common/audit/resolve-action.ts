@@ -22,7 +22,10 @@ type BaseEntity = {
   deletedAt?: Date | string | null;
 };
 
-function isDeleted(before: BaseEntity | null, after: BaseEntity | null): boolean {
+function isDeleted(
+  before: BaseEntity | null,
+  after: BaseEntity | null,
+): boolean {
   if (before && !after) return true;
   if (before && after && !before.deletedAt && after.deletedAt) return true;
   return false;
@@ -78,7 +81,8 @@ export function resolveSdkKeyAction(
   if (isDeleted(before, after)) return 'SDK_KEY_DELETE';
   if (before && after) {
     if (before.isActive && !after.isActive) return 'SDK_KEY_REVOKE';
-    if (before.keyHash && after.keyHash && before.keyHash !== after.keyHash) return 'SDK_KEY_ROTATE';
+    if (before.keyHash && after.keyHash && before.keyHash !== after.keyHash)
+      return 'SDK_KEY_ROTATE';
     if (before.keyHint !== after.keyHint) return 'SDK_KEY_ROTATE';
     return 'SDK_KEY_UPDATE';
   }

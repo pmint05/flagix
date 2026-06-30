@@ -63,6 +63,15 @@ export class OrganizationsService {
     return this.orgRepo.findAllForUser(userId);
   }
 
+  async findUsers(orgId: string, requesterRole?: string) {
+    const users = await this.orgRepo.findUsers(orgId);
+    const maskEmail = requesterRole === 'viewer';
+    return users.map((u) => ({
+      ...u,
+      email: maskEmail ? null : u.email,
+    }));
+  }
+
   async update(id: string, input: UpdateOrganizationDto) {
     const org = await this.orgRepo.findById(id);
     if (!org) throw new NotFoundException('Organization not found');

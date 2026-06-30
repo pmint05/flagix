@@ -1,6 +1,17 @@
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, isNull, count } from 'drizzle-orm';
-import { featureFlags, flagStates, variations, targetingRules } from '@/db/schema';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { eq, and, isNull, count, inArray } from 'drizzle-orm';
+import {
+  featureFlags,
+  flagStates,
+  variations,
+  targetingRules,
+  user,
+} from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type {
@@ -8,11 +19,23 @@ import type {
   UpdateFeatureFlagDto,
   PatchFeatureFlagConfigDto,
 } from './dto/feature-flag.dto';
+import { ListQueryBuilder } from '@/common/utils/list-query-builder';
+import type { FeatureFlagListQuery } from '@flagix/shared';
 import * as crypto from 'crypto';
 
 const COLOR_KEYS = [
-  'red', 'blue', 'amber', 'green', 'purple', 'sky', 'pink',
-  'lime', 'indigo', 'yellow', 'teal', 'fuchsia'
+  'red',
+  'blue',
+  'amber',
+  'green',
+  'purple',
+  'sky',
+  'pink',
+  'lime',
+  'indigo',
+  'yellow',
+  'teal',
+  'fuchsia',
 ];
 
 @Injectable()
@@ -79,34 +102,155 @@ export class FeatureFlagsRepository {
       );
   }
 
-  async findAllForEnv(envId: string, statusFilter?: string) {
-    const conditions = [
-      eq(flagStates.environmentId, envId),
-      isNull(flagStates.deletedAt),
-      isNull(featureFlags.deletedAt),
-    ];
+  async findAllForEnv(
+    projectId: string,
+    envId: string,
+    query: FeatureFlagListQuery,
+  ): Promise<{
+    data: Array<{
+      id: string;
+      organizationId: string;
+      projectId: string;
+      key: string;
+      name: string;
+      description: string | null;
+      flagType: 'boolean' | 'multivariate';
+      visibility: 'all' | 'client_only' | 'server_only';
+      version: number;
+      isTemporary: boolean;
+      createdBy: string | null;
+      updatedBy: string | null;
+      deletedBy: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      deletedAt: Date | null;
+      isEnabled: boolean;
+      status: 'draft' | 'active' | 'archived';
+      environmentId: string;
+      stateId: string;
+      stateVersion: number;
+      creator: { id: string; name: string; email: string } | null;
+      variationCount: number;
+      variations: Array<{ id: string; key: string; color: string | null }>;
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    const builder = new ListQueryBuilder({
+      base: [
+        eq(featureFlags.projectId, projectId),
+        isNull(featureFlags.deletedAt),
+        eq(flagStates.environmentId, envId),
+        isNull(flagStates.deletedAt),
+      ],
+      q: {
+        columns: [
+          featureFlags.key,
+          featureFlags.name,
+          featureFlags.description,
+        ],
+      },
+      filters: {
+        status: { column: flagStates.status, operator: 'in' },
+        flagType: { column: featureFlags.flagType, operator: 'in' },
+        visibility: { column: featureFlags.visibility, operator: 'in' },
+        isTemporary: { column: featureFlags.isTemporary, operator: 'boolean' },
+        creator: { column: featureFlags.createdBy, operator: 'eq' },
+        createdAtFrom: { column: featureFlags.createdAt, operator: 'dateFrom' },
+        createdAtTo: { column: featureFlags.createdAt, operator: 'dateTo' },
+      },
+      sort: {
+        key: { column: featureFlags.key },
+        name: { column: featureFlags.name },
+        createdAt: { column: featureFlags.createdAt },
+        updatedAt: { column: featureFlags.updatedAt },
+        status: { column: flagStates.status },
+        flagType: { column: featureFlags.flagType },
+      },
+      defaultSort: { column: featureFlags.createdAt, direction: 'desc' },
+    }).apply(query);
 
-    if (statusFilter) {
-      conditions.push(eq(flagStates.status, statusFilter));
-    }
+    const where = builder.where;
+    const orderBy = builder.orderBy(query.sort);
+    const { limit, offset } = builder.pagination(query.page, query.pageSize);
 
-    const states = await this.db
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(featureFlags)
+      .innerJoin(flagStates, eq(featureFlags.id, flagStates.featureFlagId))
+      .where(where);
+
+    const rows = await this.db
       .select({
         flag: featureFlags,
         state: flagStates,
+        creator: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
       })
-      .from(flagStates)
-      .innerJoin(featureFlags, eq(flagStates.featureFlagId, featureFlags.id))
-      .where(and(...conditions));
+      .from(featureFlags)
+      .innerJoin(flagStates, eq(featureFlags.id, flagStates.featureFlagId))
+      .leftJoin(user, eq(featureFlags.createdBy, user.id))
+      .where(where)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
-    return states.map(({ flag, state }) => ({
-      ...flag,
-      isEnabled: state.isEnabled,
-      status: state.status,
-      environmentId: state.environmentId,
-      stateId: state.id,
-      stateVersion: state.version,
-    }));
+    const flagIds = rows.map((r) => r.flag.id);
+    const variationRows =
+      flagIds.length > 0
+        ? await this.db
+            .select({
+              featureFlagId: variations.featureFlagId,
+              id: variations.id,
+              key: variations.key,
+              color: variations.color,
+            })
+            .from(variations)
+            .where(
+              and(
+                inArray(variations.featureFlagId, flagIds),
+                isNull(variations.deletedAt),
+              ),
+            )
+        : [];
+
+    const variationsByFlag = new Map<
+      string,
+      Array<{ id: string; key: string; color: string | null }>
+    >();
+    for (const row of variationRows) {
+      const list = variationsByFlag.get(row.featureFlagId) ?? [];
+      list.push({ id: row.id, key: row.key, color: row.color });
+      variationsByFlag.set(row.featureFlagId, list);
+    }
+
+    const data = rows.map(({ flag, state, creator }) => {
+      const flagVariations = variationsByFlag.get(flag.id) ?? [];
+      return {
+        ...flag,
+        isEnabled: state.isEnabled,
+        status: state.status as 'draft' | 'active' | 'archived',
+        environmentId: state.environmentId,
+        stateId: state.id,
+        stateVersion: state.version,
+        creator: creator?.id
+          ? { id: creator.id, name: creator.name, email: creator.email }
+          : null,
+        variationCount: flagVariations.length,
+        variations: flagVariations,
+      };
+    });
+
+    return {
+      data,
+      total,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 20,
+    };
   }
 
   async findFlagState(flagId: string, envId: string) {
@@ -180,6 +324,7 @@ export class FeatureFlagsRepository {
           description: input.description ?? null,
           flagType: input.flagType,
           visibility: input.visibility ?? 'all',
+          isTemporary: input.isTemporary ?? false,
           createdBy: actorId ?? null,
         })
         .returning();
@@ -228,6 +373,9 @@ export class FeatureFlagsRepository {
         ...(input.visibility !== undefined && {
           visibility: input.visibility,
         }),
+        ...(input.isTemporary !== undefined && {
+          isTemporary: input.isTemporary,
+        }),
         version: currentVersion + 1,
         updatedBy: actorId ?? null,
       })
@@ -261,7 +409,12 @@ export class FeatureFlagsRepository {
       const currentVariations = await tx
         .select()
         .from(variations)
-        .where(and(eq(variations.featureFlagId, flagId), isNull(variations.deletedAt)));
+        .where(
+          and(
+            eq(variations.featureFlagId, flagId),
+            isNull(variations.deletedAt),
+          ),
+        );
 
       // Fetch rules for this environment
       const currentRules = await tx
@@ -293,7 +446,10 @@ export class FeatureFlagsRepository {
       if (payload.variations !== undefined) {
         variationsUpdated = true;
         targetVariations = payload.variations.map((pv) => {
-          const id = pv.id || currentVariations.find((cv) => cv.key === pv.key)?.id || crypto.randomUUID();
+          const id =
+            pv.id ||
+            currentVariations.find((cv) => cv.key === pv.key)?.id ||
+            crypto.randomUUID();
           return {
             id,
             organizationId: orgId,
@@ -325,35 +481,55 @@ export class FeatureFlagsRepository {
         });
       }
 
-      const nextDefaultId = payload.defaultVariationId || (variationsUpdated ? targetVariations.find((v) => v.isDefault)?.id : null);
+      const nextDefaultId =
+        payload.defaultVariationId ||
+        (variationsUpdated
+          ? targetVariations.find((v) => v.isDefault)?.id
+          : null);
 
       // 3. Cross-validate Target State
       const validVariationIds = new Set(targetVariations.map((v) => v.id));
 
-      const finalDefaultId = nextDefaultId || currentFlagState?.defaultVariationId;
+      const finalDefaultId =
+        nextDefaultId || currentFlagState?.defaultVariationId;
       if (finalDefaultId && !validVariationIds.has(finalDefaultId)) {
-        throw new BadRequestException('Default variation does not exist in target variations');
+        throw new BadRequestException(
+          'Default variation does not exist in target variations',
+        );
       }
 
-      const finalOffId = payload.offVariationId !== undefined ? payload.offVariationId : currentFlagState?.offVariationId;
+      const finalOffId =
+        payload.offVariationId !== undefined
+          ? payload.offVariationId
+          : currentFlagState?.offVariationId;
       if (finalOffId && !validVariationIds.has(finalOffId)) {
-        throw new BadRequestException('Off variation does not exist in target variations');
+        throw new BadRequestException(
+          'Off variation does not exist in target variations',
+        );
       }
 
       for (const rule of targetRules) {
         if (rule.ruleType !== 'percentage') {
           if (!rule.variationId) {
-            throw new BadRequestException(`Rule of type ${rule.ruleType} must specify a variationId`);
+            throw new BadRequestException(
+              `Rule of type ${rule.ruleType} must specify a variationId`,
+            );
           }
           if (!validVariationIds.has(rule.variationId)) {
-            throw new BadRequestException(`Rule references non-existent variation: ${rule.variationId}`);
+            throw new BadRequestException(
+              `Rule references non-existent variation: ${rule.variationId}`,
+            );
           }
         } else {
-          const rollouts = (rule.conditions as any)?.rollouts as Array<{ variationId: string, percentage: number }> | undefined;
+          const rollouts = (rule.conditions as any)?.rollouts as
+            | Array<{ variationId: string; percentage: number }>
+            | undefined;
           if (rollouts && Array.isArray(rollouts)) {
             for (const r of rollouts) {
               if (!validVariationIds.has(r.variationId)) {
-                throw new BadRequestException(`Percentage rollout references non-existent variation: ${r.variationId}`);
+                throw new BadRequestException(
+                  `Percentage rollout references non-existent variation: ${r.variationId}`,
+                );
               }
             }
           }
@@ -373,7 +549,10 @@ export class FeatureFlagsRepository {
                 value: tv.value,
                 description: tv.description,
                 isDefault: tv.isDefault,
-                color: tv.color ?? currentVariations.find((v) => v.id === tv.id)?.color ?? COLOR_KEYS[index % 12],
+                color:
+                  tv.color ??
+                  currentVariations.find((v) => v.id === tv.id)?.color ??
+                  COLOR_KEYS[index % 12],
                 updatedAt: new Date(),
               })
               .where(eq(variations.id, tv.id));
@@ -453,8 +632,14 @@ export class FeatureFlagsRepository {
 
       // E. Update flag states (isEnabled, status, defaultVariationId, offVariationId)
       if (currentFlagState) {
-        const nextEnabled = payload.isEnabled !== undefined ? payload.isEnabled : currentFlagState.isEnabled;
-        const nextStatus = payload.status !== undefined ? payload.status : currentFlagState.status;
+        const nextEnabled =
+          payload.isEnabled !== undefined
+            ? payload.isEnabled
+            : currentFlagState.isEnabled;
+        const nextStatus =
+          payload.status !== undefined
+            ? payload.status
+            : currentFlagState.status;
 
         await tx
           .update(flagStates)
@@ -472,8 +657,17 @@ export class FeatureFlagsRepository {
 
       // F. Update flag attributes (name, description, version, visibility)
       const nextName = payload.name !== undefined ? payload.name : flag.name;
-      const nextDesc = payload.description !== undefined ? payload.description : flag.description;
-      const nextVisibility = payload.visibility !== undefined ? payload.visibility : flag.visibility;
+      const nextDesc =
+        payload.description !== undefined
+          ? payload.description
+          : flag.description;
+      const nextVisibility =
+        payload.visibility !== undefined ? payload.visibility : flag.visibility;
+
+      const nextIsTemporary =
+        payload.isTemporary !== undefined
+          ? payload.isTemporary
+          : flag.isTemporary;
 
       const [updatedFlag] = await tx
         .update(featureFlags)
@@ -481,6 +675,7 @@ export class FeatureFlagsRepository {
           name: nextName,
           description: nextDesc,
           visibility: nextVisibility,
+          isTemporary: nextIsTemporary,
           version: flag.version + 1,
           updatedBy: actorId ?? null,
           updatedAt: new Date(),

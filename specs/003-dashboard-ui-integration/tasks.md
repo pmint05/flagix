@@ -240,6 +240,19 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 
 ---
 
+## Phase 14: Feature Flag List Enhancements
+
+**Purpose**: Improve the Feature Flags list with server-driven search, multi-filter, sort, pagination, and reusable UI primitives.
+
+- [X] T063 [P] Add `isTemporary` column to `feature_flags`, update shared Zod schemas, and generate migration
+- [X] T064 Create generic `ListQueryBuilder` and `ZodValidationPipe` for paginated/filtered/sorted endpoints
+- [X] T065 Rewrite backend flag list query with joins to `flag_states`/`user` and batched variation lookup; return `{ data, total, page, pageSize }`
+- [X] T066 Add `GET /organizations/:organizationId/users` with server-side email masking for viewers
+- [X] T067 Update frontend flag types and `useFlags` hook to consume paginated list params and responses
+- [X] T068 Create reusable `VariationDots` and `FlagFilters` components
+- [X] T069 Integrate filters, server sort, and pagination into `FlagsIndex` and flag table columns
+- [X] T070 Fix API client response unwrapping so paginated objects are not reduced to their `data` array
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -247,6 +260,7 @@ description: "Task list for feature implementation: Dashboard UI & Backend Integ
 - **Foundational (Phase 2)**: Depends on Setup. Blocks all user stories.
 - **User Stories (Phase 3-12)**: Depend on Foundational. Can be executed in parallel where appropriate, but P1 stories (Auth, Navigation, Projects, Flags) should be prioritized before P2 stories (Rules, Keys, Audit Logs).
 - **Polish (Phase 13)**: Depends on completion of stories.
+- **Feature Flag List Enhancements (Phase 14)**: Depends on User Story 4 (Flags) and Phase 13 DataTable foundation.
 
 ### Parallel Opportunities
 - Foundational components (T005-T008) can be developed in parallel.

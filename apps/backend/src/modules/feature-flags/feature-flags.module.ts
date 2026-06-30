@@ -9,7 +9,12 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { EvaluationModule } from '../evaluation/evaluation.module';
 
 @Module({
-  imports: [EnvironmentsModule, FlagChangesModule, AuditLogsModule, EvaluationModule],
+  imports: [
+    EnvironmentsModule,
+    FlagChangesModule,
+    AuditLogsModule,
+    EvaluationModule,
+  ],
   controllers: [FeatureFlagsController, FeatureFlagItemController],
   providers: [FeatureFlagsService, FeatureFlagsRepository],
   exports: [FeatureFlagsService],

@@ -54,7 +54,9 @@ export function buildSafeDefault(
   }
 
   // Resolve environment-specific offVariationId first, fall back to global default variation
-  let variation = flag.offVariationId ? flag.variations.find((v) => v.id === flag.offVariationId) : undefined;
+  let variation = flag.offVariationId
+    ? flag.variations.find((v) => v.id === flag.offVariationId)
+    : undefined;
   if (!variation) {
     variation = flag.variations.find((v) => v.isDefault);
   }

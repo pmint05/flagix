@@ -45,7 +45,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, name: 'New Name', version: 2 };
 
-      expect(resolveFlagAction(before as any, after as any)).toBe('FLAG_UPDATE');
+      expect(resolveFlagAction(before as any, after as any)).toBe(
+        'FLAG_UPDATE',
+      );
     });
   });
 
@@ -59,7 +61,9 @@ describe('resolve-action', () => {
         status: 'draft',
       };
 
-      expect(resolveFlagStateAction(null as any, after as any)).toBe('FLAG_STATE_CREATE');
+      expect(resolveFlagStateAction(null as any, after as any)).toBe(
+        'FLAG_STATE_CREATE',
+      );
     });
 
     it('should return FLAG_STATE_DELETE when after is null', () => {
@@ -71,7 +75,9 @@ describe('resolve-action', () => {
         status: 'draft',
       };
 
-      expect(resolveFlagStateAction(before as any, null as any)).toBe('FLAG_STATE_DELETE');
+      expect(resolveFlagStateAction(before as any, null as any)).toBe(
+        'FLAG_STATE_DELETE',
+      );
     });
 
     it('should return FLAG_ARCHIVE when status changes to archived', () => {
@@ -85,7 +91,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, status: 'archived' };
 
-      expect(resolveFlagStateAction(before as any, after as any)).toBe('FLAG_ARCHIVE');
+      expect(resolveFlagStateAction(before as any, after as any)).toBe(
+        'FLAG_ARCHIVE',
+      );
     });
 
     it('should return FLAG_ACTIVATE when status changes from draft to active', () => {
@@ -99,7 +107,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, status: 'active', isEnabled: true };
 
-      expect(resolveFlagStateAction(before as any, after as any)).toBe('FLAG_ACTIVATE');
+      expect(resolveFlagStateAction(before as any, after as any)).toBe(
+        'FLAG_ACTIVATE',
+      );
     });
 
     it('should return FLAG_TOGGLE when isEnabled changes', () => {
@@ -113,7 +123,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, isEnabled: true };
 
-      expect(resolveFlagStateAction(before as any, after as any)).toBe('FLAG_TOGGLE');
+      expect(resolveFlagStateAction(before as any, after as any)).toBe(
+        'FLAG_TOGGLE',
+      );
     });
 
     it('should return FLAG_STATE_UPDATE for other changes', () => {
@@ -127,7 +139,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, someOtherField: 'new' };
 
-      expect(resolveFlagStateAction(before as any, after as any)).toBe('FLAG_STATE_UPDATE');
+      expect(resolveFlagStateAction(before as any, after as any)).toBe(
+        'FLAG_STATE_UPDATE',
+      );
     });
   });
 
@@ -157,7 +171,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, isEnabled: true };
 
-      expect(resolveRuleAction(before as any, after as any)).toBe('RULE_TOGGLE');
+      expect(resolveRuleAction(before as any, after as any)).toBe(
+        'RULE_TOGGLE',
+      );
     });
 
     it('should return RULE_REORDER when priority changes', () => {
@@ -172,7 +188,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, priority: 'b' };
 
-      expect(resolveRuleAction(before as any, after as any)).toBe('RULE_REORDER');
+      expect(resolveRuleAction(before as any, after as any)).toBe(
+        'RULE_REORDER',
+      );
     });
 
     it('should return RULE_UPDATE for other changes', () => {
@@ -187,7 +205,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, conditions: [{ type: 'new' }] };
 
-      expect(resolveRuleAction(before as any, after as any)).toBe('RULE_UPDATE');
+      expect(resolveRuleAction(before as any, after as any)).toBe(
+        'RULE_UPDATE',
+      );
     });
   });
 
@@ -203,7 +223,9 @@ describe('resolve-action', () => {
         isActive: true,
       };
 
-      expect(resolveSdkKeyAction(null as any, after as any)).toBe('SDK_KEY_CREATE');
+      expect(resolveSdkKeyAction(null as any, after as any)).toBe(
+        'SDK_KEY_CREATE',
+      );
     });
 
     it('should return SDK_KEY_DELETE when after is null', () => {
@@ -217,7 +239,9 @@ describe('resolve-action', () => {
         isActive: true,
       };
 
-      expect(resolveSdkKeyAction(before as any, null as any)).toBe('SDK_KEY_DELETE');
+      expect(resolveSdkKeyAction(before as any, null as any)).toBe(
+        'SDK_KEY_DELETE',
+      );
     });
 
     it('should return SDK_KEY_REVOKE when isActive changes from true to false', () => {
@@ -233,7 +257,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, isActive: false };
 
-      expect(resolveSdkKeyAction(before as any, after as any)).toBe('SDK_KEY_REVOKE');
+      expect(resolveSdkKeyAction(before as any, after as any)).toBe(
+        'SDK_KEY_REVOKE',
+      );
     });
 
     it('should return SDK_KEY_ROTATE when keyHash changes', () => {
@@ -250,7 +276,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, keyHash: 'hash2' }; // keyHint same, hash changed
 
-      expect(resolveSdkKeyAction(before as any, after as any)).toBe('SDK_KEY_ROTATE');
+      expect(resolveSdkKeyAction(before as any, after as any)).toBe(
+        'SDK_KEY_ROTATE',
+      );
     });
 
     it('should return SDK_KEY_UPDATE when name changes', () => {
@@ -267,7 +295,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, name: 'New Key' };
 
-      expect(resolveSdkKeyAction(before as any, after as any)).toBe('SDK_KEY_UPDATE');
+      expect(resolveSdkKeyAction(before as any, after as any)).toBe(
+        'SDK_KEY_UPDATE',
+      );
     });
   });
 
@@ -280,7 +310,9 @@ describe('resolve-action', () => {
         slug: 'test-project',
       };
 
-      expect(resolveProjectAction(null as any, after as any)).toBe('PROJECT_CREATE');
+      expect(resolveProjectAction(null as any, after as any)).toBe(
+        'PROJECT_CREATE',
+      );
     });
 
     it('should return PROJECT_UPDATE when before exists', () => {
@@ -293,7 +325,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, name: 'New Name' };
 
-      expect(resolveProjectAction(before as any, after as any)).toBe('PROJECT_UPDATE');
+      expect(resolveProjectAction(before as any, after as any)).toBe(
+        'PROJECT_UPDATE',
+      );
     });
   });
 
@@ -306,7 +340,9 @@ describe('resolve-action', () => {
         slug: 'production',
       };
 
-      expect(resolveEnvironmentAction(null as any, after as any)).toBe('ENV_CREATE');
+      expect(resolveEnvironmentAction(null as any, after as any)).toBe(
+        'ENV_CREATE',
+      );
     });
 
     it('should return ENV_UPDATE when before exists', () => {
@@ -319,7 +355,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, name: 'Staging' };
 
-      expect(resolveEnvironmentAction(before as any, after as any)).toBe('ENV_UPDATE');
+      expect(resolveEnvironmentAction(before as any, after as any)).toBe(
+        'ENV_UPDATE',
+      );
     });
   });
 
@@ -331,7 +369,9 @@ describe('resolve-action', () => {
         slug: 'test-org',
       };
 
-      expect(resolveOrganizationAction(null as any, after as any)).toBe('ORG_CREATE');
+      expect(resolveOrganizationAction(null as any, after as any)).toBe(
+        'ORG_CREATE',
+      );
     });
 
     it('should return ORG_UPDATE when before exists', () => {
@@ -343,7 +383,9 @@ describe('resolve-action', () => {
 
       const after = { ...before, name: 'New Name' };
 
-      expect(resolveOrganizationAction(before as any, after as any)).toBe('ORG_UPDATE');
+      expect(resolveOrganizationAction(before as any, after as any)).toBe(
+        'ORG_UPDATE',
+      );
     });
   });
 });

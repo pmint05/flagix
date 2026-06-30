@@ -106,6 +106,25 @@ export interface ApiRequestOptions<T = unknown> extends Options {
 	schema?: ZodType<T>;
 }
 
+function normalizeSearchParams(
+	params: Options["searchParams"],
+): URLSearchParams | undefined {
+	if (!params) return undefined;
+	if (params instanceof URLSearchParams) return params;
+	if (typeof params === "string") return new URLSearchParams(params);
+	if (Array.isArray(params)) return new URLSearchParams(params as [string, string][]);
+	const sp = new URLSearchParams();
+	for (const [key, value] of Object.entries(params)) {
+		if (value === undefined || value === null) continue;
+		if (Array.isArray(value)) {
+			for (const item of value) sp.append(key, String(item));
+		} else {
+			sp.append(key, String(value));
+		}
+	}
+	return sp;
+}
+
 function withSchema<T>(schema: ZodType<T> | undefined, value: unknown): T {
 	if (!schema) return value as T;
 	try {
@@ -134,7 +153,10 @@ export const api = {
 		options: ApiRequestOptions<T> = {},
 	): Promise<T> {
 		return base
-			.get(url, options)
+			.get(url, {
+				...options,
+				searchParams: normalizeSearchParams(options.searchParams),
+			})
 			.json()
 			.then((v: any) => {
 				const data = v && typeof v === "object" && "data" in v ? v.data : v;

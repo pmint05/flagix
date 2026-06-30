@@ -27,6 +27,7 @@ import {
 	Radio,
 	Description,
 	cn,
+	Checkbox,
 } from "@heroui/react";
 import {
 	PlusIcon,
@@ -51,6 +52,7 @@ const flagFormSchema = z.object({
 	description: z.string().optional(),
 	flagType: z.enum(["boolean", "multivariate"]),
 	visibility: z.enum(["all", "client_only", "server_only"]),
+	isTemporary: z.boolean().default(false),
 	variations: z.array(
 		z.object({
 			key: z.string().optional(),
@@ -207,6 +209,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 			description: "",
 			flagType: "boolean",
 			visibility: "all",
+			isTemporary: false,
 			variations: [
 				{ key: "true", value: "true", description: "" },
 				{ key: "false", value: "false", description: "" },
@@ -230,6 +233,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 				description: "",
 				flagType: "boolean",
 				visibility: "all",
+				isTemporary: false,
 				variations: [
 					{ key: "true", value: "true", description: "" },
 					{ key: "false", value: "false", description: "" },
@@ -327,6 +331,29 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 										rows={3}
 									/>
 								</TextField>
+
+								<Controller
+									name="isTemporary"
+									control={control}
+									render={({ field }) => (
+										<Checkbox
+											isSelected={field.value}
+											onChange={field.onChange}
+											variant="secondary">
+											<Checkbox.Content>
+												<Checkbox.Control>
+													<Checkbox.Indicator />
+												</Checkbox.Control>
+												<div className="flex flex-col gap-0.5">
+													<span className="text-sm font-medium text-foreground">Temporary flag</span>
+													<span className="text-xs text-muted-foreground">
+														Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
+													</span>
+												</div>
+											</Checkbox.Content>
+										</Checkbox>
+									)}
+								/>
 
 								<Controller
 									name="visibility"

@@ -8,6 +8,7 @@ export class OrgContext {
   ruleId?: string;
   keyId?: string;
   logId?: string;
+  role?: 'admin' | 'editor' | 'viewer';
 }
 
 export const CurrentContext = createParamDecorator(
@@ -21,6 +22,7 @@ export const CurrentContext = createParamDecorator(
       ruleId: request.params.ruleId,
       keyId: request.params.keyId,
       logId: request.params.logId,
+      role: request.orgRole,
     };
   },
 );

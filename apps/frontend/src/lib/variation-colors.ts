@@ -79,13 +79,13 @@ export const TAILWIND_COLORS_500: Record<
 export const COLOR_KEYS = Object.keys(TAILWIND_COLORS_500);
 
 export function getVariationColor(index: number): string {
-	const key = COLOR_KEYS[index % COLOR_KEYS.length];
-	return TAILWIND_COLORS_500[key].textClass;
+	const key = COLOR_KEYS[Math.abs(index) % COLOR_KEYS.length];
+	return TAILWIND_COLORS_500[key]?.textClass ?? "text-default-400";
 }
 
 export function getVariationBgColor(index: number): string {
-	const key = COLOR_KEYS[index % COLOR_KEYS.length];
-	return TAILWIND_COLORS_500[key].bgClass;
+	const key = COLOR_KEYS[Math.abs(index) % COLOR_KEYS.length];
+	return TAILWIND_COLORS_500[key]?.bgClass ?? "bg-default-400";
 }
 
 export function getVariationColorClass(colorName?: string | null, index: number = 0): string {

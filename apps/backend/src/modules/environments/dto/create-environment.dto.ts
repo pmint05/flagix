@@ -1,10 +1,4 @@
-import {
-  IsString,
-  Length,
-  Matches,
-  IsOptional,
-  IsIn,
-} from 'class-validator';
+import { IsString, Length, Matches, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateEnvironmentDto {

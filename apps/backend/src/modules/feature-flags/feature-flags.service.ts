@@ -12,7 +12,7 @@ import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { EvaluationService } from '../evaluation/evaluation.service';
-import type { EvaluationContext } from '@flagix/shared';
+import type { EvaluationContext, FeatureFlagListQuery } from '@flagix/shared';
 import {
   resolveFlagAction,
   resolveFlagStateAction,
@@ -55,11 +55,7 @@ export class FeatureFlagsService {
     @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
-  async create(
-    orgId: string,
-    projectId: string,
-    dto: CreateFeatureFlagDto,
-  ) {
+  async create(orgId: string, projectId: string, dto: CreateFeatureFlagDto) {
     const existing = await this.flagRepo.findByKey(projectId, dto.key);
     if (existing)
       throw new ConflictException('Flag key already exists within project');
@@ -140,8 +136,13 @@ export class FeatureFlagsService {
     return { ...flag, variations: createdVariations };
   }
 
-  async findAllForEnv(orgId: string, envId: string, statusFilter?: string) {
-    return this.flagRepo.findAllForEnv(envId, statusFilter);
+  async findAllForEnv(
+    orgId: string,
+    projectId: string,
+    envId: string,
+    query: FeatureFlagListQuery,
+  ) {
+    return this.flagRepo.findAllForEnv(projectId, envId, query);
   }
 
   async findOne(orgId: string, flagId: string, envId?: string) {
@@ -154,13 +155,21 @@ export class FeatureFlagsService {
     return { ...flag, variations: flagVariations, states: flagStates };
   }
 
-  async findByKey(orgId: string, projectId: string, key: string, envId?: string) {
+  async findByKey(
+    orgId: string,
+    projectId: string,
+    key: string,
+    envId?: string,
+  ) {
     const flag = await this.flagRepo.findByKey(projectId, key);
     if (!flag || flag.organizationId !== orgId)
       throw new NotFoundException('Feature flag not found');
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flag.id);
-    const flagStates = await this.flagRepo.findFlagStatesForFlag(flag.id, envId);
+    const flagStates = await this.flagRepo.findFlagStatesForFlag(
+      flag.id,
+      envId,
+    );
     return { ...flag, variations: flagVariations, states: flagStates };
   }
 
@@ -288,7 +297,9 @@ export class FeatureFlagsService {
     dto: PatchFeatureFlagConfigDto,
   ) {
     const actorId = getActorId();
-    const beforeConfig = await this.findOne(orgId, flagId, envId).catch(() => null);
+    const beforeConfig = await this.findOne(orgId, flagId, envId).catch(
+      () => null,
+    );
 
     const updated = await this.flagRepo.patchConfig(
       flagId,
@@ -299,7 +310,9 @@ export class FeatureFlagsService {
     );
 
     if (this.auditLogsService && beforeConfig) {
-      const afterConfig = await this.findOne(orgId, flagId, envId).catch(() => null);
+      const afterConfig = await this.findOne(orgId, flagId, envId).catch(
+        () => null,
+      );
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: updated.projectId,
@@ -314,9 +327,11 @@ export class FeatureFlagsService {
     }
 
     if (this.flagChangePublisher) {
-      const isEnabledState = dto.isEnabled !== undefined 
-        ? dto.isEnabled 
-        : (beforeConfig?.states?.find((s) => s.environmentId === envId)?.isEnabled ?? false);
+      const isEnabledState =
+        dto.isEnabled !== undefined
+          ? dto.isEnabled
+          : (beforeConfig?.states?.find((s) => s.environmentId === envId)
+              ?.isEnabled ?? false);
 
       this.flagChangePublisher.publish(envId, {
         type: 'flag.updated',
@@ -345,7 +360,12 @@ export class FeatureFlagsService {
       throw new NotFoundException('Feature flag not found');
     }
 
-    return this.evaluationService.simulateFlag(envId, flag.key, context, flagConfig);
+    return this.evaluationService.simulateFlag(
+      envId,
+      flag.key,
+      context,
+      flagConfig,
+    );
   }
 
   async remove(orgId: string, flagId: string) {

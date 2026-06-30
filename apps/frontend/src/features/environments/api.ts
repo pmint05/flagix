@@ -25,11 +25,11 @@ export const createEnvironmentsApi = (orgId: string, projectId: string) => {
 			api
 				.get(basePath, {
 					schema: z.object({
-						environments: z.array(environmentSchema),
+						data: z.array(environmentSchema),
 						total: z.number(),
 					}),
 				})
-				.then((res) => res.environments),
+				.then((res) => res.data),
 		get: (id: string): Promise<Environment> =>
 			api.get(`${basePath}/${id}`, { schema: environmentSchema }),
 		getBySlug: (slug: string): Promise<Environment> =>

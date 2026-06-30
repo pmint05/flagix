@@ -30,7 +30,7 @@ export class AuditLogsController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    return this.auditLogsService.list({
+    const result = await this.auditLogsService.list({
       orgId: ctx.organizationId,
       projectId,
       environmentId,
@@ -41,6 +41,15 @@ export class AuditLogsController {
       limit: limit ? parseInt(limit, 10) : undefined,
       offset: offset ? parseInt(offset, 10) : undefined,
     });
+    const limitNum = result.limit;
+    const offsetNum = result.offset;
+    const page = limitNum > 0 ? Math.floor(offsetNum / limitNum) + 1 : 1;
+    return {
+      data: result.logs,
+      total: result.total,
+      page,
+      pageSize: limitNum,
+    };
   }
 
   @Get(':logId')

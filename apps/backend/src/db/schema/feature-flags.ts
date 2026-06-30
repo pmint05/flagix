@@ -43,9 +43,12 @@ export const featureFlags = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     deletedAt: timestamp('deleted_at'),
-    visibility: text('visibility', { enum: ['all', 'client_only', 'server_only'] })
+    visibility: text('visibility', {
+      enum: ['all', 'client_only', 'server_only'],
+    })
       .notNull()
       .default('all'),
+    isTemporary: boolean('is_temporary').notNull().default(false),
   },
   (table) => [
     uniqueIndex('idx_flags_project_key').on(table.projectId, table.key),

@@ -57,11 +57,14 @@ async function main() {
     // 3. Create Organization
     console.log('Creating organization...');
     const orgId = crypto.randomUUID();
-    const [org] = await db.insert(organizations).values({
-      id: orgId,
-      name: "Developer's Organization",
-      slug: 'developer-org',
-    }).returning();
+    const [org] = await db
+      .insert(organizations)
+      .values({
+        id: orgId,
+        name: "Developer's Organization",
+        slug: 'developer-org',
+      })
+      .returning();
 
     await db.insert(organizationMembers).values({
       id: crypto.randomUUID(),
@@ -73,13 +76,16 @@ async function main() {
     // 4. Create Project
     console.log('Creating project...');
     const projectId = crypto.randomUUID();
-    const [project] = await db.insert(projects).values({
-      id: projectId,
-      organizationId: org.id,
-      name: 'Default Project',
-      slug: 'default-project',
-      createdBy: userId,
-    }).returning();
+    const [project] = await db
+      .insert(projects)
+      .values({
+        id: projectId,
+        organizationId: org.id,
+        name: 'Default Project',
+        slug: 'default-project',
+        createdBy: userId,
+      })
+      .returning();
 
     // 5. Create Environments
     console.log('Creating environments...');
@@ -248,7 +254,8 @@ async function main() {
       projectId: project.id,
       key: 'payment-gateway',
       name: 'Active Payment Gateway',
-      description: 'Controls which payment processing provider to route transactions to.',
+      description:
+        'Controls which payment processing provider to route transactions to.',
       flagType: 'multivariate',
       visibility: 'server_only',
       createdBy: userId,
@@ -426,17 +433,42 @@ async function main() {
 
     // 9. Create Targeting Rules
     console.log('Creating targeting rules...');
-    
+
     // Rule for theme-color (Custom targeting with multiple parameters to benchmark performance)
     const lagTestingConditions = {
       conditions: [
         { contextKey: 'userId', type: 'string', operator: 'is_not_empty' },
-        { contextKey: 'browser', type: 'string', operator: 'is_one_of', values: ['Chrome', 'Firefox', 'Safari'] },
-        { contextKey: 'device', type: 'string', operator: 'is_one_of', values: ['mobile', 'desktop'] },
-        { contextKey: 'version', type: 'number', operator: 'greater_than', value: 10 },
-        { contextKey: 'location', type: 'string', operator: 'is_one_of', values: ['US', 'VN', 'SG', 'EU'] },
-        { contextKey: 'betaUser', type: 'boolean', operator: 'equals', value: true }
-      ]
+        {
+          contextKey: 'browser',
+          type: 'string',
+          operator: 'is_one_of',
+          values: ['Chrome', 'Firefox', 'Safari'],
+        },
+        {
+          contextKey: 'device',
+          type: 'string',
+          operator: 'is_one_of',
+          values: ['mobile', 'desktop'],
+        },
+        {
+          contextKey: 'version',
+          type: 'number',
+          operator: 'greater_than',
+          value: 10,
+        },
+        {
+          contextKey: 'location',
+          type: 'string',
+          operator: 'is_one_of',
+          values: ['US', 'VN', 'SG', 'EU'],
+        },
+        {
+          contextKey: 'betaUser',
+          type: 'boolean',
+          operator: 'equals',
+          value: true,
+        },
+      ],
     };
 
     await db.insert(targetingRules).values([
@@ -463,7 +495,7 @@ async function main() {
         conditions: { userIds: ['dev-user-1', 'dev-user-2'] },
         isEnabled: true,
         createdBy: userId,
-      }
+      },
     ]);
 
     console.log('Database seeded successfully!');

@@ -56,6 +56,8 @@ export class OrgRolesGuard implements CanActivate {
     if (!membership)
       throw new ForbiddenException('Not a member of this organization');
 
+    request.orgRole = membership.role;
+
     // If no metadata, just check membership
     if (!metadata) return true;
 

@@ -30,7 +30,10 @@ export class SdkKeysService {
   ) {}
 
   async create(orgId: string, envId: string, input: CreateSdkKeyDto) {
-    const rawKey = generateRawKey().replace('fkx_', `sdk_${input.type === 'client' ? 'client' : 'server'}_`);
+    const rawKey = generateRawKey().replace(
+      'fkx_',
+      `sdk_${input.type === 'client' ? 'client' : 'server'}_`,
+    );
     const keyHash = hashSdkKey(rawKey);
     // Prefix is 11 characters (sdk_client_ or sdk_server_), take keyHint from random string part (length 8)
     const keyHint = rawKey.slice(11, 19);
@@ -90,13 +93,22 @@ export class SdkKeysService {
     }));
   }
 
-  async toggleActive(orgId: string, envId: string, keyId: string, isActive: boolean) {
+  async toggleActive(
+    orgId: string,
+    envId: string,
+    keyId: string,
+    isActive: boolean,
+  ) {
     const key = await this.sdkKeysRepo.findById(keyId);
     if (!key || key.organizationId !== orgId || key.environmentId !== envId)
       throw new NotFoundException('SDK key not found');
 
     const actorId = getActorId();
-    const updated = await this.sdkKeysRepo.updateStatus(keyId, isActive, actorId);
+    const updated = await this.sdkKeysRepo.updateStatus(
+      keyId,
+      isActive,
+      actorId,
+    );
 
     if (this.auditLogsService && updated) {
       const [env] = await this.db
@@ -120,10 +132,12 @@ export class SdkKeysService {
 
     return {
       success: true,
-      sdkKey: updated ? {
-        ...updated,
-        maskedKey: maskKey(updated.type, updated.keyHint),
-      } : null,
+      sdkKey: updated
+        ? {
+            ...updated,
+            maskedKey: maskKey(updated.type, updated.keyHint),
+          }
+        : null,
     };
   }
 

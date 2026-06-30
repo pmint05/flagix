@@ -51,7 +51,9 @@ export class TransformInterceptor<T> implements NestInterceptor<
       map((data) => ({
         success: true,
         message: data?.message || 'Operation successful',
-        data: stripSensitiveFields(data?.data !== undefined ? data.data : data),
+        data: stripSensitiveFields(
+          data?.data !== undefined && !('total' in data) ? data.data : data,
+        ),
       })),
     );
   }

@@ -41,7 +41,7 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'List organizations for current user' })
   async findAll(@CurrentUser() user: any) {
     const orgs = await this.orgService.findAllForUser(user.id);
-    return { organizations: orgs, total: orgs.length };
+    return { data: orgs, total: orgs.length };
   }
 
   @Get(':organizationId')
@@ -69,5 +69,13 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Delete organization' })
   async remove(@CurrentContext() ctx: OrgContext) {
     return this.orgService.remove(ctx.organizationId);
+  }
+
+  @Get(':organizationId/users')
+  @UseGuards(OrgRolesGuard)
+  @ApiOperation({ summary: 'List organization users' })
+  async findUsers(@CurrentContext() ctx: OrgContext) {
+    const users = await this.orgService.findUsers(ctx.organizationId, ctx.role);
+    return { data: users, total: users.length };
   }
 }
