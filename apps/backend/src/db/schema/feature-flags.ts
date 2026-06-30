@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -51,7 +51,9 @@ export const featureFlags = pgTable(
     isTemporary: boolean('is_temporary').notNull().default(false),
   },
   (table) => [
-    uniqueIndex('idx_flags_project_key').on(table.projectId, table.key),
+    uniqueIndex('idx_flags_project_key')
+      .on(table.projectId, table.key)
+      .where(sql`${table.deletedAt} IS NULL`),
     index('idx_flags_org').on(table.organizationId),
     index('idx_flags_project').on(table.projectId),
   ],

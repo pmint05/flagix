@@ -52,7 +52,7 @@ const flagFormSchema = z.object({
 	description: z.string().optional(),
 	flagType: z.enum(["boolean", "multivariate"]),
 	visibility: z.enum(["all", "client_only", "server_only"]),
-	isTemporary: z.boolean().default(false),
+	isTemporary: z.boolean(),
 	variations: z.array(
 		z.object({
 			key: z.string().optional(),

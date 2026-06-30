@@ -37,7 +37,9 @@ export const variations = pgTable(
     deletedAt: timestamp('deleted_at'),
   },
   (table) => [
-    uniqueIndex('idx_variations_flag_key').on(table.featureFlagId, table.key),
+    uniqueIndex('idx_variations_flag_key')
+      .on(table.featureFlagId, table.key)
+      .where(sql`${table.deletedAt} IS NULL`),
     index('idx_variations_flag').on(table.featureFlagId),
     index('idx_variations_organization').on(table.organizationId),
     uniqueIndex('idx_variations_default')

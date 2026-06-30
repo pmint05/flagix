@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button, Skeleton, SearchField } from "@heroui/react";
+import { Button, SearchField } from "@heroui/react";
 import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
 	useFlags,

@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -41,10 +41,9 @@ export const environments = pgTable(
     deletedAt: timestamp('deleted_at'),
   },
   (table) => [
-    uniqueIndex('idx_environments_project_slug').on(
-      table.projectId,
-      table.slug,
-    ),
+    uniqueIndex('idx_environments_project_slug')
+      .on(table.projectId, table.slug)
+      .where(sql`${table.deletedAt} IS NULL`),
     index('idx_environments_project').on(table.projectId),
     index('idx_environments_org').on(table.organizationId),
   ],

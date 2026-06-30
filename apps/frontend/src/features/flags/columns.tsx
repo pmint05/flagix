@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Chip, Button, Tooltip, Avatar, AvatarFallback } from "@heroui/react";
-import { RocketLaunchIcon, TrashIcon, WarningIcon } from "@phosphor-icons/react";
+import { Chip, Button, Tooltip } from "@heroui/react";
+import { RocketLaunchIcon, TrashIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { FlagToggle } from "./FlagToggle";
 import { VariationDots } from "@/components/ui/filters/VariationDots";

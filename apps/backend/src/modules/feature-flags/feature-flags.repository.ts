@@ -688,11 +688,36 @@ export class FeatureFlagsRepository {
   }
 
   async softDelete(id: string, actorId?: string) {
-    const [flag] = await this.db
-      .update(featureFlags)
-      .set({ deletedAt: new Date(), deletedBy: actorId ?? null })
-      .where(eq(featureFlags.id, id))
-      .returning();
-    return flag ?? null;
+    return this.db.transaction(async (tx) => {
+      const deletedAt = new Date();
+      // 1. Soft-delete flag
+      const [flag] = await tx
+        .update(featureFlags)
+        .set({ deletedAt, deletedBy: actorId ?? null })
+        .where(eq(featureFlags.id, id))
+        .returning();
+
+      if (!flag) return null;
+
+      // 2. Soft-delete flag states
+      await tx
+        .update(flagStates)
+        .set({ deletedAt })
+        .where(eq(flagStates.featureFlagId, id));
+
+      // 3. Soft-delete targeting rules
+      await tx
+        .update(targetingRules)
+        .set({ deletedAt })
+        .where(eq(targetingRules.featureFlagId, id));
+
+      // 4. Soft-delete variations
+      await tx
+        .update(variations)
+        .set({ deletedAt })
+        .where(eq(variations.featureFlagId, id));
+
+      return flag;
+    });
   }
 }

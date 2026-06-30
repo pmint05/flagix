@@ -116,8 +116,20 @@ export class FeatureFlagsService {
       });
     }
 
-    // We skip publishing to redis on create since no envId is tied to the action
-    // If needed, we could publish to all environments.
+    if (this.flagChangePublisher) {
+      for (const env of environments) {
+        this.flagChangePublisher.publish(env.id, {
+          type: 'flag.created',
+          flagKey: flag.key,
+          environmentId: env.id,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            version: flag.version,
+            isEnabled: false,
+          },
+        });
+      }
+    }
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({

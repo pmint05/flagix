@@ -45,7 +45,7 @@ const flagMetadataSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().optional(),
 	visibility: z.enum(["all", "client_only", "server_only"]),
-	isTemporary: z.boolean().default(false),
+	isTemporary: z.boolean(),
 });
 
 const visibilityOptions = [

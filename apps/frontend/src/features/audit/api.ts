@@ -3,7 +3,6 @@ import { api } from "@/lib/api";
 import { type AuditLog, auditLogSchema } from "@/types/audit-log";
 import { paginatedSchema, type Paginated } from "@/types/base";
 import { useContextStore } from "@/stores";
-import { z } from "zod";
 
 export interface AuditLogQueryParams {
 	projectId?: string;

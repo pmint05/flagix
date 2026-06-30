@@ -6,8 +6,6 @@ import type { RangeValue } from "@react-types/shared";
 
 import {
 	Autocomplete,
-	Avatar,
-	AvatarFallback,
 	Button,
 	DateField,
 	DateRangePicker,
