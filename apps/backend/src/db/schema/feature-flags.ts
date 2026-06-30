@@ -5,6 +5,7 @@ import {
   varchar,
   text,
   integer,
+  boolean,
   timestamp,
   index,
   uniqueIndex,
@@ -42,6 +43,7 @@ export const featureFlags = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     deletedAt: timestamp('deleted_at'),
+    isClientVisible: boolean('is_client_visible').notNull().default(false),
   },
   (table) => [
     uniqueIndex('idx_flags_project_key').on(table.projectId, table.key),

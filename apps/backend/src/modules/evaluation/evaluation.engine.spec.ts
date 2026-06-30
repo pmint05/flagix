@@ -15,6 +15,7 @@ describe('evaluation.engine', () => {
       { id: 'var-false', key: 'false', value: false, isDefault: true },
     ],
     rules: [],
+    isClientVisible: false,
     ...overrides,
   });
 

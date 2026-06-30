@@ -34,6 +34,7 @@ export class EvaluationController {
       env.environmentId,
       dto.flagKey,
       dto.context,
+      env.keyType,
     );
   }
 
@@ -46,6 +47,7 @@ export class EvaluationController {
     const flags = await this.evaluationService.evaluateAllFlags(
       env.environmentId,
       dto.context,
+      env.keyType,
     );
     return { flags };
   }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Drawer, Button } from "@heroui/react";
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { Drawer, Button, Form, TextField, Label, Input, FieldError } from "@heroui/react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { CreateSdkKeyInput } from "./api";
@@ -25,21 +25,25 @@ export function KeyModal({
 	onSubmit,
 	isLoading,
 }: KeyModalProps) {
-	const [selectedType, setSelectedType] = useState<"client" | "server">(
-		"client",
-	);
-
 	const {
-		register,
+		control,
 		handleSubmit,
+		reset,
 		formState: { errors },
 	} = useForm<CreateSdkKeyInput>({
 		resolver: zodResolver(createSdkKeyFormSchema),
 		defaultValues: { name: "", type: "client" },
 	});
 
+	// Reset form values when modal opens or closes
+	useEffect(() => {
+		if (isOpen) {
+			reset({ name: "", type: "client" });
+		}
+	}, [isOpen, reset]);
+
 	const handleFormSubmit = (data: CreateSdkKeyInput) => {
-		onSubmit({ ...data, type: selectedType });
+		onSubmit(data);
 	};
 
 	return (
@@ -48,62 +52,87 @@ export function KeyModal({
 				<Drawer.Content placement="right">
 					<Drawer.Dialog>
 						<Drawer.Header>
-							<Drawer.Heading>Generate SDK Key</Drawer.Heading>
+							<Drawer.Heading>
+								Generate SDK Key
+								<Drawer.CloseTrigger />
+							</Drawer.Heading>
 						</Drawer.Header>
-						<form onSubmit={handleSubmit(handleFormSubmit)}>
-							<Drawer.Body>
-								<div className="space-y-2">
-									<label className="text-sm font-medium">Key Name</label>
-									<input
-										type="text"
-										className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm"
-										placeholder="e.g. production-web-sdk"
-										{...register("name")}
-									/>
-									{errors.name && (
-										<p className="text-sm text-danger">{errors.name.message}</p>
+						<Drawer.Body>
+							<Form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.name}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}
+											className="w-full"
+										>
+											<Label>Key Name</Label>
+											<Input placeholder="e.g. production-web-sdk" />
+											{errors.name && (
+												<FieldError>{errors.name.message}</FieldError>
+											)}
+										</TextField>
 									)}
-								</div>
+								/>
 
-								<div className="space-y-2">
-									<label className="text-sm font-medium">Key Type</label>
-									<div className="flex gap-3">
-										<button
-											type="button"
-											className={`flex-1 rounded-lg border p-3 text-left transition ${
-												selectedType === "client"
-													? "border-primary bg-primary-50"
-													: "hover:border-default"
-											}`}
-											onClick={() => setSelectedType("client")}>
-											<div className="font-medium">Client</div>
-											<div className="mt-1 text-xs">
-												Public, safe for browser/mobile
+								<Controller
+									name="type"
+									control={control}
+									render={({ field }) => (
+										<div className="space-y-2">
+											<span className="text-sm font-semibold text-foreground/80">Key Type</span>
+											<div className="flex gap-3">
+												<button
+													type="button"
+													className={`flex-1 rounded-2xl border p-4 text-left transition text-sm ${
+														field.value === "client"
+															? "border-primary bg-primary-soft/10 text-primary font-medium"
+															: "border-divider bg-background-secondary text-default-600 hover:border-default"
+													}`}
+													onClick={() => field.onChange("client")}
+												>
+													<div className="font-bold text-foreground">Client</div>
+													<div className="mt-1 text-xs text-default-500 font-normal">
+														Public, safe for browser/mobile applications.
+													</div>
+												</button>
+												<button
+													type="button"
+													className={`flex-1 rounded-2xl border p-4 text-left transition text-sm ${
+														field.value === "server"
+															? "border-primary bg-primary-soft/10 text-primary font-medium"
+															: "border-divider bg-background-secondary text-default-600 hover:border-default"
+													}`}
+													onClick={() => field.onChange("server")}
+												>
+													<div className="font-bold text-foreground">Server</div>
+													<div className="mt-1 text-xs text-default-500 font-normal">
+														Secret, use in backend or secure environments only.
+													</div>
+												</button>
 											</div>
-										</button>
-										<button
-											type="button"
-											className={`flex-1 rounded-lg border p-3 text-left transition ${
-												selectedType === "server"
-													? "border-primary bg-primary-50"
-													: "hover:border-default"
-											}`}
-											onClick={() => setSelectedType("server")}>
-											<div className="font-medium">Server</div>
-											<div className="mt-1 text-xs">Secret, backend only</div>
-										</button>
-									</div>
-								</div>
-							</Drawer.Body>
-							<Drawer.Footer>
-								<Button variant="ghost" onPress={onClose}>
-									Cancel
-								</Button>
-								<Button type="submit" variant="primary" isDisabled={isLoading}>
-									{isLoading ? "Generating..." : "Generate"}
-								</Button>
-							</Drawer.Footer>
-						</form>
+											{errors.type && (
+												<p className="text-xs text-danger mt-1">{errors.type.message}</p>
+											)}
+										</div>
+									)}
+								/>
+
+								<Drawer.Footer className="pt-4 border-t border-divider">
+									<Button variant="outline" onPress={onClose}>
+										Cancel
+									</Button>
+									<Button type="submit" variant="primary" isDisabled={isLoading}>
+										{isLoading ? "Generating..." : "Generate"}
+									</Button>
+								</Drawer.Footer>
+							</Form>
+						</Drawer.Body>
 					</Drawer.Dialog>
 				</Drawer.Content>
 			</Drawer.Backdrop>

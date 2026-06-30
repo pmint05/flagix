@@ -35,6 +35,7 @@ export interface LoadedFlag {
   defaultVariationId?: string | null;
   variations: LoadedFlagVariation[];
   rules: LoadedFlagRule[];
+  isClientVisible: boolean;
 }
 
 export function buildSafeDefault(

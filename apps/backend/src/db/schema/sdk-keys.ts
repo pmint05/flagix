@@ -39,6 +39,7 @@ export const sdkKeys = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     deletedAt: timestamp('deleted_at'),
+    lastUsedAt: timestamp('last_used_at'),
   },
   (table) => [
     index('idx_sdk_keys_environment').on(table.environmentId),
