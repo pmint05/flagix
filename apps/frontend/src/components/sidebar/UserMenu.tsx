@@ -16,12 +16,11 @@ import {
 	CheckIcon,
 	CaretRightIcon,
 } from "@phosphor-icons/react";
-import { useAuthStore, useThemeStore } from "#/stores";
+import { useAuthStore, useThemeStore, useContextStore } from "#/stores";
 import { authClient } from "#/lib/auth-client";
 import type React from "react";
 import { motion } from "motion/react";
 import { useIsMobile } from "#/hooks/useIsMobile";
-import { maskEmail } from "#/lib/masking";
 
 interface UserMenuProps {
 	children: React.ReactNode;
@@ -195,6 +194,7 @@ function ThemeGroup({
 export function UserMenu({ children }: UserMenuProps) {
 	const user = useAuthStore((s) => s.user);
 	const clearSession = useAuthStore((s) => s.clearSession);
+	const clearContext = useContextStore((s) => s.clearContext);
 	const { theme, setTheme } = useThemeStore();
 	const [mainOpen, setMainOpen] = useState(false);
 
@@ -203,6 +203,7 @@ export function UserMenu({ children }: UserMenuProps) {
 			await authClient.signOut();
 		} finally {
 			clearSession();
+			clearContext();
 		}
 	};
 
@@ -222,7 +223,7 @@ export function UserMenu({ children }: UserMenuProps) {
 							<span className="truncate text-sm font-semibold">
 								{user?.name}
 							</span>
-							<span className="truncate text-xs">{maskEmail(user?.email)}</span>
+							<span className="truncate text-xs">{user?.email}</span>
 						</div>
 
 						<Separator className="my-1" />

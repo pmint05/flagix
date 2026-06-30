@@ -190,7 +190,9 @@ svg[class*="phosphor"] {
 .switch__thumb,
 .slider__track,
 .slider__thumb::after,
-.slider__thumb {
+.slider__thumb,
+.radio__control,
+.radio__indicator, .radio__indicator::before {
 	border-radius: calc(var(--radius) * 100);
 }
 

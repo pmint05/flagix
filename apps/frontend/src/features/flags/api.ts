@@ -16,6 +16,7 @@ export interface CreateFlagInput {
 	name: string;
 	description?: string;
 	flagType: "boolean" | "multivariate";
+	visibility?: "all" | "client_only" | "server_only";
 	variations?: Array<{
 		key: string;
 		value: boolean | string | Record<string, unknown>;
@@ -26,6 +27,7 @@ export interface CreateFlagInput {
 export interface UpdateFlagInput {
 	name?: string;
 	description?: string;
+	visibility?: "all" | "client_only" | "server_only";
 }
 
 export interface UpdateFlagStateInput {

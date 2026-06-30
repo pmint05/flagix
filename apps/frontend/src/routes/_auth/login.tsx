@@ -61,18 +61,14 @@ function LoginPage() {
 			});
 
 			if (result.error) {
-				toast(result.error.message ?? "Login failed", {
-					variant: "danger",
-				});
+				toast.danger(result.error.message ?? "Login failed");
 				return;
 			}
 
 			toast.success("Welcome back!");
 			navigate({ to: "/" });
 		} catch (error) {
-			toast("An unexpected error occurred", {
-				variant: "danger",
-			});
+			toast.danger("An unexpected error occurred");
 		} finally {
 			setIsLoading(false);
 		}

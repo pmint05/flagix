@@ -35,6 +35,7 @@ export const featureFlagSchema = z.object({
 	version: z.number(),
 	variations: z.array(variationSchema).optional(),
 	states: z.array(flagStateSchema).optional(),
+	visibility: z.enum(["all", "client_only", "server_only"]).default("all"),
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
 });

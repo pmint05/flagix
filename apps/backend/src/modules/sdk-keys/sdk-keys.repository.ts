@@ -35,6 +35,7 @@ export class SdkKeysRepository {
         name: sdkKeys.name,
         keyHint: sdkKeys.keyHint,
         type: sdkKeys.type,
+        rawKey: sdkKeys.rawKey,
         isActive: sdkKeys.isActive,
         createdAt: sdkKeys.createdAt,
         updatedAt: sdkKeys.updatedAt,
@@ -61,6 +62,7 @@ export class SdkKeysRepository {
       keyHash: string;
       keyHint: string;
       type: string;
+      rawKey?: string | null;
     },
     actorId?: string,
   ) {
@@ -73,6 +75,7 @@ export class SdkKeysRepository {
         keyHash: input.keyHash,
         keyHint: input.keyHint,
         type: input.type as 'client' | 'server',
+        rawKey: input.rawKey ?? null,
         createdBy: actorId ?? null,
       })
       .returning();

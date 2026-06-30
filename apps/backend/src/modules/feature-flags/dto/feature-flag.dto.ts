@@ -77,6 +77,11 @@ export class CreateFeatureFlagDto {
   @Type(() => VariationDto)
   variations?: VariationDto[];
 
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -103,6 +108,11 @@ export class UpdateFeatureFlagDto {
   @IsOptional()
   @IsEnum(['draft', 'active', 'archived'])
   status?: 'draft' | 'active' | 'archived';
+
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -144,6 +154,11 @@ export class PatchFeatureFlagConfigDto {
   @ValidateNested({ each: true })
   @Type(() => CreateTargetingRuleDto)
   rules?: CreateTargetingRuleDto[];
+
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -1,0 +1,1 @@
+ALTER TABLE "feature_flags" ADD COLUMN "visibility" text DEFAULT 'all' NOT NULL;

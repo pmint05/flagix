@@ -23,8 +23,17 @@ import {
 	Popover,
 	PopoverTrigger,
 	PopoverContent,
+	RadioGroup,
+	Radio,
+	Description,
+	cn,
 } from "@heroui/react";
-import { PlusIcon } from "@phosphor-icons/react";
+import {
+	PlusIcon,
+	GlobeIcon,
+	BrowserIcon,
+	TerminalIcon,
+} from "@phosphor-icons/react";
 import { useCreateFlag } from "./api";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { VariationDot } from "@/components/ui/VariationDot";
@@ -41,6 +50,7 @@ const flagFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().optional(),
 	flagType: z.enum(["boolean", "multivariate"]),
+	visibility: z.enum(["all", "client_only", "server_only"]),
 	variations: z.array(
 		z.object({
 			key: z.string().optional(),
@@ -55,6 +65,27 @@ type FlagFormData = z.infer<typeof flagFormSchema>;
 const FLAG_TYPES = [
 	{ key: "boolean", label: "Boolean" },
 	{ key: "multivariate", label: "Multivariate" },
+] as const;
+
+const visibilityOptions = [
+	{
+		value: "all",
+		title: "All SDKs",
+		description: "Available for both client and server evaluations.",
+		icon: GlobeIcon,
+	},
+	{
+		value: "client_only",
+		title: "Client Only",
+		description: "Visible to client-side SDKs only. Restricted on backend.",
+		icon: BrowserIcon,
+	},
+	{
+		value: "server_only",
+		title: "Server Only",
+		description: "Secret flags, accessible by server/backend keys only.",
+		icon: TerminalIcon,
+	},
 ] as const;
 
 interface EditVariationDialogProps {
@@ -175,6 +206,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 			name: "",
 			description: "",
 			flagType: "boolean",
+			visibility: "all",
 			variations: [
 				{ key: "true", value: "true", description: "" },
 				{ key: "false", value: "false", description: "" },
@@ -197,6 +229,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 				name: "",
 				description: "",
 				flagType: "boolean",
+				visibility: "all",
 				variations: [
 					{ key: "true", value: "true", description: "" },
 					{ key: "false", value: "false", description: "" },
@@ -253,14 +286,17 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 	return (
 		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<Modal.Backdrop>
-				<Modal.Container>
-					<Modal.Dialog>
+				<Modal.Container size="lg">
+					<Modal.Dialog className="max-w-xl">
 						<Modal.Header>
 							<Modal.Heading>Create Feature Flag</Modal.Heading>
 						</Modal.Header>
 						<Modal.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField variant="secondary" isRequired>
+								<TextField
+									variant="secondary"
+									isRequired
+									isInvalid={!!errors.key}>
 									<Label>Key</Label>
 									<Input
 										{...register("key")}
@@ -269,7 +305,10 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 									{errors.key && <FieldError>{errors.key.message}</FieldError>}
 								</TextField>
 
-								<TextField variant="secondary" isRequired>
+								<TextField
+									variant="secondary"
+									isRequired
+									isInvalid={!!errors.name}>
 									<Label>Name</Label>
 									<Input
 										{...register("name")}
@@ -288,6 +327,55 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 										rows={3}
 									/>
 								</TextField>
+
+								<Controller
+									name="visibility"
+									control={control}
+									render={({ field }) => (
+										<RadioGroup
+											value={field.value}
+											onChange={field.onChange}
+											variant="secondary"
+											className="w-full">
+											<div className="flex flex-wrap items-center justify-between gap-4">
+												<Label>Visibility Scope</Label>
+											</div>
+											<div className="grid gap-3 md:grid-cols-3">
+												{visibilityOptions.map((option) => {
+													const IconComponent = option.icon;
+													return (
+														<Radio
+															key={option.value}
+															value={option.value}
+															className="w-full">
+															<Radio.Content
+																className={cn(
+																	"group relative flex w-full flex-col items-start justify-start gap-2.5 rounded-xl border border-transparent bg-default-soft p-4 transition-all hover:bg-default cursor-pointer text-left h-full",
+																	"data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft/10",
+																)}>
+																<Radio.Control className="absolute top-3 right-4 size-4">
+																	<Radio.Indicator />
+																</Radio.Control>
+																<IconComponent className="size-5 group-data-[selected=true]:text-accent" />
+																<div className="flex flex-col gap-1 pr-4">
+																	<span className="text-sm font-semibold text-foreground">
+																		{option.title}
+																	</span>
+																	<Description className="text-xs text-default-400 font-normal leading-relaxed">
+																		{option.description}
+																	</Description>
+																</div>
+															</Radio.Content>
+														</Radio>
+													);
+												})}
+											</div>
+											{errors.visibility && (
+												<FieldError>{errors.visibility.message}</FieldError>
+											)}
+										</RadioGroup>
+									)}
+								/>
 
 								<Controller
 									name="flagType"

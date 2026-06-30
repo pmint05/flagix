@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { Drawer, Button, Form, TextField, Label, Input, FieldError } from "@heroui/react";
+import {
+	Drawer,
+	Button,
+	Form,
+	TextField,
+	Label,
+	Input,
+	FieldError,
+	RadioGroup,
+	Radio,
+	Description,
+	cn,
+} from "@heroui/react";
+import { BrowserIcon, TerminalIcon } from "@phosphor-icons/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,6 +24,22 @@ const createSdkKeyFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	type: z.enum(["client", "server"]),
 });
+
+const keyTypeOptions = [
+	{
+		value: "client",
+		title: "Client Key",
+		description: "Public, safe for browser/mobile applications.",
+		icon: BrowserIcon,
+	},
+	{
+		value: "server",
+		title: "Server Key",
+		description:
+			"Secret, use in backend or secure environments. Key shown ONLY ONCE upon creation.",
+		icon: TerminalIcon,
+	},
+] as const;
 
 interface KeyModalProps {
 	isOpen: boolean;
@@ -58,7 +87,9 @@ export function KeyModal({
 							</Drawer.Heading>
 						</Drawer.Header>
 						<Drawer.Body>
-							<Form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+							<Form
+								onSubmit={handleSubmit(handleFormSubmit)}
+								className="space-y-6">
 								<Controller
 									name="name"
 									control={control}
@@ -69,8 +100,7 @@ export function KeyModal({
 											value={field.value}
 											onChange={field.onChange}
 											onBlur={field.onBlur}
-											className="w-full"
-										>
+											className="w-full">
 											<Label>Key Name</Label>
 											<Input placeholder="e.g. production-web-sdk" />
 											{errors.name && (
@@ -84,42 +114,48 @@ export function KeyModal({
 									name="type"
 									control={control}
 									render={({ field }) => (
-										<div className="space-y-2">
-											<span className="text-sm font-semibold text-foreground/80">Key Type</span>
-											<div className="flex gap-3">
-												<button
-													type="button"
-													className={`flex-1 rounded-2xl border p-4 text-left transition text-sm ${
-														field.value === "client"
-															? "border-primary bg-primary-soft/10 text-primary font-medium"
-															: "border-divider bg-background-secondary text-default-600 hover:border-default"
-													}`}
-													onClick={() => field.onChange("client")}
-												>
-													<div className="font-bold text-foreground">Client</div>
-													<div className="mt-1 text-xs text-default-500 font-normal">
-														Public, safe for browser/mobile applications.
-													</div>
-												</button>
-												<button
-													type="button"
-													className={`flex-1 rounded-2xl border p-4 text-left transition text-sm ${
-														field.value === "server"
-															? "border-primary bg-primary-soft/10 text-primary font-medium"
-															: "border-divider bg-background-secondary text-default-600 hover:border-default"
-													}`}
-													onClick={() => field.onChange("server")}
-												>
-													<div className="font-bold text-foreground">Server</div>
-													<div className="mt-1 text-xs text-default-500 font-normal">
-														Secret, use in backend or secure environments only.
-													</div>
-												</button>
+										<RadioGroup
+											value={field.value}
+											onChange={field.onChange}
+											variant="secondary"
+											className="w-full">
+											<div className="flex flex-wrap items-center justify-between gap-4">
+												<Label>Key Type</Label>
+											</div>
+											<div className="grid gap-3 md:grid-cols-2">
+												{keyTypeOptions.map((option) => {
+													const IconComponent = option.icon;
+													return (
+														<Radio
+															key={option.value}
+															value={option.value}
+															className="w-full">
+															<Radio.Content
+																className={cn(
+																	"group relative flex w-full flex-col items-start justify-start gap-2.5 rounded-xl border border-transparent bg-default-soft p-4 transition-all hover:bg-default cursor-pointer text-left h-full",
+																	"data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft/10",
+																)}>
+																<Radio.Control className="absolute top-3 right-4 size-4">
+																	<Radio.Indicator />
+																</Radio.Control>
+																<IconComponent className="size-5 group-data-[selected=true]:text-accent" />
+																<div className="flex flex-col gap-1 pr-4">
+																	<span className="text-sm font-semibold text-foreground">
+																		{option.title}
+																	</span>
+																	<Description className="text-xs text-default-400 font-normal leading-relaxed">
+																		{option.description}
+																	</Description>
+																</div>
+															</Radio.Content>
+														</Radio>
+													);
+												})}
 											</div>
 											{errors.type && (
-												<p className="text-xs text-danger mt-1">{errors.type.message}</p>
+												<FieldError>{errors.type.message}</FieldError>
 											)}
-										</div>
+										</RadioGroup>
 									)}
 								/>
 
@@ -127,7 +163,10 @@ export function KeyModal({
 									<Button variant="outline" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button type="submit" variant="primary" isDisabled={isLoading}>
+									<Button
+										type="submit"
+										variant="primary"
+										isDisabled={isLoading}>
 										{isLoading ? "Generating..." : "Generate"}
 									</Button>
 								</Drawer.Footer>

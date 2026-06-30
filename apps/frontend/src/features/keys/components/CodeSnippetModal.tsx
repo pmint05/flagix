@@ -18,6 +18,7 @@ import {
 	Bash as BashIcon,
 } from "developer-icons";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import type { SdkKey } from "@/types/sdk-key";
 
 export const SDKS = [
 	{ id: "react", name: "React SDK (@flagix/sdk-react)" },
@@ -28,8 +29,7 @@ export const SDKS = [
 interface CodeSnippetModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	rawKey?: string;
-	keyType?: "client" | "server";
+	keys?: SdkKey[];
 	flagKey?: string;
 	contextJson?: string;
 }
@@ -63,7 +63,8 @@ const generateSnippet = (
 	sdk: string,
 	flagKey: string,
 	contextJson: string,
-	rawKey?: string,
+	clientKey: string,
+	serverKey: string,
 ) => {
 	let contextObj: any = {};
 	try {
@@ -73,7 +74,7 @@ const generateSnippet = (
 	}
 
 	const formattedContextJson = JSON.stringify(contextObj, null, 2);
-	const sdkKeyVal = rawKey || (sdk === "react" ? "sdk_client_YOUR_KEY" : "sdk_server_YOUR_KEY");
+	const sdkKeyVal = sdk === "react" ? clientKey : serverKey;
 
 	switch (sdk) {
 		case "react":
@@ -151,8 +152,7 @@ async function main() {
 export function CodeSnippetModal({
 	isOpen,
 	onClose,
-	rawKey,
-	keyType,
+	keys,
 	flagKey = "my-feature-flag",
 	contextJson = JSON.stringify({ userId: "user-123" }, null, 2),
 }: CodeSnippetModalProps) {
@@ -160,22 +160,20 @@ export function CodeSnippetModal({
 	const editorTheme = resolvedTheme === "dark" ? "vs-dark" : "light";
 	const { contains } = useFilter({ sensitivity: "base" });
 
-	const filteredSdks = SDKS.filter((sdk) => {
-		if (keyType === "client") return sdk.id === "react";
-		if (keyType === "server") return sdk.id !== "react";
-		return true;
-	});
+	const filteredSdks = SDKS;
 
-	const [selectedSdk, setSelectedSdk] = useState<string>(
-		keyType === "server" ? "nodejs" : "react"
-	);
+	const [selectedSdk, setSelectedSdk] = useState<string>("react");
 
-	// Safe guard: if keyType changes, reset selectedSdk to a valid one
+	// Safe guard: if SDK not in list, fallback
 	const actualSdk = filteredSdks.some((s) => s.id === selectedSdk)
 		? selectedSdk
-		: filteredSdks[0]?.id || "react";
+		: "react";
 
-	const codeSnippet = generateSnippet(actualSdk, flagKey, contextJson, rawKey);
+	const activeKeys = keys || [];
+	const clientKey = activeKeys.find((k) => k.type === "client" && k.isActive)?.rawKey || "sdk_client_YOUR_KEY";
+	const serverKey = activeKeys.find((k) => k.type === "server" && k.isActive)?.maskedKey || "sdk_server_YOUR_KEY";
+
+	const codeSnippet = generateSnippet(actualSdk, flagKey, contextJson, clientKey, serverKey);
 
 	return (
 		<Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>

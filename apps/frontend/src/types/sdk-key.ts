@@ -8,6 +8,7 @@ export const sdkKeySchema = z.object({
 	type: z.enum(["client", "server"]),
 	keyHint: z.string(),
 	maskedKey: z.string(),
+	rawKey: z.string().nullable().optional(),
 	isActive: z.boolean(),
 	createdAt: timestampSchema,
 	lastUsedAt: timestampSchema.nullable().optional(),

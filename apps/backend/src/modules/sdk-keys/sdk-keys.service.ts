@@ -44,6 +44,7 @@ export class SdkKeysService {
         keyHash,
         keyHint,
         type: input.type,
+        rawKey: input.type === 'client' ? rawKey : null,
       },
       actorId,
     );
@@ -70,6 +71,7 @@ export class SdkKeysService {
 
     return {
       id: sdkKey.id,
+      environmentId: sdkKey.environmentId,
       name: sdkKey.name,
       type: sdkKey.type,
       keyHint: sdkKey.keyHint,

@@ -22,7 +22,10 @@ export class EvaluationService {
       if (!flag) {
         return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
       }
-      if (keyType === 'client' && !flag.isClientVisible) {
+      if (keyType === 'client' && flag.visibility === 'server_only') {
+        return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
+      }
+      if (keyType === 'server' && flag.visibility === 'client_only') {
         return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
       }
       return evaluate(flag, context);
@@ -43,7 +46,9 @@ export class EvaluationService {
     try {
       let flags = await this.flagLoader.loadAllActiveFlags(environmentId);
       if (keyType === 'client') {
-        flags = flags.filter((f) => f.isClientVisible);
+        flags = flags.filter((f) => f.visibility !== 'server_only');
+      } else if (keyType === 'server') {
+        flags = flags.filter((f) => f.visibility !== 'client_only');
       }
       return flags.map((flag) => {
         try {

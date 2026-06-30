@@ -44,6 +44,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({
 					className={cn("flex items-center gap-2", className)}
 					variant="ghost"
 					size="sm"
+					isIconOnly={!showLabel}
 					{...buttonProps}>
 					{showLabel && (
 						<div className="grid grid-cols-1 grid-rows-1 place-items-center min-w-0">
@@ -70,7 +71,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({
 
 					<div className="relative size-4 flex items-center justify-center shrink-0">
 						<CheckIcon
-							className={cn("size-4 absolute transition-all duration-200", {
+							className={cn("size-4 absolute transition-all duration-200 text-success", {
 								"opacity-0 scale-75 pointer-events-none": !copied,
 								"opacity-100 scale-100": copied,
 							})}

@@ -1,31 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
-	ArrowLeftIcon,
 	PlusIcon,
 	TrashIcon,
-	CopyIcon,
-	CheckIcon,
 	CodeIcon,
 	KeyIcon,
 	TerminalWindowIcon,
 	BrowserIcon,
 	ToggleLeftIcon,
+	EyeIcon,
+	EyeSlashIcon,
 } from "@phosphor-icons/react";
 import {
-	Badge,
+	Chip,
 	Button,
 	Skeleton,
 	Table,
-	TableBody,
-	TableColumn,
-	TableHeader,
-	TableRow,
 	TableCell,
 	Tooltip,
 	SearchField,
+	EmptyState,
+	Input,
 } from "@heroui/react";
 import {
 	useSdkKeys,
@@ -37,11 +34,73 @@ import type { CreateSdkKeyInput } from "@/features/keys";
 import type { CreateSdkKeyResponse } from "@/features/keys/api";
 import { KeyModal } from "@/features/keys/KeyModal";
 import { KeyDisplay } from "@/features/keys/KeyDisplay";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { AsyncSwitch } from "@/components/ui/async-switch";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { CodeSnippetModal } from "@/features/keys/components/CodeSnippetModal";
 import type { SdkKey } from "@/types/sdk-key";
+import { formatDistanceToNow } from "date-fns";
+import { formatDate } from "#/lib/date";
+import UserAvatar from "#/components/user/user-avatar";
+import CopyButton from "#/components/ui/copy-button";
+
+function KeyInputCell({
+	sdkKey,
+}: {
+	sdkKey: SdkKey;
+}) {
+	const [revealed, setRevealed] = useState(false);
+
+	if (sdkKey.type === "server") {
+		return (
+			<div className="flex items-center gap-2">
+				<Input
+					variant="secondary"
+					readOnly
+					value={sdkKey.maskedKey}
+					type="text"
+					className="font-mono text-xs w-full h-8 max-w-96"
+				/>
+			</div>
+		);
+	}
+
+	const keyValue = sdkKey.rawKey || sdkKey.maskedKey;
+
+	return (
+		<div className="flex items-center gap-2">
+			<Input
+				variant="secondary"
+				readOnly
+				value={keyValue}
+				type={revealed ? "text" : "password"}
+				className="font-mono text-xs w-full h-8 max-w-96"
+			/>
+			<Tooltip>
+				<Tooltip.Trigger>
+					<Button
+						isIconOnly
+						size="sm"
+						variant="ghost"
+						onPress={() => setRevealed(!revealed)}>
+						{revealed ? (
+							<EyeSlashIcon className="h-4 w-4" />
+						) : (
+							<EyeIcon className="h-4 w-4" />
+						)}
+					</Button>
+				</Tooltip.Trigger>
+				<Tooltip.Content>{revealed ? "Hide key" : "Show key"}</Tooltip.Content>
+			</Tooltip>
+			<Tooltip>
+				<Tooltip.Trigger>
+					<CopyButton text={keyValue} buttonProps={{}} />
+				</Tooltip.Trigger>
+				<Tooltip.Content>Copy key</Tooltip.Content>
+			</Tooltip>
+		</div>
+	);
+}
 
 export const Route = createFileRoute(
 	"/_authenticated/projects/$projectSlug/_admin/sdk-keys",
@@ -50,17 +109,18 @@ export const Route = createFileRoute(
 });
 
 function SdkKeysPage() {
-	const { projectSlug } = Route.useParams();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isDisplayOpen, setIsDisplayOpen] = useState(false);
-	const [displayedKey, setDisplayedKey] =
-		useState<CreateSdkKeyResponse | null>(null);
-	const [copiedId, setCopiedId] = useState<string | null>(null);
+	const [displayedKey, setDisplayedKey] = useState<CreateSdkKeyResponse | null>(
+		null,
+	);
+	const [revokingKey, setRevokingKey] = useState<SdkKey | null>(null);
 
 	// Filters and snippets state
 	const [searchQuery, setSearchQuery] = useState("");
-	const [typeFilter, setTypeFilter] = useState<"all" | "client" | "server">("all");
-	const [selectedKeyForSnippet, setSelectedKeyForSnippet] = useState<SdkKey | null>(null);
+	const [typeFilter, setTypeFilter] = useState<"all" | "client" | "server">(
+		"all",
+	);
 	const [isSnippetOpen, setIsSnippetOpen] = useState(false);
 
 	const { data: keys, isPending } = useSdkKeys();
@@ -72,22 +132,18 @@ function SdkKeysPage() {
 		createMutation.mutate(data, {
 			onSuccess: (res) => {
 				setIsCreateOpen(false);
-				setDisplayedKey(res);
-				setIsDisplayOpen(true);
+				if (data.type === "server") {
+					setDisplayedKey(res);
+					setIsDisplayOpen(true);
+				} else {
+					setDisplayedKey(null);
+				}
 			},
 		});
 	};
 
-	const handleRevoke = (keyId: string) => {
-		if (window.confirm("Permanently revoke this key? Apps using it will stop working immediately.")) {
-			revokeMutation.mutate(keyId);
-		}
-	};
-
-	const handleCopyMasked = async (id: string, maskedKey: string) => {
-		await navigator.clipboard.writeText(maskedKey);
-		setCopiedId(id);
-		setTimeout(() => setCopiedId(null), 2000);
+	const handleRevoke = (key: SdkKey) => {
+		setRevokingKey(key);
 	};
 
 	const keyList = keys ?? [];
@@ -110,15 +166,6 @@ function SdkKeysPage() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center gap-3">
-				<Button isIconOnly variant="ghost">
-					<Link
-						to="/projects/$projectSlug/flags"
-						params={{ projectSlug }}
-						className="flex items-center justify-center"
-					>
-						<ArrowLeftIcon className="h-4 w-4" />
-					</Link>
-				</Button>
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">SDK Keys</h1>
 					<p className="mt-1 text-sm text-default-500">
@@ -126,14 +173,18 @@ function SdkKeysPage() {
 						server keys must be kept secret.
 					</p>
 				</div>
+				<Button
+					variant="outline"
+					className="gap-2"
+					onPress={() => setIsSnippetOpen(true)}>
+					<CodeIcon className="h-4 w-4" />
+					Code Snippets
+				</Button>
 				<PermissionGuard
 					permission="sdk-key:create"
 					mode="disable"
 					fallback={
-						<Button
-							variant="primary"
-							className="gap-2"
-							isDisabled>
+						<Button variant="primary" className="gap-2" isDisabled>
 							<PlusIcon className="h-4 w-4" />
 							Generate Key
 						</Button>
@@ -141,8 +192,7 @@ function SdkKeysPage() {
 					<Button
 						variant="primary"
 						className="gap-2"
-						onPress={() => setIsCreateOpen(true)}
-					>
+						onPress={() => setIsCreateOpen(true)}>
 						<PlusIcon className="h-4 w-4" />
 						Generate Key
 					</Button>
@@ -184,7 +234,9 @@ function SdkKeysPage() {
 					</div>
 					<div>
 						<p className="text-sm font-medium text-default-500">Deactivated</p>
-						<p className="text-2xl font-bold text-foreground">{inactiveCount}</p>
+						<p className="text-2xl font-bold text-foreground">
+							{inactiveCount}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -197,8 +249,7 @@ function SdkKeysPage() {
 						value={searchQuery}
 						onChange={setSearchQuery}
 						aria-label="Search SDK Keys"
-						className="w-full max-w-xs"
-					>
+						className="w-full max-w-xs">
 						<SearchField.Group>
 							<SearchField.SearchIcon />
 							<SearchField.Input placeholder="Search by name or hint..." />
@@ -209,22 +260,19 @@ function SdkKeysPage() {
 						<Button
 							variant={typeFilter === "all" ? "primary" : "outline"}
 							onPress={() => setTypeFilter("all")}
-							size="sm"
-						>
+							size="sm">
 							All
 						</Button>
 						<Button
 							variant={typeFilter === "client" ? "primary" : "outline"}
 							onPress={() => setTypeFilter("client")}
-							size="sm"
-						>
+							size="sm">
 							Client
 						</Button>
 						<Button
 							variant={typeFilter === "server" ? "primary" : "outline"}
 							onPress={() => setTypeFilter("server")}
-							size="sm"
-						>
+							size="sm">
 							Server
 						</Button>
 					</div>
@@ -237,152 +285,180 @@ function SdkKeysPage() {
 						<Skeleton key={i} className="h-14 w-full rounded-lg" />
 					))}
 				</div>
-			) : keyList.length === 0 ? (
-				<EmptyState
-					title="No SDK keys"
-					description="Generate your first key to connect your application to Flagix."
-					actionLabel="Generate Key"
-					onAction={() => setIsCreateOpen(true)}
-				/>
-			) : filteredKeys.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-12 text-center">
-					<p className="text-default-500">No keys matches your search or filter.</p>
-				</div>
 			) : (
 				<Table aria-label="SDK Keys">
-					<TableHeader>
-						<TableColumn>Name / Creator</TableColumn>
-						<TableColumn>Type</TableColumn>
-						<TableColumn>Key</TableColumn>
-						<TableColumn>Status</TableColumn>
-						<TableColumn>Last Used</TableColumn>
-						<TableColumn>Created</TableColumn>
-						<TableColumn>Actions</TableColumn>
-					</TableHeader>
-					<TableBody items={filteredKeys}>
-						{(key) => (
-							<TableRow key={key.id}>
-								<TableCell>
-									<div className="flex flex-col gap-0.5">
-										<span className="font-semibold text-foreground">{key.name}</span>
-										{key.creator && (
-											<span className="text-xs text-default-500 font-normal">
-												by {key.creator.name} ({key.creator.email})
-											</span>
-										)}
-									</div>
-								</TableCell>
-								<TableCell>
-									<Badge
-										color={key.type === "server" ? "warning" : "default"}
-										variant="soft"
-									>
-										{key.type}
-									</Badge>
-								</TableCell>
-								<TableCell>
-									<div className="flex items-center gap-2">
-										<code className="text-xs font-mono text-default-700 bg-background-tertiary px-2 py-0.5 rounded border border-divider">
-											{key.maskedKey}
-										</code>
-										<Tooltip>
-											<Tooltip.Trigger>
-												<Button
-													isIconOnly
-													size="sm"
-													variant="ghost"
-													onPress={() =>
-														handleCopyMasked(key.id, key.maskedKey)
-													}
-												>
-													{copiedId === key.id ? (
-														<CheckIcon className="h-3 w-3 text-success" />
-													) : (
-														<CopyIcon className="h-3 w-3" />
-													)}
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content>Copy masked key</Tooltip.Content>
-										</Tooltip>
-
-										<Tooltip>
-											<Tooltip.Trigger>
-												<Button
-													isIconOnly
-													size="sm"
-													variant="ghost"
-													onPress={() => {
-														setSelectedKeyForSnippet(key);
-														setIsSnippetOpen(true);
-													}}
-												>
-													<CodeIcon className="h-3 w-3" />
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content>Integration snippet</Tooltip.Content>
-										</Tooltip>
-									</div>
-								</TableCell>
-								<TableCell>
-									<AsyncSwitch
-										isSelected={key.isActive}
-										action={async () => {
-											await toggleMutation.mutateAsync({
-												keyId: key.id,
-												isActive: !key.isActive,
-											});
-										}}
-										showToast
-										actionName={key.isActive ? "Deactivate SDK Key" : "Activate SDK Key"}
-										aria-label={`Toggle active state of ${key.name}`}
-									/>
-								</TableCell>
-								<TableCell className="text-sm text-default-600">
-									{key.lastUsedAt
-										? new Date(key.lastUsedAt).toLocaleString()
-										: "Never"}
-								</TableCell>
-								<TableCell className="text-sm text-default-600">
-									{new Date(key.createdAt).toLocaleDateString()}
-								</TableCell>
-								<TableCell>
-									<PermissionGuard
-										permission="sdk-key:delete"
-										mode="disable"
-										fallback={
-											<Tooltip>
-												<Tooltip.Trigger>
+					<Table.ScrollContainer>
+						<Table.Content>
+							<Table.Header>
+								<Table.Column isRowHeader>Name</Table.Column>
+								<Table.Column>Type</Table.Column>
+								<Table.Column>Key</Table.Column>
+								<Table.Column>Status</Table.Column>
+								<Table.Column>Last Used</Table.Column>
+								<Table.Column>Created By</Table.Column>
+								<Table.Column>Created</Table.Column>
+								<Table.Column>Actions</Table.Column>
+							</Table.Header>
+							<Table.Body
+								items={filteredKeys}
+								renderEmptyState={() => (
+									<EmptyState title="No SDK Keys Found" className="min-h-32">
+										{!keyList.length && (
+											<div className="text-center flex flex-col items-center gap-2">
+												<h3 className="font-semibold text-foreground">
+													No SDK Keys Found
+												</h3>
+												<p>Generate a new SDK key to get started.</p>
+												<PermissionGuard
+													permission="sdk-key:create"
+													mode="disable"
+													fallback={
+														<Button variant="primary" isDisabled>
+															<PlusIcon className="h-4 w-4" />
+															Generate Key
+														</Button>
+													}>
 													<Button
-														isIconOnly
-														size="sm"
-														variant="ghost"
-														className="text-danger"
-														isDisabled>
-														<TrashIcon className="h-4 w-4" />
+														variant="primary"
+														onPress={() => setIsCreateOpen(true)}
+														className="gap-2">
+														<PlusIcon className="h-4 w-4" />
+														Generate Key
 													</Button>
-												</Tooltip.Trigger>
-												<Tooltip.Content>Revoke key (Admins only)</Tooltip.Content>
-											</Tooltip>
-										}>
-										<Tooltip>
-											<Tooltip.Trigger>
-												<Button
-													isIconOnly
-													size="sm"
-													variant="ghost"
-													className="text-danger"
-													onPress={() => handleRevoke(key.id)}
-												>
-													<TrashIcon className="h-4 w-4" />
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content>Permanently Revoke Key</Tooltip.Content>
-										</Tooltip>
-									</PermissionGuard>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
+												</PermissionGuard>
+											</div>
+										)}
+										{filteredKeys.length === 0 && keyList.length > 0 && (
+											<div className="text-center flex flex-col items-center gap-2">
+												<h3 className="font-semibold text-foreground">
+													No SDK Keys Match Your Filters
+												</h3>
+												<p>
+													Try adjusting your search or filter settings to find
+													what you're looking for.
+												</p>
+											</div>
+										)}
+									</EmptyState>
+								)}>
+								{(key) => (
+									<Table.Row key={key.id}>
+										<Table.Cell>
+											<span className="font-semibold text-foreground">
+												{key.name}
+											</span>
+										</Table.Cell>
+										<Table.Cell>
+											<Chip
+												color={
+													key.type === "server"
+														? "warning"
+														: key.type === "client"
+															? "accent"
+															: "default"
+												}
+												variant="soft">
+												{key.type}
+											</Chip>
+										</Table.Cell>
+										<Table.Cell>
+											<KeyInputCell
+												sdkKey={key}
+											/>
+										</Table.Cell>
+										<TableCell>
+											<AsyncSwitch
+												isSelected={key.isActive}
+												action={async () => {
+													await toggleMutation.mutateAsync({
+														keyId: key.id,
+														isActive: !key.isActive,
+													});
+												}}
+												showToast
+												actionName={
+													key.isActive
+														? "Deactivate SDK Key"
+														: "Activate SDK Key"
+												}
+												aria-label={`Toggle active state of ${key.name}`}
+											/>
+										</TableCell>
+										<TableCell className="text-sm text-default-600">
+											{key.lastUsedAt
+												? formatDistanceToNow(new Date(key.lastUsedAt), {
+														addSuffix: true,
+													})
+												: "Never"}
+										</TableCell>
+										<Table.Cell>
+											{key.creator ? (
+												<div className="flex items-center gap-2">
+													<UserAvatar
+														user={key.creator}
+														size="sm"
+														className="size-6 rounded-full"
+														fallbackClassName="text-xs"
+													/>
+													<div className="flex flex-col">
+														<span className="text-sm font-medium text-foreground">
+															{key.creator.name}
+														</span>
+														<span className="text-xs text-default-400">
+															{key.creator.email}
+														</span>
+													</div>
+												</div>
+											) : (
+												<span className="text-sm text-default-400">System</span>
+											)}
+										</Table.Cell>
+										<TableCell className="text-sm text-default-600">
+											{formatDate(key.createdAt)}
+										</TableCell>
+										<Table.Cell>
+											<PermissionGuard
+												permission="sdk-key:delete"
+												mode="disable"
+												fallback={
+													<Tooltip>
+														<Tooltip.Trigger>
+															<Button
+																isIconOnly
+																size="sm"
+																variant="ghost"
+																className="text-danger"
+																isDisabled>
+																<TrashIcon className="h-4 w-4" />
+															</Button>
+														</Tooltip.Trigger>
+														<Tooltip.Content>
+															Revoke key (Admins only)
+														</Tooltip.Content>
+													</Tooltip>
+												}>
+												<Tooltip>
+													<Tooltip.Trigger>
+														<Button
+															isIconOnly
+															size="sm"
+															variant="ghost"
+															className="text-danger"
+															onPress={() => handleRevoke(key)}>
+															<TrashIcon className="h-4 w-4" />
+														</Button>
+													</Tooltip.Trigger>
+													<Tooltip.Content>
+														Permanently Revoke Key
+													</Tooltip.Content>
+												</Tooltip>
+											</PermissionGuard>
+										</Table.Cell>
+									</Table.Row>
+								)}
+							</Table.Body>
+						</Table.Content>
+					</Table.ScrollContainer>
 				</Table>
 			)}
 
@@ -402,18 +478,27 @@ function SdkKeysPage() {
 				createdKey={displayedKey}
 			/>
 
-			{selectedKeyForSnippet && (
-				<CodeSnippetModal
-					isOpen={isSnippetOpen}
-					onClose={() => {
-						setIsSnippetOpen(false);
-						setSelectedKeyForSnippet(null);
-					}}
-					rawKey={selectedKeyForSnippet.maskedKey}
-					keyType={selectedKeyForSnippet.type}
-				/>
-			)}
+			<CodeSnippetModal
+				isOpen={isSnippetOpen}
+				onClose={() => setIsSnippetOpen(false)}
+				keys={keyList}
+			/>
+
+			<ConfirmModal
+				isOpen={!!revokingKey}
+				onOpenChange={(open) => !open && setRevokingKey(null)}
+				title={`Revoke SDK Key "${revokingKey?.name}"?`}
+				description="Are you sure you want to permanently revoke this key? Apps using it will stop working immediately."
+				variant="danger"
+				confirmText="Revoke"
+				cancelText="Cancel"
+				onConfirm={async () => {
+					if (revokingKey) {
+						await revokeMutation.mutateAsync(revokingKey.id);
+						setRevokingKey(null);
+					}
+				}}
+			/>
 		</div>
 	);
 }
-

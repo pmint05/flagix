@@ -71,7 +71,7 @@ export class FlagLoader {
           isEnabled: r.isEnabled,
         }),
       ),
-      isClientVisible: flag.isClientVisible,
+      visibility: flag.visibility as LoadedFlag['visibility'],
     };
   }
 
@@ -135,7 +135,7 @@ export class FlagLoader {
               isEnabled: r.isEnabled,
             }),
           ),
-          isClientVisible: flag.isClientVisible,
+          visibility: flag.visibility as LoadedFlag['visibility'],
         };
       });
   }

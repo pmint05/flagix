@@ -179,6 +179,7 @@ export class FeatureFlagsRepository {
           name: input.name,
           description: input.description ?? null,
           flagType: input.flagType,
+          visibility: input.visibility ?? 'all',
           createdBy: actorId ?? null,
         })
         .returning();
@@ -223,6 +224,9 @@ export class FeatureFlagsRepository {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.description !== undefined && {
           description: input.description,
+        }),
+        ...(input.visibility !== undefined && {
+          visibility: input.visibility,
         }),
         version: currentVersion + 1,
         updatedBy: actorId ?? null,
@@ -466,15 +470,17 @@ export class FeatureFlagsRepository {
           .where(eq(flagStates.id, currentFlagState.id));
       }
 
-      // F. Update flag attributes (name, description, version)
+      // F. Update flag attributes (name, description, version, visibility)
       const nextName = payload.name !== undefined ? payload.name : flag.name;
       const nextDesc = payload.description !== undefined ? payload.description : flag.description;
+      const nextVisibility = payload.visibility !== undefined ? payload.visibility : flag.visibility;
 
       const [updatedFlag] = await tx
         .update(featureFlags)
         .set({
           name: nextName,
           description: nextDesc,
+          visibility: nextVisibility,
           version: flag.version + 1,
           updatedBy: actorId ?? null,
           updatedAt: new Date(),

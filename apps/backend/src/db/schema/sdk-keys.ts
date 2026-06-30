@@ -29,6 +29,7 @@ export const sdkKeys = pgTable(
     type: text('type', { enum: ['client', 'server'] })
       .notNull()
       .default('client'),
+    rawKey: text('raw_key'),
     isActive: boolean('is_active').notNull().default(true),
     createdBy: text('created_by').references(() => user.id),
     updatedBy: text('updated_by').references(() => user.id),

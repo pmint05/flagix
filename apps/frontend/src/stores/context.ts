@@ -8,6 +8,7 @@ interface ContextState {
 	setOrganization: (org: Organization | null) => void;
 	setProject: (project: Project | null) => void;
 	setEnvironment: (env: Environment | null) => void;
+	clearContext: () => void;
 }
 
 export const useContextStore = createPersistedStore<ContextState>(
@@ -18,6 +19,11 @@ export const useContextStore = createPersistedStore<ContextState>(
 		setOrganization: (org) => set({ selectedOrganization: org }),
 		setProject: (project) => set({ selectedProject: project }),
 		setEnvironment: (env) => set({ selectedEnvironment: env }),
+		clearContext: () => set({
+			selectedOrganization: null,
+			selectedProject: null,
+			selectedEnvironment: null,
+		}),
 	}),
 	{ name: 'flagix.context' },
 );
