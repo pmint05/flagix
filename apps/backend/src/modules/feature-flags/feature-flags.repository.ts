@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, isNull, count, inArray } from 'drizzle-orm';
+import { eq, and, isNull, count, inArray, asc } from 'drizzle-orm';
 import {
   featureFlags,
   flagStates,
@@ -99,6 +99,20 @@ export class FeatureFlagsRepository {
       .from(variations)
       .where(
         and(eq(variations.featureFlagId, flagId), isNull(variations.deletedAt)),
+      )
+      .orderBy(asc(variations.key));
+  }
+
+  async findRulesForFlag(flagId: string, envId: string) {
+    return this.db
+      .select()
+      .from(targetingRules)
+      .where(
+        and(
+          eq(targetingRules.featureFlagId, flagId),
+          eq(targetingRules.environmentId, envId),
+          isNull(targetingRules.deletedAt),
+        ),
       );
   }
 
@@ -539,6 +553,11 @@ export class FeatureFlagsRepository {
       // 4. Execute updates in transaction with safe dependency order
       // A. Variations updates (insert / update)
       if (variationsUpdated) {
+        await tx
+          .update(variations)
+          .set({ isDefault: false })
+          .where(eq(variations.featureFlagId, flagId));
+
         const currentIds = new Set(currentVariations.map((cv) => cv.id));
         for (const [index, tv] of targetVariations.entries()) {
           if (currentIds.has(tv.id)) {

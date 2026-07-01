@@ -17,7 +17,12 @@ import {
   resolveFlagAction,
   resolveFlagStateAction,
 } from '@/common/audit/resolve-action';
-import { sanitizeFlag } from '@/common/audit/sanitize';
+import {
+  sanitizeFlag,
+  sanitizeRule,
+  sanitizeVariation,
+  sanitizeState,
+} from '@/common/audit/sanitize';
 import type {
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
@@ -85,6 +90,14 @@ export class FeatureFlagsService {
         isDefault: v.key === defaultKey,
         color: v.color ?? COLOR_KEYS[index % 12],
       }));
+
+      const keys = variationData.map((v) => v.key);
+      const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
+      if (duplicateKeys.length > 0) {
+        throw new BadRequestException(
+          `Duplicate variation keys: ${[...new Set(duplicateKeys)].join(', ')}`,
+        );
+      }
 
       const defaultCount = variationData.filter((v) => v.isDefault).length;
       if (defaultCount === 0) {
@@ -164,7 +177,10 @@ export class FeatureFlagsService {
 
     const flagVariations = await this.flagRepo.findVariationsForFlag(flagId);
     const flagStates = await this.flagRepo.findFlagStatesForFlag(flagId, envId);
-    return { ...flag, variations: flagVariations, states: flagStates };
+    const rules = envId
+      ? await this.flagRepo.findRulesForFlag(flagId, envId)
+      : [];
+    return { ...flag, variations: flagVariations, states: flagStates, rules };
   }
 
   async findByKey(
@@ -182,7 +198,10 @@ export class FeatureFlagsService {
       flag.id,
       envId,
     );
-    return { ...flag, variations: flagVariations, states: flagStates };
+    const rules = envId
+      ? await this.flagRepo.findRulesForFlag(flag.id, envId)
+      : [];
+    return { ...flag, variations: flagVariations, states: flagStates, rules };
   }
 
   async update(orgId: string, flagId: string, dto: UpdateFeatureFlagDto) {
@@ -290,12 +309,12 @@ export class FeatureFlagsService {
         organizationId: orgId,
         projectId: flag.projectId,
         environmentId: envId,
-        entityType: 'flag_state',
+        entityType: 'feature_flag',
         entityId: flagId,
         before: currentState,
         after: updated,
         resolveAction: resolveFlagStateAction,
-        sanitize: sanitizeFlag,
+        sanitize: sanitizeState,
       });
     }
 
@@ -308,6 +327,16 @@ export class FeatureFlagsService {
     envId: string,
     dto: PatchFeatureFlagConfigDto,
   ) {
+    if (dto.variations && dto.variations.length > 0) {
+      const keys = dto.variations.map((v) => v.key);
+      const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
+      if (duplicateKeys.length > 0) {
+        throw new BadRequestException(
+          `Duplicate variation keys: ${[...new Set(duplicateKeys)].join(', ')}`,
+        );
+      }
+    }
+
     const actorId = getActorId();
     const beforeConfig = await this.findOne(orgId, flagId, envId).catch(
       () => null,
@@ -325,17 +354,175 @@ export class FeatureFlagsService {
       const afterConfig = await this.findOne(orgId, flagId, envId).catch(
         () => null,
       );
-      await this.auditLogsService.recordChange({
-        organizationId: orgId,
-        projectId: updated.projectId,
-        environmentId: envId,
-        entityType: 'feature_flag',
-        entityId: flagId,
-        before: beforeConfig,
-        after: afterConfig,
-        resolveAction: resolveFlagAction,
-        sanitize: sanitizeFlag,
-      });
+
+      if (afterConfig) {
+        // 1. Visibility Update
+        if (beforeConfig.visibility !== afterConfig.visibility) {
+          await this.auditLogsService.recordChange({
+            organizationId: orgId,
+            projectId: updated.projectId,
+            environmentId: envId,
+            entityType: 'feature_flag',
+            entityId: flagId,
+            before: { visibility: beforeConfig.visibility },
+            after: { visibility: afterConfig.visibility },
+            resolveAction: () => 'FLAG_VISIBILITY_UPDATE',
+            sanitize: (val) => val,
+          });
+        }
+
+        // 2. Rules Update
+        const areRulesEqual = (b: any[], a: any[]) => {
+          const cleanB = JSON.stringify(
+            (b ?? []).map((r) => ({
+              ruleType: r.ruleType,
+              isEnabled: r.isEnabled,
+              variationId: r.variationId,
+              conditions: r.conditions,
+            })),
+          );
+          const cleanA = JSON.stringify(
+            (a ?? []).map((r) => ({
+              ruleType: r.ruleType,
+              isEnabled: r.isEnabled,
+              variationId: r.variationId,
+              conditions: r.conditions,
+            })),
+          );
+          return cleanB === cleanA;
+        };
+
+        if (!areRulesEqual(beforeConfig.rules, afterConfig.rules)) {
+          await this.auditLogsService.recordChange({
+            organizationId: orgId,
+            projectId: updated.projectId,
+            environmentId: envId,
+            entityType: 'feature_flag',
+            entityId: flagId,
+            before: beforeConfig.rules,
+            after: afterConfig.rules,
+            resolveAction: () => 'FLAG_RULE_UPDATE',
+            sanitize: (rules) => rules.map(sanitizeRule),
+          });
+        }
+
+        // 3. Variations Update
+        const areVariationsEqual = (b: any[], a: any[]) => {
+          const sortFn = (x: any, y: any) => (x.key || '').localeCompare(y.key || '');
+          const sortedB = [...(b ?? [])].sort(sortFn);
+          const sortedA = [...(a ?? [])].sort(sortFn);
+
+          const cleanB = JSON.stringify(
+            sortedB.map((v) => ({
+              key: v.key,
+              value: v.value,
+              description: v.description,
+              isDefault: v.isDefault,
+            })),
+          );
+          const cleanA = JSON.stringify(
+            sortedA.map((v) => ({
+              key: v.key,
+              value: v.value,
+              description: v.description,
+              isDefault: v.isDefault,
+            })),
+          );
+          return cleanB === cleanA;
+        };
+
+        if (!areVariationsEqual(beforeConfig.variations, afterConfig.variations)) {
+          const sortFn = (x: any, y: any) => (x.key || '').localeCompare(y.key || '');
+          const sortedB = [...(beforeConfig.variations ?? [])].sort(sortFn);
+          const sortedA = [...(afterConfig.variations ?? [])].sort(sortFn);
+
+          await this.auditLogsService.recordChange({
+            organizationId: orgId,
+            projectId: updated.projectId,
+            environmentId: envId,
+            entityType: 'feature_flag',
+            entityId: flagId,
+            before: sortedB,
+            after: sortedA,
+            resolveAction: () => 'FLAG_VARIATION_UPDATE',
+            sanitize: (variations) => variations.map(sanitizeVariation),
+          });
+        }
+
+        // 4. State Update (isEnabled or status)
+        const stateBefore = beforeConfig.states?.find(
+          (s) => s.environmentId === envId,
+        );
+        const stateAfter = afterConfig.states?.find(
+          (s) => s.environmentId === envId,
+        );
+
+        if (stateBefore && stateAfter) {
+          let stateAction: string | null = null;
+          if (stateBefore.status !== stateAfter.status) {
+            if (stateAfter.status === 'archived') {
+              stateAction = 'FLAG_ARCHIVE';
+            } else if (
+              stateAfter.status === 'active' &&
+              stateBefore.status === 'draft'
+            ) {
+              stateAction = 'FLAG_ACTIVATE';
+            } else {
+              stateAction = 'FLAG_UPDATE';
+            }
+          } else if (stateBefore.isEnabled !== stateAfter.isEnabled) {
+            stateAction = 'FLAG_TOGGLE';
+          } else if (
+            stateBefore.defaultVariationId !== stateAfter.defaultVariationId ||
+            stateBefore.offVariationId !== stateAfter.offVariationId
+          ) {
+            stateAction = 'FLAG_UPDATE';
+          }
+
+          if (stateAction) {
+            await this.auditLogsService.recordChange({
+              organizationId: orgId,
+              projectId: updated.projectId,
+              environmentId: envId,
+              entityType: 'feature_flag',
+              entityId: flagId,
+              before: stateBefore,
+              after: stateAfter,
+              resolveAction: () => stateAction!,
+              sanitize: sanitizeState,
+            });
+          }
+        }
+
+        // 5. Fallback: if name, description, etc. changed but nothing above matched
+        const hasOtherChanges =
+          beforeConfig.name !== afterConfig.name ||
+          beforeConfig.description !== afterConfig.description ||
+          beforeConfig.isTemporary !== afterConfig.isTemporary;
+
+        const matchedAny =
+          beforeConfig.visibility !== afterConfig.visibility ||
+          !areRulesEqual(beforeConfig.rules, afterConfig.rules) ||
+          !areVariationsEqual(beforeConfig.variations, afterConfig.variations) ||
+          (stateBefore &&
+            stateAfter &&
+            (stateBefore.status !== stateAfter.status ||
+              stateBefore.isEnabled !== stateAfter.isEnabled));
+
+        if (hasOtherChanges && !matchedAny) {
+          await this.auditLogsService.recordChange({
+            organizationId: orgId,
+            projectId: updated.projectId,
+            environmentId: envId,
+            entityType: 'feature_flag',
+            entityId: flagId,
+            before: beforeConfig,
+            after: afterConfig,
+            resolveAction: () => 'FLAG_UPDATE',
+            sanitize: sanitizeFlag,
+          });
+        }
+      }
     }
 
     if (this.flagChangePublisher) {

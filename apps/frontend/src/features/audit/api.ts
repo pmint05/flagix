@@ -14,6 +14,12 @@ export interface AuditLogQueryParams {
 	offset?: number;
 	from?: string;
 	to?: string;
+	actorId?: string;
+	actorEmail?: string;
+	search?: string;
+	sort?: string;
+	page?: number;
+	pageSize?: number;
 }
 
 export const createAuditLogsApi = (orgId: string) => {

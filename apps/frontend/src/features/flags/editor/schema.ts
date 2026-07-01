@@ -197,6 +197,20 @@ export const flagEditorFormSchema = z
 	.superRefine((data, ctx) => {
 		const validVariationIds = new Set(data.variations.map((v) => v.id));
 
+		// Validate unique variation keys
+		const seenKeys = new Set<string>();
+		data.variations.forEach((v, idx) => {
+			if (seenKeys.has(v.key)) {
+				ctx.addIssue({
+					code: "custom",
+					message: `Duplicate variation key: "${v.key}"`,
+					path: ["variations", idx, "key"],
+				});
+			} else {
+				seenKeys.add(v.key);
+			}
+		});
+
 		if (
 			data.defaultVariationId &&
 			!validVariationIds.has(data.defaultVariationId)

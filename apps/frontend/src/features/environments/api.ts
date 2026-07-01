@@ -63,6 +63,18 @@ export function useEnvironments() {
 	});
 }
 
+export function useProjectEnvironments(projectId?: string) {
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	const isHydrated = useIsHydrated();
+
+	return useQuery({
+		queryKey: [...ENVIRONMENTS_KEY, orgId, projectId],
+		queryFn: () => createEnvironmentsApi(orgId!, projectId!).list(),
+		enabled: isHydrated && !!orgId && !!projectId,
+		staleTime: 1000 * 60 * 5,
+	});
+}
+
 export function useEnvironment(id: string) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const projectId = useCurrentProject()?.id;

@@ -114,10 +114,8 @@ function RuleCardComponent({
 					key="1"
 					aria-label="Rule Settings"
 					className="group/accordion">
-					{({ isExpanded }) => (
-						<>
-							<Accordion.Heading>
-								<Accordion.Trigger
+					<Accordion.Heading>
+						<Accordion.Trigger
 							className={cn(
 								"flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0",
 							)}>
@@ -256,11 +254,9 @@ function RuleCardComponent({
 					</Accordion.Heading>
 					<Accordion.Panel className="mt-0 border border-t-0 bg-surface rounded-b-3xl overflow-hidden">
 						<Accordion.Body className="p-4 ">
-							{isExpanded && renderContent()}
+							{renderContent()}
 						</Accordion.Body>
 					</Accordion.Panel>
-						</>
-					)}
 				</Accordion.Item>
 			</Accordion>
 		</div>

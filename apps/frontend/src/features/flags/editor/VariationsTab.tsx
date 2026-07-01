@@ -27,6 +27,7 @@ interface VariationInputProps {
 	value: string;
 	onChange: (val: string) => void;
 	readOnly?: boolean;
+	error?: any;
 	placeholder?: string;
 	className?: string;
 	prefix?: React.ReactNode;
@@ -36,6 +37,7 @@ function VariationInput({
 	value,
 	onChange,
 	readOnly,
+	error,
 	placeholder,
 	className,
 	prefix,
@@ -47,7 +49,7 @@ function VariationInput({
 	}, [value]);
 
 	return (
-		<TextField variant="secondary">
+		<TextField isInvalid={!!error} variant="secondary">
 			<InputGroup>
 				{prefix && <InputGroup.Prefix>{prefix}</InputGroup.Prefix>}
 				<InputGroup.Input
@@ -69,6 +71,7 @@ function VariationInput({
 					className={className}
 				/>
 			</InputGroup>
+			{error && <FieldError className="text-xs text-danger">{error.message}</FieldError>}
 		</TextField>
 	);
 }
@@ -164,9 +167,19 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 
 	const handleAdd = () => {
 		if (isBoolean) return;
+
+		const getUniqueVariationKey = () => {
+			const keys = new Set(fields.map((f) => f.key));
+			let i = fields.length + 1;
+			while (keys.has(`variation-${i}`)) {
+				i++;
+			}
+			return `variation-${i}`;
+		};
+
 		append({
 			id: crypto.randomUUID(),
-			key: `variation-${fields.length + 1}`,
+			key: getUniqueVariationKey(),
 			value: "new-value",
 			description: "",
 			color: COLOR_KEYS[fields.length % COLOR_KEYS.length],
@@ -215,11 +228,12 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 												<Controller
 													name={`variations.${index}.key` as const}
 													control={control}
-													render={({ field: keyField }) => (
+													render={({ field: keyField, fieldState }) => (
 														<VariationInput
 															value={keyField.value || ""}
 															onChange={keyField.onChange}
 															readOnly={isBoolean}
+															error={fieldState.error}
 															placeholder="Key (Optional)"
 															className={
 																isBoolean

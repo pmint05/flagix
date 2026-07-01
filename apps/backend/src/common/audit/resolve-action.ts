@@ -32,11 +32,22 @@ function isDeleted(
 }
 
 export function resolveFlagAction(
-  before: FeatureFlagEntity | null,
-  after: FeatureFlagEntity | null,
+  before: any | null,
+  after: any | null,
 ): string {
   if (!before && after) return 'FLAG_CREATE';
   if (isDeleted(before, after)) return 'FLAG_DELETE';
+  if (before && after) {
+    if (before.visibility !== after.visibility) return 'FLAG_VISIBILITY_UPDATE';
+
+    const rulesBefore = JSON.stringify(before.rules ?? []);
+    const rulesAfter = JSON.stringify(after.rules ?? []);
+    if (rulesBefore !== rulesAfter) return 'FLAG_RULE_UPDATE';
+
+    const varBefore = JSON.stringify(before.variations ?? []);
+    const varAfter = JSON.stringify(after.variations ?? []);
+    if (varBefore !== varAfter) return 'FLAG_VARIATION_UPDATE';
+  }
   return 'FLAG_UPDATE';
 }
 
@@ -44,9 +55,8 @@ export function resolveFlagStateAction(
   before: FlagStateEntity | null,
   after: FlagStateEntity | null,
 ): string {
-  if (!before && after) return 'FLAG_STATE_CREATE';
-  if (isDeleted(before, after)) return 'FLAG_STATE_DELETE';
-  if (!before || !after) return 'FLAG_STATE_UPDATE';
+  if (isDeleted(before, after)) return 'FLAG_UPDATE';
+  if (!before || !after) return 'FLAG_UPDATE';
 
   if (before.status !== after.status) {
     if (after.status === 'archived') return 'FLAG_ARCHIVE';
@@ -56,21 +66,14 @@ export function resolveFlagStateAction(
 
   if (before.isEnabled !== after.isEnabled) return 'FLAG_TOGGLE';
 
-  return 'FLAG_STATE_UPDATE';
+  return 'FLAG_UPDATE';
 }
 
 export function resolveRuleAction(
   before: TargetingRuleEntity | null,
   after: TargetingRuleEntity | null,
 ): string {
-  if (!before && after) return 'RULE_CREATE';
-  if (isDeleted(before, after)) return 'RULE_DELETE';
-  if (!before || !after) return 'RULE_UPDATE';
-
-  if (before.isEnabled !== after.isEnabled) return 'RULE_TOGGLE';
-  if (before.priority !== after.priority) return 'RULE_REORDER';
-
-  return 'RULE_UPDATE';
+  return 'FLAG_RULE_UPDATE';
 }
 
 export function resolveSdkKeyAction(
@@ -78,9 +81,10 @@ export function resolveSdkKeyAction(
   after: SdkKeyEntity | null,
 ): string {
   if (!before && after) return 'SDK_KEY_CREATE';
-  if (isDeleted(before, after)) return 'SDK_KEY_DELETE';
+  if (isDeleted(before, after)) return 'SDK_KEY_REVOKE';
   if (before && after) {
-    if (before.isActive && !after.isActive) return 'SDK_KEY_REVOKE';
+    if (!before.isActive && after.isActive) return 'SDK_KEY_ENABLE';
+    if (before.isActive && !after.isActive) return 'SDK_KEY_DISABLE';
     if (before.keyHash && after.keyHash && before.keyHash !== after.keyHash)
       return 'SDK_KEY_ROTATE';
     if (before.keyHint !== after.keyHint) return 'SDK_KEY_ROTATE';

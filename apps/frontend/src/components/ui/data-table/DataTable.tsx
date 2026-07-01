@@ -16,7 +16,7 @@ import { TrayIcon } from "@phosphor-icons/react";
 
 interface DataTableProps<TData> {
 	data: TData[];
-	columns: ColumnDef<TData, unknown>[];
+	columns: ColumnDef<TData, any>[];
 	state: TableState;
 	onStateChange: (updates: Partial<TableState>) => void;
 	pageCount?: number;
@@ -34,6 +34,8 @@ interface DataTableProps<TData> {
 	showPageJump?: boolean;
 	isLoading?: boolean;
 	getRowId?: (row: TData) => string;
+	columnVisibility?: Record<string, boolean>;
+	onColumnVisibilityChange?: (updater: any) => void;
 }
 
 function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
@@ -74,6 +76,8 @@ export function DataTable<TData>({
 	showPageSizeSelector = true,
 	showPageJump = false,
 	getRowId,
+	columnVisibility,
+	onColumnVisibilityChange,
 }: DataTableProps<TData>) {
 	const [internalSelection, setInternalSelection] = useState<Selection>(
 		new Set(),
@@ -97,7 +101,7 @@ export function DataTable<TData>({
 		return Object.fromEntries(keys.map((id) => [id, true]));
 	}, [resolvedSelectionKeys]);
 
-	const selectionColumn: ColumnDef<TData, unknown> = useMemo(
+	const selectionColumn: ColumnDef<TData, any> = useMemo(
 		() => ({
 			id: "__selection",
 			size: 40,
@@ -142,7 +146,8 @@ export function DataTable<TData>({
 	const table = useReactTable({
 		data,
 		columns: allColumns,
-		state: { sorting, pagination, globalFilter: state.query, rowSelection },
+		state: { sorting, pagination, globalFilter: state.query, rowSelection, columnVisibility },
+		onColumnVisibilityChange,
 		onRowSelectionChange: (updater) => {
 			const next = typeof updater === "function" ? updater(rowSelection) : updater;
 			const keys = new Set(Object.keys(next).filter((k) => next[k]));
@@ -202,9 +207,8 @@ export function DataTable<TData>({
 			}}>
 			<Table.Header
 				className={isHeaderSticky ? "sticky top-0 z-20" : undefined}>
-				{table.getHeaderGroups()[0]?.headers.map((header, idx) => {
-					const col = allColumns[idx];
-					const colDef = col as ColumnDef<TData, unknown> & {
+				{table.getHeaderGroups()[0]?.headers.map((header) => {
+					const colDef = header.column.columnDef as ColumnDef<TData, any> & {
 						enableSorting?: boolean;
 					};
 					const canSort =
@@ -215,7 +219,7 @@ export function DataTable<TData>({
 							id={header.id}
 							allowsSorting={canSort}
 							isRowHeader={
-								!enableRowSelection && idx === (enableRowSelection ? 1 : 0)
+								!enableRowSelection && table.getHeaderGroups()[0].headers.indexOf(header) === 0
 							}>
 							{canSort ? (
 								({ sortDirection }) => (
@@ -247,19 +251,6 @@ export function DataTable<TData>({
 				})}
 			</Table.Header>
 			<Table.Body
-				items={
-					isLoading
-						? Array.from({ length: 5 }).map((_, rowIndex) => ({
-								id: `skeleton-row-${rowIndex}`,
-								isSkeleton: true as const,
-								rowIndex,
-							}))
-						: rows.map((row) => ({
-								id: row.id,
-								isSkeleton: false as const,
-								row,
-							}))
-				}
 				renderEmptyState={() =>
 					emptyState ?? (
 						<EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center min-h-42">
@@ -270,12 +261,12 @@ export function DataTable<TData>({
 						</EmptyState>
 					)
 				}>
-				{(item: any) => (
-					<Table.Row key={item.id} id={item.id}>
-						{item.isSkeleton
-							? allColumns.map((_, colIndex) => (
+				{isLoading
+					? Array.from({ length: 5 }).map((_, rowIndex) => (
+							<Table.Row key={`skeleton-row-${rowIndex}`} id={`skeleton-row-${rowIndex}`}>
+								{table.getVisibleFlatColumns().map((_, colIndex) => (
 									<Table.Cell
-										key={`skeleton-cell-${item.rowIndex}-${colIndex}`}
+										key={`skeleton-cell-${rowIndex}-${colIndex}`}
 										className={isCompact ? "py-1" : undefined}>
 										<Skeleton
 											className="h-6 rounded-2xl!"
@@ -284,8 +275,12 @@ export function DataTable<TData>({
 											}}
 										/>
 									</Table.Cell>
-								))
-							: item.row.getVisibleCells().map((cell: any) => (
+								))}
+							</Table.Row>
+						))
+					: rows.map((row) => (
+							<Table.Row key={row.id} id={row.id}>
+								{row.getVisibleCells().map((cell: any) => (
 									<Table.Cell
 										key={cell.id}
 										className={isCompact ? "py-1 text-sm" : undefined}>
@@ -295,8 +290,8 @@ export function DataTable<TData>({
 										)}
 									</Table.Cell>
 								))}
-					</Table.Row>
-				)}
+							</Table.Row>
+						))}
 			</Table.Body>
 		</Table.Content>
 	);

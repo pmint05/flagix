@@ -39,28 +39,44 @@ import { useCreateFlag } from "./api";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { VariationDot } from "@/components/ui/VariationDot";
 
-const flagFormSchema = z.object({
-	key: z
-		.string()
-		.min(1, "Key is required")
-		.max(255)
-		.regex(
-			/^[a-zA-Z0-9_-]+$/,
-			"Only letters, numbers, underscores, and hyphens",
+const flagFormSchema = z
+	.object({
+		key: z
+			.string()
+			.min(1, "Key is required")
+			.max(255)
+			.regex(
+				/^[a-zA-Z0-9_-]+$/,
+				"Only letters, numbers, underscores, and hyphens",
+			),
+		name: z.string().min(1, "Name is required").max(255),
+		description: z.string().optional(),
+		flagType: z.enum(["boolean", "multivariate"]),
+		visibility: z.enum(["all", "client_only", "server_only"]),
+		isTemporary: z.boolean(),
+		variations: z.array(
+			z.object({
+				key: z.string().optional(),
+				value: z.string().min(1, "Value is required"),
+				description: z.string().optional(),
+			}),
 		),
-	name: z.string().min(1, "Name is required").max(255),
-	description: z.string().optional(),
-	flagType: z.enum(["boolean", "multivariate"]),
-	visibility: z.enum(["all", "client_only", "server_only"]),
-	isTemporary: z.boolean(),
-	variations: z.array(
-		z.object({
-			key: z.string().optional(),
-			value: z.string().min(1, "Value is required"),
-			description: z.string().optional(),
-		}),
-	),
-});
+	})
+	.superRefine((data, ctx) => {
+		const seenKeys = new Set<string>();
+		data.variations.forEach((v, idx) => {
+			const k = v.key?.trim() || v.value.trim();
+			if (seenKeys.has(k)) {
+				ctx.addIssue({
+					code: "custom",
+					message: `Duplicate variation key: "${k}"`,
+					path: ["variations", idx, "key"],
+				});
+			} else {
+				seenKeys.add(k);
+			}
+		});
+	});
 
 type FlagFormData = z.infer<typeof flagFormSchema>;
 
@@ -479,8 +495,14 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																flagType === "multivariate" && fields.length > 2
 															}
 															onSave={(data) => {
+																const trimmedKey = data.key.trim();
+																const hasDuplicate = fields.some((f, fIdx) => fIdx !== idx && (f.key || f.value) === trimmedKey);
+																if (hasDuplicate) {
+																	toast.danger(`Variation key "${trimmedKey}" is already used by another variation.`);
+																	return;
+																}
 																update(idx, {
-																	key: data.key,
+																	key: trimmedKey,
 																	value: data.value,
 																	description: data.description,
 																});
@@ -555,14 +577,34 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																variant="primary"
 																size="sm"
 																onPress={() => {
-																	const val =
-																		newValue.trim() ||
-																		`value-${fields.length + 1}`;
+																	const getUniqueVariationKey = () => {
+																		const keys = new Set(fields.map((f) => f.key));
+																		let i = fields.length + 1;
+																		while (keys.has(`variation-${i}`)) {
+																			i++;
+																		}
+																		return `variation-${i}`;
+																	};
+																	const getUniqueVariationValue = () => {
+																		const vals = new Set(fields.map((f) => f.value));
+																		let i = fields.length + 1;
+																		while (vals.has(`value-${i}`)) {
+																			i++;
+																		}
+																		return `value-${i}`;
+																	};
+
+																	const finalKey = newKey.trim() || getUniqueVariationKey();
+																	const finalVal = newValue.trim() || getUniqueVariationValue();
+
+																	if (fields.some((f) => (f.key || f.value) === finalKey)) {
+																		toast.danger(`Variation key "${finalKey}" already exists.`);
+																		return;
+																	}
+
 																	append({
-																		key:
-																			newKey.trim() ||
-																			`variation-${fields.length + 1}`,
-																		value: val,
+																		key: finalKey,
+																		value: finalVal,
 																		description: newDesc.trim() || "",
 																	});
 																	setNewKey("");

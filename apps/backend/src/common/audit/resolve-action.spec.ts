@@ -52,7 +52,7 @@ describe('resolve-action', () => {
   });
 
   describe('resolveFlagStateAction', () => {
-    it('should return FLAG_STATE_CREATE when before is null', () => {
+    it('should return FLAG_UPDATE when before is null', () => {
       const after = {
         id: '1',
         featureFlagId: 'flag-1',
@@ -62,11 +62,11 @@ describe('resolve-action', () => {
       };
 
       expect(resolveFlagStateAction(null as any, after as any)).toBe(
-        'FLAG_STATE_CREATE',
+        'FLAG_UPDATE',
       );
     });
 
-    it('should return FLAG_STATE_DELETE when after is null', () => {
+    it('should return FLAG_UPDATE when after is null', () => {
       const before = {
         id: '1',
         featureFlagId: 'flag-1',
@@ -76,7 +76,7 @@ describe('resolve-action', () => {
       };
 
       expect(resolveFlagStateAction(before as any, null as any)).toBe(
-        'FLAG_STATE_DELETE',
+        'FLAG_UPDATE',
       );
     });
 
@@ -128,7 +128,7 @@ describe('resolve-action', () => {
       );
     });
 
-    it('should return FLAG_STATE_UPDATE for other changes', () => {
+    it('should return FLAG_UPDATE for other changes', () => {
       const before = {
         id: '1',
         featureFlagId: 'flag-1',
@@ -140,13 +140,13 @@ describe('resolve-action', () => {
       const after = { ...before, someOtherField: 'new' };
 
       expect(resolveFlagStateAction(before as any, after as any)).toBe(
-        'FLAG_STATE_UPDATE',
+        'FLAG_UPDATE',
       );
     });
   });
 
   describe('resolveRuleAction', () => {
-    it('should return RULE_CREATE when before is null', () => {
+    it('should return FLAG_RULE_UPDATE when before is null', () => {
       const after = {
         id: '1',
         organizationId: 'org-1',
@@ -156,10 +156,10 @@ describe('resolve-action', () => {
         isEnabled: true,
       };
 
-      expect(resolveRuleAction(null as any, after as any)).toBe('RULE_CREATE');
+      expect(resolveRuleAction(null as any, after as any)).toBe('FLAG_RULE_UPDATE');
     });
 
-    it('should return RULE_TOGGLE when isEnabled changes', () => {
+    it('should return FLAG_RULE_UPDATE when isEnabled changes', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
@@ -172,11 +172,11 @@ describe('resolve-action', () => {
       const after = { ...before, isEnabled: true };
 
       expect(resolveRuleAction(before as any, after as any)).toBe(
-        'RULE_TOGGLE',
+        'FLAG_RULE_UPDATE',
       );
     });
 
-    it('should return RULE_REORDER when priority changes', () => {
+    it('should return FLAG_RULE_UPDATE when priority changes', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
@@ -189,11 +189,11 @@ describe('resolve-action', () => {
       const after = { ...before, priority: 'b' };
 
       expect(resolveRuleAction(before as any, after as any)).toBe(
-        'RULE_REORDER',
+        'FLAG_RULE_UPDATE',
       );
     });
 
-    it('should return RULE_UPDATE for other changes', () => {
+    it('should return FLAG_RULE_UPDATE for other changes', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
@@ -206,7 +206,7 @@ describe('resolve-action', () => {
       const after = { ...before, conditions: [{ type: 'new' }] };
 
       expect(resolveRuleAction(before as any, after as any)).toBe(
-        'RULE_UPDATE',
+        'FLAG_RULE_UPDATE',
       );
     });
   });
@@ -228,7 +228,7 @@ describe('resolve-action', () => {
       );
     });
 
-    it('should return SDK_KEY_DELETE when after is null', () => {
+    it('should return SDK_KEY_REVOKE when after is null', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
@@ -240,11 +240,11 @@ describe('resolve-action', () => {
       };
 
       expect(resolveSdkKeyAction(before as any, null as any)).toBe(
-        'SDK_KEY_DELETE',
+        'SDK_KEY_REVOKE',
       );
     });
 
-    it('should return SDK_KEY_REVOKE when isActive changes from true to false', () => {
+    it('should return SDK_KEY_DISABLE when isActive changes from true to false', () => {
       const before = {
         id: '1',
         organizationId: 'org-1',
@@ -258,7 +258,25 @@ describe('resolve-action', () => {
       const after = { ...before, isActive: false };
 
       expect(resolveSdkKeyAction(before as any, after as any)).toBe(
-        'SDK_KEY_REVOKE',
+        'SDK_KEY_DISABLE',
+      );
+    });
+
+    it('should return SDK_KEY_ENABLE when isActive changes from false to true', () => {
+      const before = {
+        id: '1',
+        organizationId: 'org-1',
+        environmentId: 'env-1',
+        name: 'Test Key',
+        keyHint: '12345678',
+        type: 'client',
+        isActive: false,
+      };
+
+      const after = { ...before, isActive: true };
+
+      expect(resolveSdkKeyAction(before as any, after as any)).toBe(
+        'SDK_KEY_ENABLE',
       );
     });
 

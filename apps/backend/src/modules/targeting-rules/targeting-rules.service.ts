@@ -87,11 +87,11 @@ export class TargetingRulesService {
         organizationId: orgId,
         projectId: flag?.projectId,
         environmentId: rule.environmentId,
-        entityType: 'targeting_rule',
-        entityId: rule.id,
+        entityType: 'feature_flag',
+        entityId: flagId,
         before: null,
         after: rule,
-        resolveAction: resolveRuleAction,
+        resolveAction: () => 'FLAG_RULE_UPDATE',
         sanitize: sanitizeRule,
       });
     }
@@ -141,11 +141,11 @@ export class TargetingRulesService {
         organizationId: orgId,
         projectId: flag?.projectId,
         environmentId: updated.environmentId,
-        entityType: 'targeting_rule',
-        entityId: ruleId,
+        entityType: 'feature_flag',
+        entityId: flagId,
         before: rule,
         after: updated,
-        resolveAction: resolveRuleAction,
+        resolveAction: () => 'FLAG_RULE_UPDATE',
         sanitize: sanitizeRule,
       });
     }
@@ -170,11 +170,11 @@ export class TargetingRulesService {
         organizationId: orgId,
         projectId: flag?.projectId,
         environmentId: rule.environmentId,
-        entityType: 'targeting_rule',
-        entityId: ruleId,
+        entityType: 'feature_flag',
+        entityId: flagId,
         before: rule,
         after: deleted,
-        resolveAction: resolveRuleAction,
+        resolveAction: () => 'FLAG_RULE_UPDATE',
         sanitize: sanitizeRule,
       });
     }

@@ -29,6 +29,13 @@ export class AuditLogsController {
     @Query('to') to?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('actorId') actorId?: string,
+    @Query('actorEmail') actorEmail?: string,
+    @Query('entityId') entityId?: string,
+    @Query('search') search?: string,
+    @Query('sort') sort?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
     const result = await this.auditLogsService.list({
       orgId: ctx.organizationId,
@@ -40,14 +47,21 @@ export class AuditLogsController {
       to: to ? new Date(to) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       offset: offset ? parseInt(offset, 10) : undefined,
+      actorId,
+      actorEmail,
+      entityId,
+      search,
+      sort,
+      page: page ? parseInt(page, 10) : undefined,
+      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
     });
     const limitNum = result.limit;
     const offsetNum = result.offset;
-    const page = limitNum > 0 ? Math.floor(offsetNum / limitNum) + 1 : 1;
+    const pageNum = limitNum > 0 ? Math.floor(offsetNum / limitNum) + 1 : 1;
     return {
       data: result.logs,
       total: result.total,
-      page,
+      page: pageNum,
       pageSize: limitNum,
     };
   }
