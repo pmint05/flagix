@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	PlusIcon,
@@ -12,6 +12,8 @@ import {
 	ToggleLeftIcon,
 	EyeIcon,
 	EyeSlashIcon,
+	FadersIcon,
+	XIcon,
 } from "@phosphor-icons/react";
 import {
 	Chip,
@@ -23,6 +25,11 @@ import {
 	SearchField,
 	EmptyState,
 	Input,
+	Select,
+	ListBox,
+	Popover,
+	TagGroup,
+	Tag,
 } from "@heroui/react";
 import {
 	useSdkKeys,
@@ -36,6 +43,7 @@ import { KeyModal } from "@/features/keys/KeyModal";
 import { KeyDisplay } from "@/features/keys/KeyDisplay";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { AsyncSwitch } from "@/components/ui/async-switch";
+import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { CodeSnippetModal } from "@/features/keys/components/CodeSnippetModal";
 import type { SdkKey } from "@/types/sdk-key";
@@ -44,11 +52,7 @@ import { formatDate } from "#/lib/date";
 import UserAvatar from "#/components/user/user-avatar";
 import CopyButton from "#/components/ui/copy-button";
 
-function KeyInputCell({
-	sdkKey,
-}: {
-	sdkKey: SdkKey;
-}) {
+function KeyInputCell({ sdkKey }: { sdkKey: SdkKey }) {
 	const [revealed, setRevealed] = useState(false);
 
 	if (sdkKey.type === "server") {
@@ -121,6 +125,9 @@ function SdkKeysPage() {
 	const [typeFilter, setTypeFilter] = useState<"all" | "client" | "server">(
 		"all",
 	);
+	const [statusFilter, setStatusFilter] = useState<
+		"all" | "active" | "inactive"
+	>("all");
 	const [isSnippetOpen, setIsSnippetOpen] = useState(false);
 
 	const { data: keys, isPending } = useSdkKeys();
@@ -160,8 +167,38 @@ function SdkKeysPage() {
 			key.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			key.keyHint.toLowerCase().includes(searchQuery.toLowerCase());
 		const matchesType = typeFilter === "all" || key.type === typeFilter;
-		return matchesSearch && matchesType;
+		const matchesStatus =
+			statusFilter === "all" ||
+			(statusFilter === "active" ? key.isActive : !key.isActive);
+		return matchesSearch && matchesType && matchesStatus;
 	});
+
+	const activeTags = useMemo(() => {
+		const tags: Array<{ key: string; label: string }> = [];
+		if (typeFilter !== "all") {
+			tags.push({
+				key: "type",
+				label: `Type: ${typeFilter === "client" ? "Client" : "Server"}`,
+			});
+		}
+		if (statusFilter !== "all") {
+			tags.push({
+				key: "status",
+				label: `Status: ${statusFilter === "active" ? "Active" : "Inactive"}`,
+			});
+		}
+		return tags;
+	}, [typeFilter, statusFilter]);
+
+	const handleRemoveTag = (key: string) => {
+		if (key === "type") setTypeFilter("all");
+		if (key === "status") setStatusFilter("all");
+	};
+
+	const handleClearAll = () => {
+		setTypeFilter("all");
+		setStatusFilter("all");
+	};
 
 	return (
 		<div className="space-y-6">
@@ -201,81 +238,188 @@ function SdkKeysPage() {
 
 			{/* Stats Cards */}
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div className="flex items-center gap-4 rounded-2xl border border-divider bg-background-secondary p-4 shadow-sm">
-					<div className="rounded-xl bg-success-soft p-3 text-success">
-						<KeyIcon className="h-6 w-6" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-default-500">Active Keys</p>
-						<p className="text-2xl font-bold text-foreground">{activeCount}</p>
-					</div>
-				</div>
-				<div className="flex items-center gap-4 rounded-2xl border border-divider bg-background-secondary p-4 shadow-sm">
-					<div className="rounded-xl bg-default-soft p-3 text-default-600">
-						<BrowserIcon className="h-6 w-6" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-default-500">Client Keys</p>
-						<p className="text-2xl font-bold text-foreground">{clientCount}</p>
-					</div>
-				</div>
-				<div className="flex items-center gap-4 rounded-2xl border border-divider bg-background-secondary p-4 shadow-sm">
-					<div className="rounded-xl bg-warning-soft p-3 text-warning">
-						<TerminalWindowIcon className="h-6 w-6" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-default-500">Server Keys</p>
-						<p className="text-2xl font-bold text-foreground">{serverCount}</p>
-					</div>
-				</div>
-				<div className="flex items-center gap-4 rounded-2xl border border-divider bg-background-secondary p-4 shadow-sm">
-					<div className="rounded-xl bg-danger-soft p-3 text-danger">
-						<ToggleLeftIcon className="h-6 w-6" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-default-500">Deactivated</p>
-						<p className="text-2xl font-bold text-foreground">
-							{inactiveCount}
-						</p>
-					</div>
-				</div>
+				<StatCard
+					title="Active Keys"
+					value={activeCount}
+					icon={KeyIcon}
+					iconClassName="rounded-xl bg-success-soft p-3 text-success"
+				/>
+				<StatCard
+					title="Client Keys"
+					value={clientCount}
+					icon={BrowserIcon}
+					iconClassName="rounded-xl bg-default-soft p-3 text-default-600"
+				/>
+				<StatCard
+					title="Server Keys"
+					value={serverCount}
+					icon={TerminalWindowIcon}
+					iconClassName="rounded-xl bg-warning-soft p-3 text-warning"
+				/>
+				<StatCard
+					title="Deactivated"
+					value={inactiveCount}
+					icon={ToggleLeftIcon}
+					iconClassName="rounded-xl bg-danger-soft p-3 text-danger"
+				/>
 			</div>
 
 			{/* Search and Filters */}
 			{keyList.length > 0 && (
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
-					<SearchField
-						variant="secondary"
-						value={searchQuery}
-						onChange={setSearchQuery}
-						aria-label="Search SDK Keys"
-						className="w-full max-w-xs">
-						<SearchField.Group>
-							<SearchField.SearchIcon />
-							<SearchField.Input placeholder="Search by name or hint..." />
-						</SearchField.Group>
-					</SearchField>
+				<div className="flex flex-col gap-3">
+					<div className={"flex gap-2 items-center"}>
+						<SearchField
+							variant="secondary"
+							value={searchQuery}
+							onChange={setSearchQuery}
+							aria-label="Search SDK Keys"
+							className="w-full max-w-xs">
+							<SearchField.Group>
+								<SearchField.SearchIcon />
+								<SearchField.Input placeholder="Search by name or hint..." />
+							</SearchField.Group>
+						</SearchField>
 
-					<div className="flex gap-2">
-						<Button
-							variant={typeFilter === "all" ? "primary" : "outline"}
-							onPress={() => setTypeFilter("all")}
-							size="sm">
-							All
-						</Button>
-						<Button
-							variant={typeFilter === "client" ? "primary" : "outline"}
-							onPress={() => setTypeFilter("client")}
-							size="sm">
-							Client
-						</Button>
-						<Button
-							variant={typeFilter === "server" ? "primary" : "outline"}
-							onPress={() => setTypeFilter("server")}
-							size="sm">
-							Server
-						</Button>
+						<div className="flex items-center gap-3 w-full sm:w-auto">
+							<Popover>
+								<Popover.Trigger>
+									<Button variant="secondary" className="gap-2">
+										<FadersIcon className="size-4" />
+										Filters
+									</Button>
+								</Popover.Trigger>
+								<Popover.Content className="w-64" placement="bottom end">
+									<Popover.Dialog className="p-3 space-y-4">
+										<div className="text-xs font-semibold text-foreground/80 border-b border-divider pb-1.5">
+											Filter SDK Keys
+										</div>
+										<div className="flex flex-col gap-3">
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-medium text-muted-foreground">
+													Type
+												</span>
+												<Select
+													value={typeFilter}
+													onChange={(key) =>
+														setTypeFilter((key?.toString() || "all") as any)
+													}
+													aria-label="Filter by type"
+													className="w-full"
+													variant="secondary">
+													<Select.Trigger>
+														<Select.Value />
+														<Select.Indicator />
+													</Select.Trigger>
+													<Select.Popover>
+														<ListBox>
+															<ListBox.Item
+																id="all"
+																key="all"
+																textValue="All Types">
+																All Types
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+															<ListBox.Item
+																id="client"
+																key="client"
+																textValue="Client">
+																Client
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+															<ListBox.Item
+																id="server"
+																key="server"
+																textValue="Server">
+																Server
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+														</ListBox>
+													</Select.Popover>
+												</Select>
+											</div>
+
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-medium text-muted-foreground">
+													Status
+												</span>
+												<Select
+													value={statusFilter}
+													onChange={(key) =>
+														setStatusFilter((key?.toString() || "all") as any)
+													}
+													aria-label="Filter by status"
+													className="w-full"
+													variant="secondary">
+													<Select.Trigger>
+														<Select.Value />
+														<Select.Indicator />
+													</Select.Trigger>
+													<Select.Popover>
+														<ListBox>
+															<ListBox.Item
+																id="all"
+																key="all"
+																textValue="All Statuses">
+																All Statuses
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+															<ListBox.Item
+																id="active"
+																key="active"
+																textValue="Active">
+																Active
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+															<ListBox.Item
+																id="inactive"
+																key="inactive"
+																textValue="Inactive">
+																Inactive
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+														</ListBox>
+													</Select.Popover>
+												</Select>
+											</div>
+										</div>
+									</Popover.Dialog>
+								</Popover.Content>
+							</Popover>
+						</div>
 					</div>
+
+					{activeTags.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2 mt-1 border-b border-divider pb-4">
+							<TagGroup
+								selectionMode="none"
+								onRemove={(keys) => {
+									const removed = Array.from(keys) as string[];
+									removed.forEach((k) => handleRemoveTag(k));
+								}}>
+								<TagGroup.List className="flex-wrap gap-2">
+									{activeTags.map((tag) => (
+										<Tag
+											key={tag.key}
+											id={tag.key}
+											textValue={tag.label}
+											className="gap-1">
+											{tag.label}
+											<Tag.RemoveButton>
+												<XIcon className="size-3" />
+											</Tag.RemoveButton>
+										</Tag>
+									))}
+								</TagGroup.List>
+							</TagGroup>
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={handleClearAll}
+								className="text-muted-foreground text-xs h-7 px-2">
+								Clear all
+							</Button>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -362,9 +506,7 @@ function SdkKeysPage() {
 											</Chip>
 										</Table.Cell>
 										<Table.Cell>
-											<KeyInputCell
-												sdkKey={key}
-											/>
+											<KeyInputCell sdkKey={key} />
 										</Table.Cell>
 										<TableCell>
 											<AsyncSwitch

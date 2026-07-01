@@ -19,7 +19,7 @@ import {
 	TagGroup,
 	useFilter,
 } from "@heroui/react";
-import { FadersIcon, XIcon, CalendarBlankIcon } from "@phosphor-icons/react";
+import { FadersIcon, XIcon, CalendarBlankIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
 	getLocalTimeZone,
 	parseDate,
@@ -66,6 +66,8 @@ export interface FlagFiltersState {
 interface FlagFiltersProps {
 	filters: FlagFiltersState;
 	onChange: (filters: FlagFiltersState) => void;
+	searchQuery: string;
+	onSearchChange: (query: string) => void;
 }
 
 function toDateValue(iso?: string): DateValue | undefined {
@@ -97,7 +99,12 @@ function setArrayFilter(
 	return { ...filters, [key]: selected.length > 0 ? selected : undefined };
 }
 
-export function FlagFilters({ filters, onChange }: FlagFiltersProps) {
+export function FlagFilters({
+	filters,
+	onChange,
+	searchQuery,
+	onSearchChange,
+}: FlagFiltersProps) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const { data: users } = useOrganizationUsers(orgId ?? "");
 	const { contains } = useFilter({ sensitivity: "base" });
@@ -149,9 +156,23 @@ export function FlagFilters({ filters, onChange }: FlagFiltersProps) {
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex flex-wrap items-center gap-2">
+				<SearchField
+					value={searchQuery}
+					onChange={onSearchChange}
+					variant="secondary"
+					aria-label="Search flags"
+					className="w-full sm:w-72">
+					<SearchField.Group>
+						<SearchField.SearchIcon>
+							<MagnifyingGlassIcon className="text-muted-foreground" />
+						</SearchField.SearchIcon>
+						<SearchField.Input placeholder="Search by key or name..." />
+						<SearchField.ClearButton />
+					</SearchField.Group>
+				</SearchField>
 				<Popover>
 					<Popover.Trigger>
-						<Button variant="secondary" size="sm" className="gap-2">
+						<Button variant="secondary" className="gap-2">
 							<FadersIcon className="size-4" />
 							Filters
 						</Button>
@@ -343,8 +364,10 @@ export function FlagFilters({ filters, onChange }: FlagFiltersProps) {
 						</Popover.Dialog>
 					</Popover.Content>
 				</Popover>
+			</div>
 
-				{activeTags.length > 0 && (
+			{activeTags.length > 0 && (
+				<div className="flex flex-wrap items-center gap-2 mt-1">
 					<TagGroup
 						selectionMode="none"
 						onRemove={(keys) => {
@@ -355,7 +378,7 @@ export function FlagFilters({ filters, onChange }: FlagFiltersProps) {
 							}
 							onChange(next);
 						}}>
-						<TagGroup.List className="gap-2">
+						<TagGroup.List className="flex-wrap gap-2">
 							{activeTags.map((tag) => (
 								<Tag
 									key={tag.key}
@@ -370,18 +393,15 @@ export function FlagFilters({ filters, onChange }: FlagFiltersProps) {
 							))}
 						</TagGroup.List>
 					</TagGroup>
-				)}
-
-				{activeTags.length > 0 && (
 					<Button
 						variant="ghost"
 						size="sm"
 						onPress={() => onChange({})}
-						className="text-muted-foreground">
+						className="text-muted-foreground text-xs h-7 px-2">
 						Clear all
 					</Button>
-				)}
-			</div>
+				</div>
+			)}
 		</div>
 	);
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button, SearchField } from "@heroui/react";
-import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { Button } from "@heroui/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import {
 	useFlags,
 	useDeleteFlag,
@@ -143,26 +143,12 @@ function FlagsIndex() {
 				/>
 			) : (
 				<div className="space-y-4">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-						<SearchField
-							value={searchQuery}
-							onChange={(v) => setSearchQuery(v)}
-							variant="secondary"
-							aria-label="Search flags"
-							className="w-full sm:w-72">
-							<SearchField.Group>
-								<SearchField.SearchIcon>
-									<MagnifyingGlassIcon className="text-muted-foreground" />
-								</SearchField.SearchIcon>
-								<SearchField.Input placeholder="Search by key or name..." />
-								<SearchField.ClearButton />
-							</SearchField.Group>
-						</SearchField>
-						<FlagFilters
-							filters={(tableState.filters ?? {}) as FlagFiltersState}
-							onChange={(filters) => updateTableState({ filters, page: 1 })}
-						/>
-					</div>
+					<FlagFilters
+						filters={(tableState.filters ?? {}) as FlagFiltersState}
+						onChange={(filters) => updateTableState({ filters, page: 1 })}
+						searchQuery={searchQuery}
+						onSearchChange={(v) => setSearchQuery(v)}
+					/>
 
 					<DataTable
 						isLoading={isLoading}
