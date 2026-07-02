@@ -5,8 +5,11 @@ import {
 	useSidebarStore,
 	useContextStore,
 	useIsHydrated,
+	useUIStore,
 } from "@/stores";
 import { cn, Skeleton } from "@heroui/react";
+import { ProjectSettingsModal } from "@/features/projects/ProjectSettingsModal";
+import { OrgSettingsModal } from "@/features/organizations/OrgSettingsModal";
 import {
 	Sidebar,
 	SidebarResizeHandle,
@@ -67,6 +70,10 @@ function AuthenticatedLayout() {
 	const isMobile = useIsMobile();
 	const selectedOrganization = useContextStore((s) => s.selectedOrganization);
 	const { isCollapsed, size, setCollapsed, setSize } = useSidebarStore();
+	const isProjectSettingsOpen = useUIStore((s) => s.isProjectSettingsOpen);
+	const isOrgSettingsOpen = useUIStore((s) => s.isOrgSettingsOpen);
+	const closeProjectSettings = useUIStore((s) => s.closeProjectSettings);
+	const closeOrgSettings = useUIStore((s) => s.closeOrgSettings);
 	const panelRef = useRef<PanelImperativeHandle>(null);
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -153,11 +160,20 @@ function AuthenticatedLayout() {
 			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex flex-col">
 				<Header />
 				<main className="flex-1 overflow-auto">
-					<div className="h-full p-0 bg-surface dark:bg-background-secondary overflow-auto border">
+					<div className="h-full p-4 bg-surface dark:bg-background-secondary overflow-auto border">
 						<Outlet />
 					</div>
 				</main>
 				<MobileSidebarDrawer />
+
+				<ProjectSettingsModal
+					isOpen={isProjectSettingsOpen}
+					onClose={closeProjectSettings}
+				/>
+				<OrgSettingsModal
+					isOpen={isOrgSettingsOpen}
+					onClose={closeOrgSettings}
+				/>
 			</div>
 		);
 	}
@@ -209,6 +225,15 @@ function AuthenticatedLayout() {
 					</main>
 				</Panel>
 			</PanelGroup>
+
+			<ProjectSettingsModal
+				isOpen={isProjectSettingsOpen}
+				onClose={closeProjectSettings}
+			/>
+			<OrgSettingsModal
+				isOpen={isOrgSettingsOpen}
+				onClose={closeOrgSettings}
+			/>
 		</div>
 	);
 }

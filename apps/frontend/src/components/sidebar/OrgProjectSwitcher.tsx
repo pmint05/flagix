@@ -298,7 +298,12 @@ function EntitiesGroup({
 					fullWidth
 					variant="ghost"
 					size="sm"
-					className="justify-start h-8">
+					className="justify-start h-8"
+					isDisabled={!selectedOrganization}
+					onPress={() => {
+						useUIStore.getState().openOrgSettings();
+						setMainOpen(false);
+					}}>
 					<GearIcon size={16} />
 					Settings
 				</Button>
@@ -330,7 +335,6 @@ function EntitiesGroup({
 				onMenuLeave={handlePrjMenuLeave}
 				onTriggerClick={handlePrjTriggerClick}
 				searchRef={prjSearchRef}
-				showDescription
 				subMenuMargin="-ml-1"
 				subMenuBorder="border"
 				bottomContent={
@@ -356,7 +360,12 @@ function EntitiesGroup({
 					fullWidth
 					variant="ghost"
 					size="sm"
-					className="justify-start h-8">
+					className="justify-start h-8"
+					isDisabled={!selectedProject}
+					onPress={() => {
+						useUIStore.getState().openProjectSettings();
+						setMainOpen(false);
+					}}>
 					<GearIcon size={16} />
 					Settings
 				</Button>

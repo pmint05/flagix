@@ -46,7 +46,7 @@ export class OrganizationsService {
       });
     }
 
-    return org;
+    return { ...org, role: 'admin' as const };
   }
 
   async findOneForUser(id: string, userId: string) {
@@ -99,7 +99,12 @@ export class OrganizationsService {
       });
     }
 
-    return updated;
+    const membership = actorId
+      ? await this.orgRepo.findMembership(id, actorId)
+      : null;
+    const role = membership?.role ?? 'viewer';
+
+    return { ...updated, role };
   }
 
   async remove(id: string) {

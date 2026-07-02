@@ -64,11 +64,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
 			if (isEditing) {
-				await updateProject.mutateAsync({
+				const updated = await updateProject.mutateAsync({
 					id: project.id,
 					...data,
 				});
 				toast.success("Project updated successfully");
+				
+				const currentSelected = useContextStore.getState().selectedProject;
+				if (currentSelected && currentSelected.id === project.id) {
+					useContextStore.getState().setProject(updated);
+				}
 			} else {
 				if (!organizationId) {
 					toast.danger("No organization selected");

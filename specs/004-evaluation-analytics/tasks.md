@@ -159,8 +159,8 @@ description: "Task list for feature implementation: Evaluation Analytics & Real-
 
 **Purpose**: Unit and integration tests for critical paths
 
-- [ ] T057 [P] Unit test `EvaluationCollectorService` — verify event hashing, queue enqueue, error handling in `apps/backend/src/modules/evaluation-collector/*.spec.ts`
-- [ ] T058 [P] Unit test `EvaluationCollectorWorker` — verify batch insert, buffer flush, retry logic in `apps/backend/src/modules/evaluation-collector/*.spec.ts`
+- [x] T057 [P] Unit test `EvaluationCollectorService` — verify event hashing, queue enqueue, error handling in `apps/backend/src/modules/evaluation-collector/*.spec.ts`
+- [x] T058 [P] Unit test `EvaluationCollectorWorker` — verify batch insert, buffer flush, retry logic in `apps/backend/src/modules/evaluation-collector/*.spec.ts`
 - [ ] T059 [P] Unit test `EvaluationAnalyticsService` — verify query routing (raw vs hourly vs daily), correct aggregation SQL in `apps/backend/src/modules/evaluation-analytics/*.spec.ts`
 - [ ] T060 [P] Unit test `EvaluationAggregatorService` — verify hourly aggregation, daily rollup, purge correctness in `apps/backend/src/modules/evaluation-aggregator/*.spec.ts`
 - [ ] T061 [P] Integration test for evaluation → collect → worker → insert pipeline (seed DB, call evaluate, wait for worker, assert events in DB)
