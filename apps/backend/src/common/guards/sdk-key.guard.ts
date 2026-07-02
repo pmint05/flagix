@@ -42,8 +42,8 @@ export class SdkKeyGuard implements CanActivate {
     if (!rawKey) {
       throw new UnauthorizedException(
         isSseStream
-          ? 'Missing X-SDK-Key header or sdkKey query parameter'
-          : 'Missing X-SDK-Key header',
+          ? 'Missing X-SDK-Key header or sdkKey query parameter.'
+          : 'Missing X-SDK-Key header.',
       );
     }
 
@@ -56,11 +56,15 @@ export class SdkKeyGuard implements CanActivate {
       .limit(1);
 
     if (!sdkKey) {
-      throw new UnauthorizedException('Invalid SDK key');
+      throw new UnauthorizedException(
+        'Invalid SDK key.',
+      );
     }
 
     if (!sdkKey.isActive) {
-      throw new UnauthorizedException('SDK key is inactive');
+      throw new UnauthorizedException(
+        'SDK key is inactive.',
+      );
     }
 
     const [env] = await this.db

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PRESETS } from "../components/simulation/constants";
+import { getPresets } from "../components/simulation/constants";
 
 export interface SimulationState {
 	jsonValue: string;
@@ -15,8 +15,8 @@ interface SimulationStore {
 	setSimulationState: (flagId: string, state: Partial<SimulationState>) => void;
 }
 
-export const DEFAULT_SIMULATION_STATE = (): SimulationState => ({
-	jsonValue: PRESETS[0].value,
+export const DEFAULT_SIMULATION_STATE = (flagKey?: string): SimulationState => ({
+	jsonValue: flagKey ? getPresets(flagKey)[0].value : JSON.stringify({ flagKey: "", context: {} }, null, 2),
 	jsonError: null,
 	simulationResult: null,
 	simulationOptions: {

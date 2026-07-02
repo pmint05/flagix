@@ -13,7 +13,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { ColumnsIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useThemeStore } from "#/stores";
 
-export const Route = createFileRoute("/_authenticated/audit-logs")({
+export const Route = createFileRoute("/_authenticated/audit-logs/")({
 	component: AuditLogsIndex,
 	staticData: {
 		hideEnvironmentSwitcher: true,

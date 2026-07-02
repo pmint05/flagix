@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Inject } from '@nestjs/common';
-import { IOREDIS } from '@/modules/bullmq/bullmq.module';
+import { IOREDIS_SUB } from '@/modules/bullmq/bullmq.module';
 import { Observable, Subject, finalize } from 'rxjs';
 
 export interface EvaluationStreamEvent {
@@ -28,7 +28,7 @@ export class EvaluationStreamService {
   private readonly entries = new Map<string, OrgEntry>();
   private readonly subChannel = 'analytics:evaluations';
 
-  constructor(@Inject(IOREDIS) private readonly redis: Redis) {
+  constructor(@Inject(IOREDIS_SUB) private readonly redis: Redis) {
     this.subscribeToRedis();
   }
 

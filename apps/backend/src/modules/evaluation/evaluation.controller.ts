@@ -12,11 +12,11 @@ import { EvaluationCollectorService } from '@/modules/evaluation-collector/evalu
 import { EvaluateFlagDto } from './dto/evaluate-flag.dto';
 import { EvaluateAllDto } from './dto/evaluate-all.dto';
 
+@AllowAnonymous()
 @ApiTags('Evaluation')
 @Controller('evaluate')
 @UseGuards(SdkKeyGuard)
 @Throttle({ evaluate: { ttl: 60_000, limit: 1000 } })
-@AllowAnonymous()
 @ApiHeader({
   name: 'X-SDK-Key',
   required: true,
@@ -33,7 +33,11 @@ export class EvaluationController {
   async evaluate(
     @SdkEnvironment() env: SdkEnvironmentInfo,
     @Body() dto: EvaluateFlagDto,
-    @Req() req: { ip?: string; headers?: Record<string, string | string[] | undefined> },
+    @Req()
+    req: {
+      ip?: string;
+      headers?: Record<string, string | string[] | undefined>;
+    },
   ) {
     const result = await this.evaluationService.evaluateFlag(
       env.environmentId,
@@ -59,7 +63,11 @@ export class EvaluationController {
   async evaluateAll(
     @SdkEnvironment() env: SdkEnvironmentInfo,
     @Body() dto: EvaluateAllDto,
-    @Req() req: { ip?: string; headers?: Record<string, string | string[] | undefined> },
+    @Req()
+    req: {
+      ip?: string;
+      headers?: Record<string, string | string[] | undefined>;
+    },
   ) {
     const flags = await this.evaluationService.evaluateAllFlags(
       env.environmentId,

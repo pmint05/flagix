@@ -1,4 +1,6 @@
-import { Card, Skeleton } from "@heroui/react";
+import { Card, Skeleton, Button } from "@heroui/react";
+import { Link } from "@tanstack/react-router";
+import { BroadcastIcon } from "@phosphor-icons/react";
 import { useAnalyticsOverview } from "../hooks/useAnalyticsOverview";
 import { MetricCard } from "./MetricCard";
 import { EvaluationTrendChart } from "./EvaluationTrendChart";
@@ -40,11 +42,23 @@ export function AnalyticsOverview() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-semibold text-foreground">
-					Analytics Overview
-				</h2>
-				<p className="text-sm text-default-400">Last 24 hours</p>
+			<div className="flex items-center justify-between">
+				<div>
+					<h2 className="text-xl font-semibold text-foreground">
+						Analytics Overview
+					</h2>
+					<p className="text-sm text-default-400">Last 24 hours</p>
+				</div>
+				<Button
+					variant="outline"
+					size="sm"
+					render={({ className }) => (
+						<Link to="/analytics/live" className={className}>
+							<BroadcastIcon />
+							Live Stream
+						</Link>
+					)}
+				/>
 			</div>
 
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

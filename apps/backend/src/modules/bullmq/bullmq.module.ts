@@ -4,6 +4,7 @@ import Redis from 'ioredis';
 import { Queue } from 'bullmq';
 
 export const IOREDIS = Symbol('IOREDIS');
+export const IOREDIS_SUB = Symbol('IOREDIS_SUB');
 export const EVALUATION_QUEUE = Symbol('EVALUATION_QUEUE');
 export const EVALUATION_QUEUE_NAME = 'evaluation-events';
 
@@ -35,17 +36,24 @@ function createEvaluationQueue(redis: Redis): Queue {
       useFactory: createRedisClient,
     },
     {
+      provide: IOREDIS_SUB,
+      useFactory: createRedisClient,
+    },
+    {
       provide: EVALUATION_QUEUE,
       useFactory: createEvaluationQueue,
       inject: [IOREDIS],
     },
   ],
-  exports: [IOREDIS, EVALUATION_QUEUE],
+  exports: [IOREDIS, IOREDIS_SUB, EVALUATION_QUEUE],
 })
 export class BullMQModule implements OnModuleDestroy {
-  constructor(@Inject(IOREDIS) private readonly redis: Redis) {}
+  constructor(
+    @Inject(IOREDIS) private readonly redis: Redis,
+    @Inject(IOREDIS_SUB) private readonly redisSub: Redis,
+  ) {}
 
   async onModuleDestroy() {
-    await this.redis.quit();
+    await Promise.all([this.redis.quit(), this.redisSub.quit()]);
   }
 }

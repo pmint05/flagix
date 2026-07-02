@@ -49,6 +49,19 @@ export interface EnvironmentAnalyticsResponse {
   timeRange: { from: string; to: string };
 }
 
+export interface EvaluationStreamEvent {
+  flagKey: string;
+  variationKey: string | null;
+  resolvedValue: unknown;
+  evaluationReason: string;
+  organizationId: string;
+  projectId: string;
+  environmentId: string;
+  environmentName?: string;
+  contextUserHash: string | null;
+  timestamp: string;
+}
+
 export interface AnalyticsTimeRange {
   from?: string;
   to?: string;

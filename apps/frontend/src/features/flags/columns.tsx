@@ -7,6 +7,7 @@ import { VariationDots } from "@/components/ui/filters/VariationDots";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 import { formatDate } from "#/lib/date";
 import UserAvatar from "#/components/user/user-avatar";
+import CopyButton from "#/components/ui/copy-button";
 
 const STATUS_CHIP_COLOR: Record<
 	string,
@@ -34,15 +35,24 @@ export function createFlagColumns(actions: ColumnActions) {
 			enableSorting: true,
 			header: "Key",
 			cell: (info) => (
-				<Link
-					to="/projects/$projectSlug/flags/$flagSlug"
-					params={{
-						projectSlug: actions.projectSlug,
-						flagSlug: info.getValue(),
-					}}
-					className="text-primary hover:underline">
-					<code className="text-sm">{info.getValue()}</code>
-				</Link>
+				<div className="flex items-center gap-1 group w-full h-full">
+					<Link
+						to="/projects/$projectSlug/flags/$flagSlug"
+						params={{
+							projectSlug: actions.projectSlug,
+							flagSlug: info.getValue(),
+						}}
+						className="text-primary hover:underline">
+						<code className="text-sm">{info.getValue()}</code>
+					</Link>
+					<CopyButton
+						text={info.getValue()}
+						buttonProps={{
+							isIconOnly: true,
+							className: "group-hover:opacity-100 opacity-0 transition size-6 rounded-xl",
+						}}
+					/>
+				</div>
 			),
 		}),
 		columnHelper.accessor("name", {
