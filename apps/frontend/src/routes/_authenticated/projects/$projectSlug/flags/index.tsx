@@ -132,15 +132,6 @@ function FlagsIndex() {
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load flags. Please try again.
 				</div>
-			) : flags.length === 0 &&
-			  !tableState.query &&
-			  !Object.keys(tableState.filters ?? {}).length ? (
-				<EmptyState
-					title="No feature flags yet"
-					description="Create your first feature flag to start controlling feature rollouts."
-					actionLabel="New Flag"
-					onAction={handleCreate}
-				/>
 			) : (
 				<div className="space-y-4">
 					<FlagFilters

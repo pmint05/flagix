@@ -239,13 +239,6 @@ function EnvironmentsIndex() {
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load environments. Please try again.
 				</div>
-			) : envs.length === 0 ? (
-				<EmptyState
-					title="No environments yet"
-					description="Set up deployment environments (e.g. Development, Staging, Production) to manage feature flags per target."
-					actionLabel="Create Environment"
-					onAction={handleCreate}
-				/>
 			) : (
 				<div className="space-y-4">
 					<div className="flex flex-col sm:flex-row gap-2 items-center">

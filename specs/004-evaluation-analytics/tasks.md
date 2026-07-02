@@ -129,11 +129,11 @@ description: "Task list for feature implementation: Evaluation Analytics & Real-
 
 ### Implementation for User Story 5
 
-- [ ] T043 [P] [US5] Create `EvaluationAggregatorService` with `@Cron('0 * * * *')` hourly aggregation job in `apps/backend/src/modules/evaluation-aggregator/evaluation-aggregator.service.ts` (INSERT ... ON CONFLICT UPDATE from raw events to hourly stats)
-- [ ] T044 [P] [US5] Add daily rollup job (`@Cron('0 2 * * *')`) to `EvaluationAggregatorService` (aggregate hourly → daily stats for data > 90 days)
-- [ ] T045 [P] [US5] Add purge job (`@Cron('0 3 * * *')`) to `EvaluationAggregatorService` (DELETE raw events older than `EVALUATION_EVENT_RETENTION_DAYS`, DROP orphaned monthly partitions)
-- [ ] T046 [P] [US5] Add manual partition creation job (`@Cron('0 0 1 * *')`) to `EvaluationAggregatorService` (CREATE next-month partition on the 1st of each month)
-- [ ] T047 [US5] Create `EvaluationAggregatorModule` in `apps/backend/src/modules/evaluation-aggregator/evaluation-aggregator.module.ts`
+- [x] T043 [P] [US5] Create `EvaluationAggregatorService` with `@Cron('0 * * * *')` hourly aggregation job in `apps/backend/src/modules/evaluation-aggregator/evaluation-aggregator.service.ts` (INSERT ... ON CONFLICT UPDATE from raw events to hourly stats)
+- [x] T044 [P] [US5] Add daily rollup job (`@Cron('0 2 * * *')`) to `EvaluationAggregatorService` (aggregate hourly → daily stats for data > 90 days)
+- [x] T045 [P] [US5] Add purge job (`@Cron('0 3 * * *')`) to `EvaluationAggregatorService` (DELETE raw events older than `EVALUATION_EVENT_RETENTION_DAYS`, DROP orphaned monthly partitions)
+- [x] T046 [P] [US5] Add manual partition creation job (`@Cron('0 0 1 * *')`) to `EvaluationAggregatorService` (CREATE next-month partition on the 1st of each month)
+- [x] T047 [US5] Create `EvaluationAggregatorModule` in `apps/backend/src/modules/evaluation-aggregator/evaluation-aggregator.module.ts`
 
 **Checkpoint**: Data lifecycle is fully automated — events are purged, stats are rolled up, partitions are managed.
 
