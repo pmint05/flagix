@@ -192,7 +192,7 @@ export const flagEditorFormSchema = z
 				isDefault: z.boolean().optional(),
 				color: z.string().nullable().optional(),
 			}),
-		),
+		).min(2, "At least 2 variations are required"),
 	})
 	.superRefine((data, ctx) => {
 		const validVariationIds = new Set(data.variations.map((v) => v.id));

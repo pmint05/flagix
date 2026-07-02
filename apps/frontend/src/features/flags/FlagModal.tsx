@@ -361,9 +361,13 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 													<Checkbox.Indicator />
 												</Checkbox.Control>
 												<div className="flex flex-col gap-0.5">
-													<span className="text-sm font-medium text-foreground">Temporary flag</span>
+													<span className="text-sm font-medium text-foreground">
+														Temporary flag
+													</span>
 													<span className="text-xs text-muted-foreground">
-														Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
+														Temporary flags are used for short-lived changes
+														(e.g. rollouts, migrations). They should be removed
+														once complete.
 													</span>
 												</div>
 											</Checkbox.Content>
@@ -495,10 +499,16 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																flagType === "multivariate" && fields.length > 2
 															}
 															onSave={(data) => {
-																const trimmedKey = data.key.trim();
-																const hasDuplicate = fields.some((f, fIdx) => fIdx !== idx && (f.key || f.value) === trimmedKey);
+																const trimmedKey = (data.key ?? "").trim();
+																const hasDuplicate = fields.some(
+																	(f, fIdx) =>
+																		fIdx !== idx &&
+																		(f.key || f.value) === trimmedKey,
+																);
 																if (hasDuplicate) {
-																	toast.danger(`Variation key "${trimmedKey}" is already used by another variation.`);
+																	toast.danger(
+																		`Variation key "${trimmedKey}" is already used by another variation.`,
+																	);
 																	return;
 																}
 																update(idx, {
@@ -510,6 +520,12 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 															}}
 															onCancel={() => setOpenPopoverIndex(null)}
 															onDelete={() => {
+																if (fields.length <= 2) {
+																	toast.danger(
+																		"At least 2 variations are required for multivariate flags",
+																	);
+																	return;
+																}
 																remove(idx);
 																setOpenPopoverIndex(null);
 															}}
@@ -578,7 +594,9 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																size="sm"
 																onPress={() => {
 																	const getUniqueVariationKey = () => {
-																		const keys = new Set(fields.map((f) => f.key));
+																		const keys = new Set(
+																			fields.map((f) => f.key),
+																		);
 																		let i = fields.length + 1;
 																		while (keys.has(`variation-${i}`)) {
 																			i++;
@@ -586,7 +604,9 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																		return `variation-${i}`;
 																	};
 																	const getUniqueVariationValue = () => {
-																		const vals = new Set(fields.map((f) => f.value));
+																		const vals = new Set(
+																			fields.map((f) => f.value),
+																		);
 																		let i = fields.length + 1;
 																		while (vals.has(`value-${i}`)) {
 																			i++;
@@ -594,11 +614,20 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 																		return `value-${i}`;
 																	};
 
-																	const finalKey = newKey.trim() || getUniqueVariationKey();
-																	const finalVal = newValue.trim() || getUniqueVariationValue();
+																	const finalKey =
+																		newKey.trim() || getUniqueVariationKey();
+																	const finalVal =
+																		newValue.trim() ||
+																		getUniqueVariationValue();
 
-																	if (fields.some((f) => (f.key || f.value) === finalKey)) {
-																		toast.danger(`Variation key "${finalKey}" already exists.`);
+																	if (
+																		fields.some(
+																			(f) => (f.key || f.value) === finalKey,
+																		)
+																	) {
+																		toast.danger(
+																			`Variation key "${finalKey}" already exists.`,
+																		);
 																		return;
 																	}
 

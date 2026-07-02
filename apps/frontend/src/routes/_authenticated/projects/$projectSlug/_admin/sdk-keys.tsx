@@ -539,7 +539,7 @@ function SdkKeysPage() {
 													<UserAvatar
 														user={key.creator}
 														size="sm"
-														className="size-6 rounded-full"
+														className="size-6"
 														fallbackClassName="text-xs"
 													/>
 													<div className="flex flex-col">

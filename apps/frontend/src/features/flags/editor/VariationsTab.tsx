@@ -14,7 +14,12 @@ import {
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { COLOR_KEYS, TAILWIND_COLORS_500 } from "@/lib/variation-colors";
 import type { FeatureFlag } from "@/types/feature-flag";
-import { useFormContext, useFieldArray, Controller } from "react-hook-form";
+import {
+	useFormContext,
+	useFieldArray,
+	useWatch,
+	Controller,
+} from "react-hook-form";
 import type { FlagEditorFormValues } from "./schema";
 
 import { VariationDot } from "@/components/ui/VariationDot";
@@ -71,7 +76,9 @@ function VariationInput({
 					className={className}
 				/>
 			</InputGroup>
-			{error && <FieldError className="text-xs text-danger">{error.message}</FieldError>}
+			{error && (
+				<FieldError className="text-xs text-danger">{error.message}</FieldError>
+			)}
 		</TextField>
 	);
 }
@@ -161,9 +168,12 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 	const { fields, append, remove } = useFieldArray({
 		control,
 		name: "variations",
+		keyName: "fieldId",
 	});
 
 	const isBoolean = flag.flagType === "boolean";
+	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
+	const offVariationId = useWatch({ name: "offVariationId", control });
 
 	const handleAdd = () => {
 		if (isBoolean) return;
@@ -187,7 +197,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 	};
 
 	const handleRemove = (index: number) => {
-		if (isBoolean) return;
+		if (isBoolean || fields.length <= 2) return;
 		remove(index);
 	};
 
@@ -222,7 +232,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 								{fields.map((field, index) => {
 									return (
 										<Table.Row
-											key={field.id}
+											key={field.fieldId}
 											className="border-b border-divider last:border-b-0">
 											<Table.Cell>
 												<Controller
@@ -257,8 +267,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																					<button
 																						type="button"
 																						className="p-1 -ml-1.5 rounded-full hover:bg-default-100 flex items-center justify-center focus:outline-hidden"
-																						aria-label="Change color"
-																					>
+																						aria-label="Change color">
 																						<VariationDot
 																							color={colorField.value}
 																							index={index}
@@ -267,25 +276,34 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																					</button>
 																				</Popover.Trigger>
 																				<Popover.Content className="p-3 w-48">
-																					<div className="text-xs font-semibold mb-2 text-default-500">Choose Color</div>
+																					<div className="text-xs font-semibold mb-2">
+																						Choose Color
+																					</div>
 																					<div className="grid grid-cols-6 gap-2">
 																						{COLOR_KEYS.map((colorName) => {
-																							const colorDetails = TAILWIND_COLORS_500[colorName];
+																							const colorDetails =
+																								TAILWIND_COLORS_500[colorName];
 																							return (
 																								<Tooltip key={colorName}>
 																									<Tooltip.Trigger>
 																										<button
 																											type="button"
 																											onClick={() => {
-																												colorField.onChange(colorName);
+																												colorField.onChange(
+																													colorName,
+																												);
 																											}}
 																											className={cn(
 																												"size-6 rounded-full border-2 transition-all hover:scale-110 focus:outline-hidden",
-																												colorField.value === colorName
+																												colorField.value ===
+																													colorName
 																													? "border-foreground scale-105"
-																													: "border-transparent"
+																													: "border-transparent",
 																											)}
-																											style={{ backgroundColor: colorDetails.hex }}
+																											style={{
+																												backgroundColor:
+																													colorDetails.hex,
+																											}}
 																											aria-label={colorName}
 																										/>
 																									</Tooltip.Trigger>
@@ -356,20 +374,33 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 											</Table.Cell>
 											<Table.Cell>
 												<div className="flex justify-end">
-													{!isBoolean && (
+													{!isBoolean && fields.length > 2 && (
 														<Tooltip>
 															<Tooltip.Trigger>
 																<Button
 																	isIconOnly
 																	variant="ghost"
 																	size="sm"
-																	className="hover:bg-danger/10 text-danger hover:text-danger"
+																	isDisabled={
+																		field.id === defaultVariationId ||
+																		field.id === offVariationId
+																	}
+																	className={
+																		field.id === defaultVariationId ||
+																		field.id === offVariationId
+																			? "opacity-30 cursor-not-allowed"
+																			: "hover:bg-danger/10 text-danger hover:text-danger"
+																	}
 																	onPress={() => handleRemove(index)}>
 																	<TrashIcon className="h-4 w-4" />
 																</Button>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
-																Remove variation
+																{field.id === defaultVariationId
+																	? "Cannot delete - this is the default variation"
+																	: field.id === offVariationId
+																		? "Cannot delete - this is the off variation (clear it first)"
+																		: "Remove variation"}
 															</Tooltip.Content>
 														</Tooltip>
 													)}
@@ -378,6 +409,17 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 										</Table.Row>
 									);
 								})}
+								{/* {errors?.variations?.root && (
+									<Table.Row>
+										<Table.Cell colSpan={4} className="p-0">
+											<div className="px-3 flex justify-center">
+												<FieldError className="text-xs text-danger mt-1">
+													{errors.variations.root.message}
+												</FieldError>
+											</div>
+										</Table.Cell>
+									</Table.Row>
+								)} */}
 								{!isBoolean && (
 									<Table.Row>
 										<Table.Cell colSpan={4} className="p-0">

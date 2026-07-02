@@ -97,9 +97,10 @@ function AuditLogsIndex() {
 		projectId: filters.projectId,
 		environmentId: filters.environmentId,
 		search: tableState.query,
-		sort: tableState.sortBy && tableState.sortDir
-			? `${tableState.sortBy}-${tableState.sortDir}`
-			: undefined,
+		sort:
+			tableState.sortBy && tableState.sortDir
+				? `${tableState.sortBy}-${tableState.sortDir}`
+				: undefined,
 		page: tableState.page,
 		pageSize: tableState.pageSize,
 	};
@@ -139,8 +140,11 @@ function AuditLogsIndex() {
 	}, [filters.visibleColumns]);
 
 	const handleColumnVisibilityChange = (updater: any) => {
-		const newVisibility = typeof updater === "function" ? updater(initialVisibleColumns) : updater;
-		const visibleList = Object.keys(newVisibility).filter((k) => newVisibility[k]);
+		const newVisibility =
+			typeof updater === "function" ? updater(initialVisibleColumns) : updater;
+		const visibleList = Object.keys(newVisibility).filter(
+			(k) => newVisibility[k],
+		);
 		updateTableState({
 			filters: {
 				...filters,
@@ -191,9 +195,9 @@ function AuditLogsIndex() {
 		};
 	}, [filters]);
 
-	const hasAnyFilter = Object.values(filters).some(
-		(v) => v !== undefined && v !== "",
-	) || searchQuery !== "";
+	const hasAnyFilter =
+		Object.values(filters).some((v) => v !== undefined && v !== "") ||
+		searchQuery !== "";
 
 	const handleClearAll = () => {
 		setSearchQuery("");
@@ -206,10 +210,11 @@ function AuditLogsIndex() {
 	};
 
 	const columns = useMemo(
-		() => createAuditLogColumns((log) => {
-			setSelectedLog(log);
-			setIsDetailOpen(true);
-		}),
+		() =>
+			createAuditLogColumns((log) => {
+				setSelectedLog(log);
+				setIsDetailOpen(true);
+			}),
 		[],
 	);
 
@@ -230,18 +235,25 @@ function AuditLogsIndex() {
 							<ColumnsIcon className="size-4" />
 							Columns
 						</Button>
-						<Popover.Content className="p-4 w-56">
+						<Popover.Content className="w-56">
 							<Popover.Dialog>
 								<div className="flex flex-col gap-2">
-									<h4 className="font-semibold text-sm mb-2 text-foreground border-b pb-1">Toggle Columns</h4>
+									<h4 className="font-semibold text-sm mb-2 text-foreground border-b pb-1">
+										Toggle Columns
+									</h4>
 									<div className="flex flex-col gap-2.5 max-h-72 overflow-y-auto">
 										{ALL_COLUMNS.map((col) => (
 											<Checkbox
 												key={col.id}
 												isSelected={initialVisibleColumns[col.id] ?? false}
 												onChange={(isSelected) => {
-													const next = { ...initialVisibleColumns, [col.id]: isSelected };
-													const visibleList = Object.keys(next).filter((k) => next[k]);
+													const next = {
+														...initialVisibleColumns,
+														[col.id]: isSelected,
+													};
+													const visibleList = Object.keys(next).filter(
+														(k) => next[k],
+													);
 													updateTableState({
 														filters: {
 															...filters,
@@ -249,7 +261,8 @@ function AuditLogsIndex() {
 														},
 													});
 												}}
-											>
+												variant="secondary"
+												>
 												<Checkbox.Content>
 													<Checkbox.Control>
 														<Checkbox.Indicator />
@@ -266,7 +279,7 @@ function AuditLogsIndex() {
 				</div>
 			</div>
 
-				<AuditFilter filters={auditFilters} onChange={handleFilterChange} />
+			<AuditFilter filters={auditFilters} onChange={handleFilterChange} />
 
 			{isError ? (
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">

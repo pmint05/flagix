@@ -48,13 +48,9 @@ export function evaluate(
     }
   }
 
-  // Resolve environment-specific defaultVariationId first, fall back to global default variation
   let defaultVariation = flag.defaultVariationId
     ? flag.variations.find((v) => v.id === flag.defaultVariationId)
     : undefined;
-  if (!defaultVariation) {
-    defaultVariation = flag.variations.find((v) => v.isDefault);
-  }
 
   if (defaultVariation) {
     return {

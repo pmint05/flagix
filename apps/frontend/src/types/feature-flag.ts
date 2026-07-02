@@ -9,7 +9,7 @@ export const flagVariationDotSchema = z.object({
 
 export const variationSchema = z.object({
 	id: uuidSchema,
-	featureFlagId: uuidSchema,
+	// featureFlagId: uuidSchema,
 	key: z.string().min(1).max(100),
 	value: z.union([z.boolean(), z.string(), z.record(z.string(), z.unknown())]),
 	description: z.string().nullable().optional(),

@@ -18,11 +18,19 @@ interface DefaultRuleCardProps {
 }
 
 export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
-	const { control, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const {
+		control,
+		formState: { errors },
+	} = useFormContext<FlagEditorFormValues>();
 	const isFlagOn = useWatch({ name: "isFlagOn", control });
+	const offVariationId = useWatch({ name: "offVariationId", control });
+	const variations = useWatch({ name: "variations", control }) || [];
+	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
+
+	const isResolvingToOff = !isFlagOn && !!offVariationId;
 
 	return (
-		<Card className="border border-divider shadow-sm">
+		<Card className="border border-divider shadow-sm mt-4">
 			<h3 className="font-medium text-foreground flex items-center gap-2">
 				<span className="font-semibold">Default Rule</span>
 			</h3>
@@ -34,12 +42,12 @@ export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
 					name="defaultVariationId"
 					control={control}
 					render={({ field }) => (
-						<div className="flex flex-col gap-1 inline-flex">
+						<div className="flex-col gap-1 inline-flex">
 							<VariationSelect
 								flag={flag}
 								value={field.value}
 								onChange={field.onChange}
-								isDisabled={!isFlagOn}
+								isDisabled={isResolvingToOff}
 								isInvalid={!!errors.defaultVariationId}
 							/>
 							{errors.defaultVariationId && (
@@ -72,12 +80,13 @@ function VariationSelect({
 }: VariationSelectProps) {
 	const { contains } = useFilter({ sensitivity: "base" });
 	const { control } = useFormContext<FlagEditorFormValues>();
-	const variations = useWatch({ name: "variations", control }) || flag.variations || [];
+	const variations =
+		useWatch({ name: "variations", control }) || flag.variations || [];
 
 	return (
 		<Autocomplete
-			selectedKey={value}
-			onSelectionChange={(v) => onChange(v as string)}
+			value={value}
+			onChange={(v) => onChange(v as string)}
 			className="inline-flex"
 			variant="secondary"
 			allowsEmptyCollection
@@ -91,7 +100,7 @@ function VariationSelect({
 					<SearchField autoFocus name="search" variant="secondary">
 						<SearchField.Group>
 							<SearchField.SearchIcon />
-							<SearchField.Input placeholder="Search users..." />
+							<SearchField.Input placeholder="Search variations..." />
 							<SearchField.ClearButton />
 						</SearchField.Group>
 					</SearchField>

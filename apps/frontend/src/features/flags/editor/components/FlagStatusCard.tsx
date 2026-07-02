@@ -22,10 +22,15 @@ interface FlagStatusCardProps {
 export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 	const { control } = useFormContext<FlagEditorFormValues>();
 	const isFlagOn = useWatch({ name: "isFlagOn", control });
+	const offVariationId = useWatch({ name: "offVariationId", control });
+	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
 	const variations = useWatch({ name: "variations", control }) || [];
 
+	const defaultVariationName =
+		variations.find((v) => v.id === defaultVariationId)?.key ?? "None";
+
 	return (
-		<Card className="flex flex-wrap flex-row items-center justify-start px-4 py-3 rounded-3xl border border-divider min-h-14 mb-0">
+		<Card className="flex flex-col gap-3 px-4 py-3 rounded-3xl border border-divider min-h-14 mb-0">
 			<div className="flex items-center gap-2 flex-wrap">
 				<span className="">Flag is</span>
 				<Controller
@@ -54,6 +59,11 @@ export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 						<span className="">resolving</span>
 						<OffVariationSelect variations={variations} />
 						<span className="">to all traffic</span>
+						{!offVariationId && (
+							<span className="text-warning">
+								(falling back to default variation in the default rule: {defaultVariationName})
+							</span>
+						)}
 					</>
 				)}
 			</div>
@@ -77,8 +87,8 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 				<Autocomplete
 					variant="secondary"
 					placeholder="None"
-					selectedKey={field.value}
-					onSelectionChange={(v) => field.onChange(v as string)}
+					value={field.value}
+					onChange={(v) => field.onChange(v as string)}
 					aria-label="Select off variation"
 					className="w-fit">
 					<Autocomplete.Trigger className="min-h-4 py-1 px-1.5">
@@ -112,7 +122,10 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 												<div className="flex items-center gap-2">
 													<HexagonIcon
 														weight="fill"
-														className={`${getVariationColorClass(v.color, variations.findIndex((x) => x.id === v.id))} size-3.5 shrink-0`}
+														className={`${getVariationColorClass(
+															v.color,
+															variations.findIndex((x) => x.id === v.id),
+														)} size-3.5 shrink-0`}
 													/>
 													<span className="truncate flex-1 text-left">
 														{keyText}

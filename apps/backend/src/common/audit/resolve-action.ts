@@ -60,6 +60,7 @@ export function resolveFlagStateAction(
 
   if (before.status !== after.status) {
     if (after.status === 'archived') return 'FLAG_ARCHIVE';
+    if (after.status === 'draft' && before.status === 'archived') return 'FLAG_RESTORE';
     if (after.status === 'active' && before.status === 'draft')
       return 'FLAG_ACTIVATE';
   }

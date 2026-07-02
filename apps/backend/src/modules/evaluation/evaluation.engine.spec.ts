@@ -10,6 +10,7 @@ describe('evaluation.engine', () => {
     status: 'active',
     isEnabled: true,
     version: 1,
+    defaultVariationId: 'var-false',
     variations: [
       { id: 'var-true', key: 'true', value: true, isDefault: false },
       { id: 'var-false', key: 'false', value: false, isDefault: true },
@@ -369,14 +370,15 @@ describe('evaluation.engine', () => {
       expect(result.evaluationReason).toBe('FLAG_DISABLED');
     });
 
-    it('should fall back to global default variation when environment-specific offVariationId is missing or invalid', () => {
+    it('should return safe default when offVariationId is invalid and defaultVariationId is also invalid', () => {
       const flag = createFlag({
         isEnabled: false,
         offVariationId: 'invalid-id',
+        defaultVariationId: 'invalid-id',
       });
       const result = evaluate(flag, { userId: 'user-1' });
-      expect(result.variationKey).toBe('false');
-      expect(result.resolvedValue).toBe(false);
+      expect(result.enabled).toBe(false);
+      expect(result.evaluationReason).toBe('FLAG_DISABLED');
     });
 
     it('should return environment-specific defaultVariationId when no rules match', () => {
@@ -389,13 +391,13 @@ describe('evaluation.engine', () => {
       expect(result.evaluationReason).toBe('DEFAULT');
     });
 
-    it('should fall back to global default variation when defaultVariationId is missing or invalid', () => {
+    it('should return safe default when defaultVariationId is invalid', () => {
       const flag = createFlag({
         defaultVariationId: 'invalid-id',
       });
       const result = evaluate(flag, { userId: 'user-1' });
-      expect(result.variationKey).toBe('false');
-      expect(result.resolvedValue).toBe(false);
+      expect(result.enabled).toBe(false);
+      expect(result.evaluationReason).toBe('EVALUATION_ERROR');
     });
   });
 });

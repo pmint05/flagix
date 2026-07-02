@@ -209,3 +209,11 @@ svg[class*="phosphor"] {
 .modal__container {
 	@apply data-[entering]:animate-in data-[entering]:fade-in-0 data-[entering]:slide-in-from-bottom-4 data-[entering]:duration-500 data-[entering]:ease-[cubic-bezier(0.25,1,0.5,1)] data-[exiting]:animate-out data-[exiting]:fade-out-0 data-[exiting]:slide-out-to-bottom-2 data-[exiting]:duration-200 data-[exiting]:ease-[cubic-bezier(0.5,0,0.75,0)];
 }
+
+.table__column-resizer {
+	@apply w-0.5 p-0 bg-border cursor-col-resize transition-colors duration-200 ease-in-out;
+}
+
+.table__column-resizer:hover {
+	@apply bg-accent
+}

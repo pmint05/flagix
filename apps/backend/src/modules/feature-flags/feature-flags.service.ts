@@ -92,7 +92,9 @@ export class FeatureFlagsService {
       }));
 
       const keys = variationData.map((v) => v.key);
-      const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
+      const duplicateKeys = keys.filter(
+        (key, index) => keys.indexOf(key) !== index,
+      );
       if (duplicateKeys.length > 0) {
         throw new BadRequestException(
           `Duplicate variation keys: ${[...new Set(duplicateKeys)].join(', ')}`,
@@ -102,6 +104,10 @@ export class FeatureFlagsService {
       const defaultCount = variationData.filter((v) => v.isDefault).length;
       if (defaultCount === 0) {
         variationData[0].isDefault = true;
+      }
+
+      if (variationData.length < 2) {
+        throw new BadRequestException('At least 2 variations are required');
       }
     } else {
       throw new BadRequestException(
@@ -329,7 +335,9 @@ export class FeatureFlagsService {
   ) {
     if (dto.variations && dto.variations.length > 0) {
       const keys = dto.variations.map((v) => v.key);
-      const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
+      const duplicateKeys = keys.filter(
+        (key, index) => keys.indexOf(key) !== index,
+      );
       if (duplicateKeys.length > 0) {
         throw new BadRequestException(
           `Duplicate variation keys: ${[...new Set(duplicateKeys)].join(', ')}`,
@@ -408,7 +416,8 @@ export class FeatureFlagsService {
 
         // 3. Variations Update
         const areVariationsEqual = (b: any[], a: any[]) => {
-          const sortFn = (x: any, y: any) => (x.key || '').localeCompare(y.key || '');
+          const sortFn = (x: any, y: any) =>
+            (x.key || '').localeCompare(y.key || '');
           const sortedB = [...(b ?? [])].sort(sortFn);
           const sortedA = [...(a ?? [])].sort(sortFn);
 
@@ -431,8 +440,11 @@ export class FeatureFlagsService {
           return cleanB === cleanA;
         };
 
-        if (!areVariationsEqual(beforeConfig.variations, afterConfig.variations)) {
-          const sortFn = (x: any, y: any) => (x.key || '').localeCompare(y.key || '');
+        if (
+          !areVariationsEqual(beforeConfig.variations, afterConfig.variations)
+        ) {
+          const sortFn = (x: any, y: any) =>
+            (x.key || '').localeCompare(y.key || '');
           const sortedB = [...(beforeConfig.variations ?? [])].sort(sortFn);
           const sortedA = [...(afterConfig.variations ?? [])].sort(sortFn);
 
@@ -503,7 +515,10 @@ export class FeatureFlagsService {
         const matchedAny =
           beforeConfig.visibility !== afterConfig.visibility ||
           !areRulesEqual(beforeConfig.rules, afterConfig.rules) ||
-          !areVariationsEqual(beforeConfig.variations, afterConfig.variations) ||
+          !areVariationsEqual(
+            beforeConfig.variations,
+            afterConfig.variations,
+          ) ||
           (stateBefore &&
             stateAfter &&
             (stateBefore.status !== stateAfter.status ||

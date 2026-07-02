@@ -95,7 +95,14 @@ export class FeatureFlagsRepository {
 
   async findVariationsForFlag(flagId: string) {
     return this.db
-      .select()
+      .select({
+        id: variations.id,
+        key: variations.key,
+        color: variations.color,
+        value: variations.value,
+        description: variations.description,
+        isDefault: variations.isDefault,
+      })
       .from(variations)
       .where(
         and(eq(variations.featureFlagId, flagId), isNull(variations.deletedAt)),
@@ -457,24 +464,40 @@ export class FeatureFlagsRepository {
       // 2. Simulate & Merge the Target State
       let targetVariations = currentVariations;
       let variationsUpdated = false;
-      if (payload.variations !== undefined) {
-        variationsUpdated = true;
-        targetVariations = payload.variations.map((pv) => {
-          const id =
-            pv.id ||
-            currentVariations.find((cv) => cv.key === pv.key)?.id ||
-            crypto.randomUUID();
-          return {
-            id,
-            organizationId: orgId,
-            featureFlagId: flagId,
-            key: pv.key,
-            value: pv.value,
-            description: pv.description ?? null,
-            isDefault: pv.isDefault ?? false,
-          } as any;
-        });
-      }
+        if (payload.variations !== undefined) {
+          variationsUpdated = true;
+          // Validate unique keys in payload
+          const payloadKeySet = new Set<string>();
+          for (const v of payload.variations) {
+            if (payloadKeySet.has(v.key)) {
+              throw new BadRequestException(`Duplicate variation key "${v.key}" in payload`);
+            }
+            payloadKeySet.add(v.key);
+          }
+          // Ensure payload does not conflict with existing variations unless updating same id
+          for (const v of payload.variations) {
+            const existing = currentVariations.find((cv) => cv.key === v.key);
+            if (existing && existing.id !== v.id) {
+              throw new BadRequestException(`Variation key "${v.key}" already exists`);
+            }
+          }
+          // Build target variations, preserving IDs when possible
+          targetVariations = payload.variations.map((pv) => {
+            const id =
+              pv.id ||
+              currentVariations.find((cv) => cv.key === pv.key)?.id ||
+              crypto.randomUUID();
+            return {
+              id,
+              organizationId: orgId,
+              featureFlagId: flagId,
+              key: pv.key,
+              value: pv.value,
+              description: pv.description ?? null,
+              isDefault: pv.isDefault ?? false,
+            } as any;
+          });
+        }
 
       let targetRules = currentRules;
       let rulesUpdated = false;
@@ -590,6 +613,11 @@ export class FeatureFlagsRepository {
         }
       }
 
+      // Validate at least 2 variations exist
+      if (variationsUpdated && targetVariations.length < 2) {
+        throw new BadRequestException('At least 2 variations are required');
+      }
+
       // B. Overwrite Targeting Rules for this environment
       if (rulesUpdated) {
         await tx
@@ -636,17 +664,15 @@ export class FeatureFlagsRepository {
         }
       }
 
-      // D. Update variation default flags
-      if (nextDefaultId) {
-        await tx
-          .update(variations)
-          .set({ isDefault: false })
-          .where(eq(variations.featureFlagId, flagId));
-
-        await tx
-          .update(variations)
-          .set({ isDefault: true })
-          .where(eq(variations.id, nextDefaultId));
+      // D. Ensure off variation is set when activating flag
+      const nextStatus =
+        payload.status !== undefined
+          ? payload.status
+          : (currentFlagState?.status ?? 'draft');
+      if (nextStatus === 'active' && !finalOffId) {
+        throw new BadRequestException(
+          'Active flags must have an off variation',
+        );
       }
 
       // E. Update flag states (isEnabled, status, defaultVariationId, offVariationId)
@@ -655,10 +681,6 @@ export class FeatureFlagsRepository {
           payload.isEnabled !== undefined
             ? payload.isEnabled
             : currentFlagState.isEnabled;
-        const nextStatus =
-          payload.status !== undefined
-            ? payload.status
-            : currentFlagState.status;
 
         await tx
           .update(flagStates)

@@ -2,12 +2,6 @@ export const TAILWIND_COLORS_500: Record<
 	string,
 	{ hex: string; textClass: string; bgClass: string; borderClass: string }
 > = {
-	red: {
-		hex: "#ef4444",
-		textClass: "text-red-500",
-		bgClass: "bg-red-500",
-		borderClass: "border-red-500",
-	},
 	blue: {
 		hex: "#3b82f6",
 		textClass: "text-blue-500",
@@ -19,6 +13,12 @@ export const TAILWIND_COLORS_500: Record<
 		textClass: "text-amber-500",
 		bgClass: "bg-amber-500",
 		borderClass: "border-amber-500",
+	},
+	red: {
+		hex: "#ef4444",
+		textClass: "text-red-500",
+		bgClass: "bg-red-500",
+		borderClass: "border-red-500",
 	},
 	green: {
 		hex: "#22c55e",
