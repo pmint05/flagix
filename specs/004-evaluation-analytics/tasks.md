@@ -143,15 +143,15 @@ description: "Task list for feature implementation: Evaluation Analytics & Real-
 
 **Purpose**: Time range selector, error handling, loading states, and responsive design across all analytics pages
 
-- [ ] T048 [P] Create reusable `TimeRangeSelector` component (preset buttons: 1h, 24h, 7d, 30d, 90d + custom range picker using HeroUI DatePicker) in `apps/frontend/src/features/analytics/components/TimeRangeSelector.tsx`
-- [ ] T049 [P] Add loading skeleton states (HeroUI Skeleton) to all analytics components (overview, flag detail, live stream)
-- [ ] T050 [P] Add error state handling with retry button to all analytics pages (TanStack Query error + HeroUI Button)
-- [ ] T051 [P] Add empty state (no evaluation data yet) with illustration and "Learn about evaluations" link to all analytics pages
-- [ ] T052 [P] Add responsive design pass for all analytics pages (mobile: single column, tablet: 2-column grid, desktop: full layout)
-- [ ] T053 Configure rate limiting for analytics SSE endpoint using `@nestjs/throttler` (separate limit: 100 connections per user per 60s)
-- [ ] T054 [P] Add `hashUtil.ts` with SHA-256 helpers (hashUserId, hashClientIp) in `apps/backend/src/common/utils/hash.util.ts`
-- [ ] T055 [P] Create shared Zod schemas for analytics requests (timeRange, granularity) in `packages/shared/src/schemas/analytics.ts`
-- [ ] T056 Create `analytics.ts` frontend types mirroring API response shapes in `apps/frontend/src/features/analytics/types/analytics.ts`
+- [x] T048 [P] Create reusable `TimeRangeSelector` component (preset buttons: 1h, 24h, 7d, 30d, 90d + custom range picker using HeroUI DatePicker) in `apps/frontend/src/features/analytics/components/TimeRangeSelector.tsx`
+- [x] T049 [P] Add loading skeleton states (HeroUI Skeleton) to all analytics components (overview, flag detail, live stream)
+- [x] T050 [P] Add error state handling with retry button to all analytics pages (TanStack Query error + HeroUI Button)
+- [x] T051 [P] Add empty state (no evaluation data yet) with illustration and "Learn about evaluations" link to all analytics pages
+- [x] T052 [P] Add responsive design pass for all analytics pages (mobile: single column, tablet: 2-column grid, desktop: full layout)
+- [x] T053 Configure rate limiting for analytics SSE endpoint using `@nestjs/throttler` (separate limit: 100 connections per user per 60s)
+- [x] T054 [P] Add `hashUtil.ts` with SHA-256 helpers (hashUserId, hashClientIp) in `apps/backend/src/common/utils/hash.util.ts`
+- [x] T055 [P] Create shared Zod schemas for analytics requests (timeRange, granularity) in `packages/shared/src/schemas/analytics.ts`
+- [x] T056 Create `analytics.ts` frontend types mirroring API response shapes in `apps/frontend/src/features/analytics/types/analytics.ts`
 
 ---
 

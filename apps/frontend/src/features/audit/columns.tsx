@@ -159,8 +159,7 @@ export const createAuditLogColumns = (
 					/>
 					<div className="flex flex-col min-w-30">
 						<span className="font-medium text-sm">
-							{row.actorName ||
-								(row.actorEmail ? row.actorEmail : "System")}
+							{row.actorName || (row.actorEmail ? row.actorEmail : "System")}
 						</span>
 						{row.actorEmail && (
 							<span className="text-xs text-default-400 font-mono">
@@ -180,13 +179,10 @@ export const createAuditLogColumns = (
 			const action = info.getValue();
 			const { suffix, color } = getActionStyle(action);
 			return (
-				<div className="flex flex-col gap-1 items-start">
-					<Chip size="lg" color={color} variant="secondary">
-						{/* {suffix} */}
-						{action}
-					</Chip>
-					<span className="text-[10px] font-mono text-default-400"></span>
-				</div>
+				<Chip color={color} variant="secondary">
+					{/* {suffix} */}
+					{action}
+				</Chip>
 			);
 		},
 	}),
@@ -196,7 +192,9 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => {
 			const val = info.getValue();
-			return <span className="whitespace-nowrap font-medium">{val || "—"}</span>;
+			return (
+				<span className="whitespace-nowrap font-medium">{val || "—"}</span>
+			);
 		},
 	}),
 	columnHelper.accessor("environmentName", {
@@ -205,7 +203,9 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => {
 			const val = info.getValue();
-			return <span className="whitespace-nowrap font-medium">{val || "—"}</span>;
+			return (
+				<span className="whitespace-nowrap font-medium">{val || "—"}</span>
+			);
 		},
 	}),
 	columnHelper.accessor("entityType", {

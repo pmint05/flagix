@@ -59,7 +59,12 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 		},
 		{ label: "SDK Keys" },
 	],
-	"/_authenticated/audit-logs": [
+	"/_authenticated/analytics/": [{ label: "Analytics", href: "/analytics" }],
+	"/_authenticated/analytics/live": [
+		{ label: "Analytics", href: "/analytics" },
+		{ label: "Live Events" },
+	],
+	"/_authenticated/audit-logs/": [
 		{ label: "Audit Logs", href: "/_authenticated/audit-logs" },
 	],
 };

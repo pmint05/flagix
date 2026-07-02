@@ -29,7 +29,7 @@ export function useAnalyticsStream(
 	const { flagKey, environmentId, maxEvents = 500 } = options;
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 
-	const [events, setEvents] = useState<EvaluationStreamEvent[]>([]);
+	const [allEvents, setAllEvents] = useState<EvaluationStreamEvent[]>([]);
 	const [isPaused, setIsPaused] = useState(false);
 	const [isConnected, setIsConnected] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -40,6 +40,8 @@ export function useAnalyticsStream(
 	const abortRef = useRef<AbortController | null>(null);
 	const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const mountedRef = useRef(true);
+	const filterKeyRef = useRef(flagKey);
+	filterKeyRef.current = flagKey;
 
 	const connect = useCallback(() => {
 		if (!orgId || !mountedRef.current) return;
@@ -50,7 +52,6 @@ export function useAnalyticsStream(
 		}
 
 		const params = new URLSearchParams();
-		if (flagKey) params.set("flagKey", flagKey);
 		if (environmentId) params.set("environmentId", environmentId);
 
 		const qs = params.toString();
@@ -112,7 +113,17 @@ export function useAnalyticsStream(
 								0,
 								maxEvents,
 							);
-							if (mountedRef.current) setEvents(eventsRef.current);
+
+							const fk = filterKeyRef.current;
+							if (mountedRef.current) {
+								if (fk) {
+									setAllEvents(
+										eventsRef.current.filter((e) => e.flagKey === fk),
+									);
+								} else {
+									setAllEvents(eventsRef.current);
+								}
+							}
 						} catch {
 							// Skip malformed events
 						}
@@ -151,7 +162,7 @@ export function useAnalyticsStream(
 				}, delay);
 			}
 		})();
-	}, [orgId, flagKey, environmentId, maxEvents]);
+	}, [orgId, environmentId, maxEvents]);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -169,23 +180,13 @@ export function useAnalyticsStream(
 		};
 	}, [orgId, connect]);
 
+	// When flagKey changes, re-filter existing events without clearing buffer
 	useEffect(() => {
-		if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-		if (abortRef.current) {
-			abortRef.current.abort();
-			abortRef.current = null;
-		}
-		retriesRef.current = 0;
-		eventsRef.current = [];
-		pausedRef.current = false;
-		if (mountedRef.current) {
-			setEvents([]);
-			setIsPaused(false);
-			setIsConnected(false);
-			setError(null);
-		}
-		connect();
-	}, [flagKey, environmentId, connect]);
+		const filtered = eventsRef.current.filter(
+			(e) => !flagKey || e.flagKey.includes(flagKey),
+		);
+		setAllEvents(filtered);
+	}, [flagKey]);
 
 	const pause = useCallback(() => {
 		pausedRef.current = true;
@@ -199,8 +200,16 @@ export function useAnalyticsStream(
 
 	const clear = useCallback(() => {
 		eventsRef.current = [];
-		setEvents([]);
+		setAllEvents([]);
 	}, []);
 
-	return { events, isPaused, isConnected, error, pause, resume, clear };
+	return {
+		events: allEvents,
+		isPaused,
+		isConnected,
+		error,
+		pause,
+		resume,
+		clear,
+	};
 }

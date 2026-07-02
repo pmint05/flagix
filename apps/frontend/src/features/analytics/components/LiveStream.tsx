@@ -79,15 +79,6 @@ export function LiveStream() {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center gap-3">
-				<Button
-					variant="outline"
-					size="sm"
-					render={({ className }) => (
-						<Link to="/analytics" className={className}>
-							<ArrowLeftIcon />
-						</Link>
-					)}
-				/>
 				<div>
 					<h2 className="text-xl font-semibold text-foreground">
 						Live Evaluation Stream
@@ -95,10 +86,9 @@ export function LiveStream() {
 					<p className="text-sm">Real-time flag evaluation events</p>
 				</div>
 				<div className="flex items-center gap-2 ml-auto">
-					<span
-						className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isConnected ? "bg-success/20 text-success" : "bg-danger/20 text-danger"}`}>
+					<Chip size="sm" color={isConnected ? "success" : "danger"}>
 						{isConnected ? "Connected" : "Disconnected"}
-					</span>
+					</Chip>
 					{isPaused ? (
 						<Button variant="primary" size="sm" onPress={resume}>
 							<PlayIcon weight="fill" /> Resume
@@ -127,13 +117,13 @@ export function LiveStream() {
 
 				<div className="flex items-center gap-2 ml-auto">
 					{isPaused && missedCount > 0 && (
-						<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning">
+						<Chip size="sm" color="warning">
 							{missedCount} new events
-						</span>
+						</Chip>
 					)}
-					<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-default-100">
+					<Chip size="sm" color="default">
 						{events.length} events
-					</span>
+					</Chip>
 					<Button variant="outline" size="sm" onPress={clear}>
 						<TrashIcon />
 					</Button>
