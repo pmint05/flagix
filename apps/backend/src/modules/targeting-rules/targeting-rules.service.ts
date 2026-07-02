@@ -13,6 +13,7 @@ import { type Database } from '@/db';
 import { TargetingRulesRepository } from './targeting-rules.repository';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { resolveRuleAction } from '@/common/audit/resolve-action';
 import { sanitizeRule } from '@/common/audit/sanitize';
@@ -32,6 +33,7 @@ export class TargetingRulesService {
     @Inject(DATABASE) private readonly db: Database,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
     @Optional() private readonly auditLogsService?: AuditLogsService,
+    @Optional() private readonly cache?: FlagConfigCacheService,
   ) {}
 
   async create(orgId: string, flagId: string, dto: CreateTargetingRuleDto) {
@@ -96,6 +98,10 @@ export class TargetingRulesService {
       });
     }
 
+    if (flag?.key) {
+      this.cache?.invalidateFlag(rule.environmentId, flag.key);
+    }
+
     return rule;
   }
 
@@ -150,6 +156,10 @@ export class TargetingRulesService {
       });
     }
 
+    if (flag?.key) {
+      this.cache?.invalidateFlag(updated.environmentId, flag.key);
+    }
+
     return updated;
   }
 
@@ -177,6 +187,10 @@ export class TargetingRulesService {
         resolveAction: () => 'FLAG_RULE_UPDATE',
         sanitize: sanitizeRule,
       });
+    }
+
+    if (flag?.key) {
+      this.cache?.invalidateFlag(rule.environmentId, flag.key);
     }
 
     return { success: true };

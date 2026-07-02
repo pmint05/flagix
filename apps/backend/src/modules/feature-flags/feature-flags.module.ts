@@ -7,6 +7,7 @@ import { EnvironmentsModule } from '../environments/environments.module';
 import { FlagChangesModule } from '../flag-changes/flag-changes.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { EvaluationModule } from '../evaluation/evaluation.module';
+import { FlagConfigCacheModule } from '../evaluation/flag-config-cache.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EvaluationModule } from '../evaluation/evaluation.module';
     FlagChangesModule,
     AuditLogsModule,
     EvaluationModule,
+    FlagConfigCacheModule,
   ],
   controllers: [FeatureFlagsController, FeatureFlagItemController],
   providers: [FeatureFlagsService, FeatureFlagsRepository],

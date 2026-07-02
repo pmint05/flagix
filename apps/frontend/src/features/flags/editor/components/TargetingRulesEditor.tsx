@@ -166,15 +166,17 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 						items={fieldIds}
 						strategy={verticalListSortingStrategy}>
 						{/* Top add-rule button (only when items exist and the first rule is not a kill switch) */}
-						{canEditFlags && fields.length > 0 && fields[0]?.ruleType !== "kill_switch" && (
-							<div className="pb-4 w-full flex justify-center">
-								<AddRuleButton
-									onAdd={(type) => handleAddRule(0, type)}
-									isDisabled={!isFlagOn}
-									hasKillSwitch={hasKillSwitch}
-								/>
-							</div>
-						)}
+						{canEditFlags &&
+							fields.length > 0 &&
+							fields[0]?.ruleType !== "kill_switch" && (
+								<div className="pb-4 w-full flex justify-center">
+									<AddRuleButton
+										onAdd={(type) => handleAddRule(0, type)}
+										isDisabled={!isFlagOn}
+										hasKillSwitch={hasKillSwitch}
+									/>
+								</div>
+							)}
 
 						{fields.map((rule, formIndex) => (
 							<SortableRuleItem

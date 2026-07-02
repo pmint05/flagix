@@ -8,16 +8,23 @@ import {
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
+import { FlagConfigCacheService } from './flag-config-cache.service';
 import type { LoadedFlag, LoadedFlagRule } from './safe-default.util';
 
 @Injectable()
 export class FlagLoader {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly cache: FlagConfigCacheService,
+  ) {}
 
   async loadFlag(
     environmentId: string,
     flagKey: string,
   ): Promise<LoadedFlag | null> {
+    const cached = await this.cache.getFlagConfig(environmentId, flagKey);
+    if (cached) return cached;
+
     const flag = await this.db.query.featureFlags.findFirst({
       where: and(eq(featureFlags.key, flagKey), isNull(featureFlags.deletedAt)),
       with: {
@@ -45,7 +52,7 @@ export class FlagLoader {
 
     const state = flag.flagStates[0];
 
-    return {
+    const loaded: LoadedFlag = {
       id: flag.id,
       key: flag.key,
       name: flag.name,
@@ -73,9 +80,15 @@ export class FlagLoader {
       ),
       visibility: flag.visibility,
     };
+
+    await this.cache.setFlagConfig(environmentId, flagKey, loaded);
+    return loaded;
   }
 
   async loadAllActiveFlags(environmentId: string): Promise<LoadedFlag[]> {
+    const cached = await this.cache.getAllFlagConfigs(environmentId);
+    if (cached) return cached;
+
     const states = await this.db.query.flagStates.findMany({
       where: and(
         eq(flagStates.environmentId, environmentId),
@@ -100,7 +113,7 @@ export class FlagLoader {
       },
     });
 
-    return states
+    const loaded: LoadedFlag[] = states
       .filter(
         (
           s,
@@ -138,5 +151,8 @@ export class FlagLoader {
           visibility: flag.visibility,
         };
       });
+
+    await this.cache.setAllFlagConfigs(environmentId, loaded);
+    return loaded;
   }
 }

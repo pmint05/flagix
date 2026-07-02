@@ -69,8 +69,6 @@ export function RolloutBar({
 		bgColor: string;
 	}>;
 
-	console.log(segments);
-
 	const total = rollouts.reduce(
 		(sum, r) => sum + (Number(r.percentage) || 0),
 		0,

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Worker } from 'bullmq';
-import { IOREDIS, EVALUATION_QUEUE_NAME } from '@/modules/bullmq/bullmq.module';
+import { IOREDIS, IOREDIS_PUB, EVALUATION_QUEUE_NAME } from '@/modules/bullmq/bullmq.module';
 import { EvaluationEventsRepository } from '@/modules/evaluation-events/evaluation-events.repository';
 import type { InsertEvaluationEvent } from '@/modules/evaluation-events/evaluation-events.repository';
 import type { EvaluationStreamEvent } from '@/modules/evaluation-stream/evaluation-stream.service';
@@ -32,6 +32,7 @@ export class EvaluationCollectorWorker implements OnModuleInit {
 
   constructor(
     @Inject(IOREDIS) private readonly redis: Redis,
+    @Inject(IOREDIS_PUB) private readonly redisPub: Redis,
     private readonly repository: EvaluationEventsRepository,
   ) {}
 
@@ -105,7 +106,7 @@ export class EvaluationCollectorWorker implements OnModuleInit {
     };
 
     try {
-      await this.redis.publish('analytics:evaluations', JSON.stringify(event));
+      await this.redisPub.publish('analytics:evaluations', JSON.stringify(event));
     } catch (err) {
       this.logger.error('Failed to publish to Redis pub/sub', err);
     }

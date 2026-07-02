@@ -12,6 +12,7 @@ import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { EvaluationService } from '../evaluation/evaluation.service';
+import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
 import type { EvaluationContext, FeatureFlagListQuery } from '@flagix/shared';
 import {
   resolveFlagAction,
@@ -58,6 +59,7 @@ export class FeatureFlagsService {
     private readonly evaluationService: EvaluationService,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
     @Optional() private readonly auditLogsService?: AuditLogsService,
+    @Optional() private readonly cache?: FlagConfigCacheService,
   ) {}
 
   async create(orgId: string, projectId: string, dto: CreateFeatureFlagDto) {
@@ -324,6 +326,8 @@ export class FeatureFlagsService {
       });
     }
 
+    this.cache?.invalidateFlag(envId, flag.key);
+
     return updated;
   }
 
@@ -559,6 +563,8 @@ export class FeatureFlagsService {
       });
     }
 
+    this.cache?.invalidateFlag(envId, updated.key);
+
     return this.findOne(orgId, flagId, envId);
   }
 
@@ -603,6 +609,13 @@ export class FeatureFlagsService {
         resolveAction: resolveFlagAction,
         sanitize: sanitizeFlag,
       });
+    }
+
+    if (this.cache) {
+      const states = await this.flagRepo.findFlagStatesForFlag(flagId);
+      for (const state of states) {
+        this.cache.invalidateFlag(state.environmentId, flag.key);
+      }
     }
 
     return { success: true };

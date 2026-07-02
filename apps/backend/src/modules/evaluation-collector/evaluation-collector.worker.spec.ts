@@ -52,8 +52,18 @@ describe('EvaluationCollectorWorker', () => {
       publish: jest.fn().mockResolvedValue(undefined),
     };
 
-    worker = new EvaluationCollectorWorker(mockRedis as any, mockRepository);
+    const mockRedisPub = {
+      publish: jest.fn().mockResolvedValue(undefined),
+    };
+
+    worker = new EvaluationCollectorWorker(
+      mockRedis as any,
+      mockRedisPub as any,
+      mockRepository,
+    );
     worker.onModuleInit();
+
+    mockRedis.publish = mockRedisPub.publish;
   });
 
   describe('batch insert and flush', () => {
