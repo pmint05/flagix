@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useOrganizations } from "@/features/organizations/api";
 import { useContextStore, useIsHydrated } from "@/stores";
-import { BuildingIcon } from "@phosphor-icons/react";
-import { Skeleton } from "@heroui/react";
+import { BuildingIcon, UsersThreeIcon } from "@phosphor-icons/react";
+import { Button, Chip, Skeleton } from "@heroui/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -53,9 +53,9 @@ function OrgSelectLayout() {
 		<div className="min-h-screen w-full bg-background flex items-center justify-center p-6">
 			<div className="w-full max-w-lg space-y-8">
 				<div className="text-center space-y-2">
-					<div className="flex justify-center mb-4">
-						<div className="p-3 rounded-full bg-primary-100 dark:bg-primary-900/30">
-							<BuildingIcon className="h-8 w-8 text-primary" />
+					<div className="flex justify-center mb-3">
+						<div className="p-3 rounded-full bg-accent-soft">
+							<UsersThreeIcon className="size-8 text-accent" />
 						</div>
 					</div>
 					<h1 className="text-2xl font-bold text-foreground">
@@ -68,24 +68,15 @@ function OrgSelectLayout() {
 
 				<div className="space-y-3">
 					{organizations.map((org) => (
-						<button
+						<Button
 							key={org.id}
 							onClick={() => handleSelectOrg(org)}
-							className="w-full p-4 rounded-xl border border-default-200 dark:border-default-800 hover:border-primary hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors text-left group">
-							<div className="flex items-center justify-between">
-								<div>
-									<h3 className="font-medium text-foreground group-hover:text-primary">
-										{org.name}
-									</h3>
-									<p className="text-sm text-default-500 capitalize">
-										{org.role}
-									</p>
-								</div>
-								<div className="text-default-400 group-hover:text-primary">
-									<BuildingIcon className="h-5 w-5" />
-								</div>
-							</div>
-						</button>
+							fullWidth
+							variant="tertiary"
+							className="flex items-start flex-col min-h-auto h-auto p-4">
+							<h3 className="font-medium text-xl">{org.name}</h3>
+							<Chip variant="soft" color="accent" className="text-sm capitalize">{org.role}</Chip>
+						</Button>
 					))}
 				</div>
 			</div>

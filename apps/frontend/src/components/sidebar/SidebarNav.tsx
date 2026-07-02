@@ -5,37 +5,23 @@ import {
 	KeyIcon,
 	ClockCounterClockwiseIcon,
 	ChartBarIcon,
+	BroadcastIcon,
+	ChartLineIcon,
 } from "@phosphor-icons/react";
 import { useContextStore, useSidebarStore } from "#/stores";
 import { SidebarNavItem } from "./SidebarNavItem";
 
 const PROJECT_NAV_ITEMS = [
-	{
-		to: "/projects/$projectSlug/flags",
-		label: "Feature Flags",
-		icon: FlagIcon,
-	},
-	{
-		to: "/projects/$projectSlug/environments",
-		label: "Environments",
-		icon: TreeStructureIcon,
-	},
+	{ to: "/projects/$projectSlug/flags", label: "Feature Flags", icon: FlagIcon },
+	{ to: "/projects/$projectSlug/environments", label: "Environments", icon: TreeStructureIcon },
 	{ to: "/projects/$projectSlug/sdk-keys", label: "SDK Keys", icon: KeyIcon },
+	{ to: "/projects/$projectSlug/analytics", label: "Project Analytics", icon: ChartLineIcon },
 ];
 
 const GLOBAL_NAV_ITEMS = [
-	{
-		to: "/analytics",
-		label: "Analytics",
-		icon: ChartBarIcon,
-		keepSearch: false,
-	},
-	{
-		to: "/audit-logs",
-		label: "Audit Logs",
-		icon: ClockCounterClockwiseIcon,
-		keepSearch: false,
-	},
+	{ to: "/analytics", label: "Analytics", icon: ChartBarIcon, keepSearch: false },
+	{ to: "/live-events", label: "Live Events", icon: BroadcastIcon, keepSearch: false },
+	{ to: "/audit-logs", label: "Audit Logs", icon: ClockCounterClockwiseIcon, keepSearch: false },
 ];
 
 export function SidebarNav() {

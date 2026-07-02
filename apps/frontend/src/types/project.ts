@@ -11,6 +11,18 @@ export const projectSchema = z.object({
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
 	deletedAt: timestampSchema.nullable().optional(),
+	creator: z.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		image: z.string().optional().nullable(),
+	}).optional().nullable(),
+	updater: z.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		image: z.string().optional().nullable(),
+	}).optional().nullable(),
 });
 
 export type Project = z.infer<typeof projectSchema>;

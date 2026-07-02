@@ -12,6 +12,7 @@ import {
 interface StreamQuery {
   flagKey?: string;
   environmentId?: string;
+  projectId?: string;
 }
 
 @ApiTags('Analytics')
@@ -39,6 +40,7 @@ export class EvaluationStreamController {
         if (query.flagKey && event.flagKey !== query.flagKey) return false;
         if (query.environmentId && event.environmentId !== query.environmentId)
           return false;
+        if (query.projectId && event.projectId !== query.projectId) return false;
         return true;
       }),
       map(

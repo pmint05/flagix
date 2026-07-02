@@ -112,4 +112,58 @@ export class EvaluationAnalyticsController {
       granularity: 'hour',
     });
   }
+
+  @Get('organizations/:orgId/projects/:projectId/analytics/overview')
+  @ApiOperation({ summary: 'Get project-level analytics overview' })
+  @ApiParam({ name: 'orgId', required: true })
+  @ApiParam({ name: 'projectId', required: true })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'granularity', required: false })
+  @ApiQuery({ name: 'environmentIds', required: false })
+  async getProjectOverview(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('granularity') granularity?: string,
+    @Query('environmentIds') environmentIds?: string,
+  ) {
+    const now = new Date();
+    const defaultFrom = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const envIds = environmentIds
+      ? environmentIds.split(',').filter(Boolean)
+      : undefined;
+
+    return this.analyticsService.getProjectOverview(orgId, projectId, {
+      from: from ? new Date(from) : defaultFrom,
+      to: to ? new Date(to) : now,
+      granularity: (granularity === 'day' ? 'day' : 'hour'),
+    }, envIds);
+  }
+
+  @Get('organizations/:orgId/projects/:projectId/analytics/environments/:envId')
+  @ApiOperation({ summary: 'Get environment analytics within a project' })
+  @ApiParam({ name: 'orgId', required: true })
+  @ApiParam({ name: 'projectId', required: true })
+  @ApiParam({ name: 'envId', required: true })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  async getProjectEnvironmentAnalytics(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Param('envId') envId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const now = new Date();
+    const defaultFrom = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    return this.analyticsService.getEnvironmentAnalytics(orgId, envId, {
+      from: from ? new Date(from) : defaultFrom,
+      to: to ? new Date(to) : now,
+      granularity: 'hour',
+    }, projectId);
+  }
 }

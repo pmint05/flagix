@@ -4,12 +4,15 @@ import { Link } from "@tanstack/react-router";
 import { PencilSimpleIcon, TrashSimpleIcon } from "@phosphor-icons/react";
 import CopyButton from "#/components/ui/copy-button";
 import type { Project } from "@/types/project";
+import UserAvatar from "@/components/user/user-avatar";
+import { formatDistanceToNow } from "date-fns";
+import { formatDate } from "@/lib/date";
 
 const columnHelper = createColumnHelper<Project>();
 
 interface ColumnActions {
 	onEdit: (project: Project) => void;
-	onDelete: (projectId: string) => void;
+	onDelete: (project: Project) => void;
 }
 
 export function createProjectColumns(actions: ColumnActions) {
@@ -47,13 +50,51 @@ export function createProjectColumns(actions: ColumnActions) {
 				);
 			},
 		}),
-		columnHelper.accessor("description", {
-			header: "Description",
-			cell: (info) => <span>{info.getValue() || "—"}</span>,
+		columnHelper.accessor("creator", {
+			header: "Creator",
+			cell: (info) => {
+				const creator = info.getValue();
+				return <UserAvatar user={creator || null} showTooltip size="sm" />;
+			},
 		}),
-		columnHelper.accessor("flagCount", {
-			header: "Flags",
-			cell: (info) => <span>{info.getValue() ?? 0}</span>,
+		columnHelper.accessor("updater", {
+			header: "Updater",
+			cell: (info) => {
+				const updater = info.getValue();
+				return <UserAvatar user={updater || null} showTooltip size="sm" />;
+			},
+		}),
+		columnHelper.accessor("createdAt", {
+			header: "Created",
+			cell: (info) => {
+				const date = info.getValue();
+				return (
+					<Tooltip>
+						<Tooltip.Trigger>
+							<span className="text-sm text-default-500 cursor-default">
+								{formatDistanceToNow(new Date(date), { addSuffix: true })}
+							</span>
+						</Tooltip.Trigger>
+						<Tooltip.Content>{formatDate(date)}</Tooltip.Content>
+					</Tooltip>
+				);
+			},
+		}),
+		columnHelper.accessor("updatedAt", {
+			header: "Updated",
+			cell: (info) => {
+				const date = info.getValue();
+				return (
+					<Tooltip>
+						<Tooltip.Trigger>
+							<span className="text-sm text-default-500 cursor-default">
+								{formatDistanceToNow(new Date(date), { addSuffix: true })}
+							</span>
+						</Tooltip.Trigger>
+						<Tooltip.Content>{formatDate(date)}</Tooltip.Content>
+					</Tooltip>
+				);
+			},
 		}),
 		columnHelper.display({
 			id: "actions",
@@ -81,7 +122,7 @@ export function createProjectColumns(actions: ColumnActions) {
 									variant="ghost"
 									size="sm"
 									className="hover:text-danger hover:bg-danger-soft transition"
-									onPress={() => actions.onDelete(project.id)}>
+									onPress={() => actions.onDelete(project)}>
 									<TrashSimpleIcon className="h-4 w-4" />
 								</Button>
 							</Tooltip.Trigger>

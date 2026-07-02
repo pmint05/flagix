@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, gte, lte, desc, sql, count } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, sql, count, inArray } from 'drizzle-orm';
 import {
   evaluationEvents,
   evaluationStatsHourly,
   featureFlags,
+  environments,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -325,12 +326,23 @@ export class EvaluationAnalyticsService {
     orgId: string,
     envId: string,
     range: AnalyticsTimeRange,
+    projectId?: string,
   ): Promise<{
     environmentName: string;
     totalEvaluations: number;
     flags: { flagId: string | null; flagKey: string; totalCount: number; variationDistribution: { variationKey: string; count: number; percentage: number }[] }[];
     timeRange: { from: string; to: string };
   }> {
+    const conditions = [
+      eq(evaluationEvents.organizationId, orgId),
+      eq(evaluationEvents.environmentId, envId),
+      gte(evaluationEvents.createdAt, range.from),
+      lte(evaluationEvents.createdAt, range.to),
+    ];
+    if (projectId) {
+      conditions.push(eq(evaluationEvents.projectId, projectId));
+    }
+
     const rows = await this.db
       .select({
         flagKey: evaluationEvents.flagKey,
@@ -338,12 +350,7 @@ export class EvaluationAnalyticsService {
         variationKey: evaluationEvents.variationKey,
       })
       .from(evaluationEvents)
-      .where(and(
-        eq(evaluationEvents.organizationId, orgId),
-        eq(evaluationEvents.environmentId, envId),
-        gte(evaluationEvents.createdAt, range.from),
-        lte(evaluationEvents.createdAt, range.to),
-      ));
+      .where(and(...conditions));
 
     const flagMap = new Map<string, {
       flagId: string | null;
@@ -391,6 +398,144 @@ export class EvaluationAnalyticsService {
       timeRange: {
         from: range.from.toISOString(),
         to: range.to.toISOString(),
+      },
+    };
+  }
+
+  async getProjectOverview(
+    orgId: string,
+    projectId: string,
+    range: AnalyticsTimeRange,
+    environmentIds?: string[],
+  ): Promise<{
+    totalEvaluations: number;
+    uniqueUsers: number;
+    errorRate: number;
+    activeFlags: number;
+    evaluationTrend: { timestamp: string; count: number }[];
+    topFlags: { flagKey: string; flagName: string; flagId: string | null; totalCount: number }[];
+    byEnvironment: { environmentId: string; environmentName: string; totalCount: number; errorCount: number }[];
+    timeRange: { from: string; to: string; granularity: string };
+  }> {
+    const conditions = [
+      eq(evaluationEvents.organizationId, orgId),
+      eq(evaluationEvents.projectId, projectId),
+      gte(evaluationEvents.createdAt, range.from),
+      lte(evaluationEvents.createdAt, range.to),
+    ];
+    if (environmentIds && environmentIds.length > 0) {
+      conditions.push(inArray(evaluationEvents.environmentId, environmentIds));
+    }
+
+    const rows = await this.db
+      .select({
+        flagKey: evaluationEvents.flagKey,
+        flagId: evaluationEvents.featureFlagId,
+        evaluationReason: evaluationEvents.evaluationReason,
+        environmentId: evaluationEvents.environmentId,
+        contextUserHash: evaluationEvents.contextUserHash,
+        createdAt: evaluationEvents.createdAt,
+      })
+      .from(evaluationEvents)
+      .where(and(...conditions));
+
+    // Fetch all environments of the project to ensure we compare all selected/project environments
+    const projectEnvs = await this.db.query.environments.findMany({
+      where: eq(environments.projectId, projectId),
+    });
+
+    const trendMap = new Map<string, number>();
+    const flagTotals = new Map<string, { id: string | null; count: number }>();
+    // Pre-populate with all relevant environments so they are returned even with 0 evaluations
+    const envTotals = new Map<string, { name: string; total: number; errors: number }>();
+    for (const env of projectEnvs) {
+      if (environmentIds && environmentIds.length > 0 && !environmentIds.includes(env.id)) {
+        continue;
+      }
+      envTotals.set(env.id, { name: env.name, total: 0, errors: 0 });
+    }
+
+    const uniqueUsers = new Set<string>();
+    let totalEvaluations = 0;
+    let errorCount = 0;
+
+    for (const row of rows) {
+      let bucketKey: string;
+      if (range.granularity === 'hour') {
+        const d = new Date(row.createdAt!);
+        d.setMinutes(0, 0, 0);
+        bucketKey = d.toISOString();
+      } else {
+        const d = new Date(row.createdAt!);
+        d.setHours(0, 0, 0, 0);
+        bucketKey = d.toISOString();
+      }
+
+      trendMap.set(bucketKey, (trendMap.get(bucketKey) || 0) + 1);
+
+      const key = row.flagKey;
+      const existing = flagTotals.get(key);
+      flagTotals.set(key, {
+        id: existing?.id ?? row.flagId,
+        count: (existing?.count ?? 0) + 1,
+      });
+
+      if (row.contextUserHash) {
+        uniqueUsers.add(row.contextUserHash);
+      }
+
+      if (ERROR_REASONS.includes(row.evaluationReason || '')) {
+        errorCount++;
+      }
+
+      if (row.environmentId) {
+        const env = envTotals.get(row.environmentId);
+        if (env) {
+          env.total++;
+          if (ERROR_REASONS.includes(row.evaluationReason || '')) {
+            env.errors++;
+          }
+        }
+      }
+
+      totalEvaluations++;
+    }
+
+    const trend = Array.from(trendMap.entries())
+      .map(([timestamp, count]) => ({ timestamp, count }))
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+    const topFlags = Array.from(flagTotals.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10)
+      .map(([flagKey, { id, count }]) => ({
+        flagKey,
+        flagName: flagKey,
+        flagId: id,
+        totalCount: count,
+      }));
+
+    const errorRate = totalEvaluations > 0 ? errorCount / totalEvaluations : 0;
+
+    const byEnvironment = Array.from(envTotals.entries()).map(([envId, data]) => ({
+      environmentId: envId,
+      environmentName: data.name,
+      totalCount: data.total,
+      errorCount: data.errors,
+    }));
+
+    return {
+      totalEvaluations,
+      uniqueUsers: uniqueUsers.size,
+      errorRate,
+      activeFlags: flagTotals.size,
+      evaluationTrend: trend,
+      topFlags,
+      byEnvironment,
+      timeRange: {
+        from: range.from.toISOString(),
+        to: range.to.toISOString(),
+        granularity: range.granularity,
       },
     };
   }
