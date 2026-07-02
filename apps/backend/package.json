@@ -26,6 +26,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "npx ts-node -r tsconfig-paths/register src/db/seed.ts",
+    "db:seed-analytics": "npx ts-node -r tsconfig-paths/register src/db/seed-analytics.ts",
     "db:studio": "drizzle-kit studio",
     "auth:generate": "pnpm dlx auth@latest generate --config src/modules/auth/auth.config.ts --output src/db/schema/auth-schema.ts"
   },

@@ -217,3 +217,7 @@ svg[class*="phosphor"] {
 .table__column-resizer:hover {
 	@apply bg-accent
 }
+
+.recharts-responsive-container svg:focus, .recharts-responsive-container svg *:focus {
+	outline: none;
+}

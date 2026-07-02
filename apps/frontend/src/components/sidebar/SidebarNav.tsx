@@ -4,6 +4,7 @@ import {
 	TreeStructureIcon,
 	KeyIcon,
 	ClockCounterClockwiseIcon,
+	ChartBarIcon,
 } from "@phosphor-icons/react";
 import { useContextStore, useSidebarStore } from "#/stores";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -23,6 +24,12 @@ const PROJECT_NAV_ITEMS = [
 ];
 
 const GLOBAL_NAV_ITEMS = [
+	{
+		to: "/analytics",
+		label: "Analytics",
+		icon: ChartBarIcon,
+		keepSearch: false,
+	},
 	{
 		to: "/audit-logs",
 		label: "Audit Logs",

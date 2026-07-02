@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authenticated/audit-logs'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
@@ -51,6 +52,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedAuditLogsRoute = AuthenticatedAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/orgSelect': typeof OrgSelectRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/orgSelect': typeof OrgSelectRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/orgSelect': typeof OrgSelectRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/login'
     | '/signup'
+    | '/analytics'
     | '/audit-logs'
     | '/projects/$projectSlug'
     | '/projects/'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/login'
     | '/signup'
+    | '/analytics'
     | '/audit-logs'
     | '/projects/$projectSlug'
     | '/projects'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/_auth/login'
     | '/_auth/signup'
+    | '/_authenticated/analytics'
     | '/_authenticated/audit-logs'
     | '/_authenticated/'
     | '/_authenticated/projects/$projectSlug'
@@ -248,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/audit-logs'
       fullPath: '/audit-logs'
       preLoaderRoute: typeof AuthenticatedAuditLogsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_auth/signup': {
@@ -368,6 +387,7 @@ const AuthenticatedProjectsProjectSlugRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditLogsRoute: typeof AuthenticatedAuditLogsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedProjectsProjectSlugRouteRoute: typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
@@ -375,6 +395,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditLogsRoute: AuthenticatedAuditLogsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProjectsProjectSlugRouteRoute:

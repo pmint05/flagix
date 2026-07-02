@@ -195,20 +195,6 @@ function AuditLogsIndex() {
 		};
 	}, [filters]);
 
-	const hasAnyFilter =
-		Object.values(filters).some((v) => v !== undefined && v !== "") ||
-		searchQuery !== "";
-
-	const handleClearAll = () => {
-		setSearchQuery("");
-		updateTableState({
-			query: "",
-			filters: {
-				visibleColumns: filters.visibleColumns,
-			},
-		});
-	};
-
 	const columns = useMemo(
 		() =>
 			createAuditLogColumns((log) => {
@@ -261,8 +247,7 @@ function AuditLogsIndex() {
 														},
 													});
 												}}
-												variant="secondary"
-												>
+												variant="secondary">
 												<Checkbox.Content>
 													<Checkbox.Control>
 														<Checkbox.Indicator />

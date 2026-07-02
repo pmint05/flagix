@@ -153,7 +153,7 @@ function AuthenticatedLayout() {
 			<div className="h-screen w-full bg-background dark:bg-background-tertiary overflow-hidden flex flex-col">
 				<Header />
 				<main className="flex-1 overflow-auto">
-					<div className="h-full p-6 bg-surface dark:bg-background-secondary overflow-auto border">
+					<div className="h-full p-0 bg-surface dark:bg-background-secondary overflow-auto border">
 						<Outlet />
 					</div>
 				</main>

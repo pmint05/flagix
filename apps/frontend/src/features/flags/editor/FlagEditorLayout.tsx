@@ -10,8 +10,9 @@ import type { FeatureFlag } from "@/types/feature-flag";
 import { TargetingTab } from "./TargetingTab";
 import { VariationsTab } from "./VariationsTab";
 import { SimulationTab } from "./SimulationTab";
-import { MonitoringTab } from "./MonitoringTab";
+import { MonitoringTab } from "./ChangesHistoryTab";
 import { SettingsTab } from "./SettingsTab";
+import { FlagAnalytics } from "@/features/analytics/components/FlagAnalytics";
 import { FlagEditorProvider } from "./FlagEditorContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useForm, FormProvider } from "react-hook-form";
@@ -307,8 +308,9 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 								title: isMobile ? "Targeting" : "Targeting & Variations",
 							},
 							...(isMobile ? [{ id: "variations", title: "Variations" }] : []),
+							{ id: "analytics", title: "Analytics" },
+							{ id: "changes-history", title: "Changes History" },
 							{ id: "simulation", title: "Simulation" },
-							{ id: "monitoring", title: "Monitoring" },
 							{ id: "settings", title: "Settings" },
 						];
 
@@ -364,10 +366,13 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 									className={!isMobile ? "hidden" : ""}>
 									<VariationsTab flag={flag} />
 								</Tabs.Panel>
+								<Tabs.Panel id="analytics">
+									<FlagAnalytics flag={flag} />
+								</Tabs.Panel>
 								<Tabs.Panel id="simulation">
 									<SimulationTab flag={flag} />
 								</Tabs.Panel>
-								<Tabs.Panel id="monitoring">
+								<Tabs.Panel id="changes-history">
 									<MonitoringTab flag={flag} />
 								</Tabs.Panel>
 								<Tabs.Panel id="settings">
