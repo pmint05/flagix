@@ -27,6 +27,8 @@ interface ColumnActions {
 		flag: FeatureFlagListItem,
 		status: "draft" | "active" | "archived",
 	) => void;
+	canEdit: boolean;
+	canDelete: boolean;
 }
 
 export function createFlagColumns(actions: ColumnActions) {
@@ -153,7 +155,7 @@ export function createFlagColumns(actions: ColumnActions) {
 				const flag = info.row.original;
 				return (
 					<div className="flex items-center gap-1">
-						{flag.status === "draft" && (
+						{flag.status === "draft" && actions.canEdit && (
 							<Tooltip>
 								<Tooltip.Trigger>
 									<Button
@@ -168,19 +170,21 @@ export function createFlagColumns(actions: ColumnActions) {
 								<Tooltip.Content>Activate</Tooltip.Content>
 							</Tooltip>
 						)}
-						<Tooltip>
-							<Tooltip.Trigger>
-								<Button
-									isIconOnly
-									variant="ghost"
-									size="sm"
-									className="text-danger"
-									onPress={() => actions.onDelete(flag)}>
-									<TrashIcon className="h-4 w-4" />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Delete</Tooltip.Content>
-						</Tooltip>
+						{actions.canDelete && (
+							<Tooltip>
+								<Tooltip.Trigger>
+									<Button
+										isIconOnly
+										variant="ghost"
+										size="sm"
+										className="text-danger"
+										onPress={() => actions.onDelete(flag)}>
+										<TrashIcon className="h-4 w-4" />
+									</Button>
+								</Tooltip.Trigger>
+								<Tooltip.Content>Delete</Tooltip.Content>
+							</Tooltip>
+						)}
 					</div>
 				);
 			},

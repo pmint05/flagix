@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { useUIStore } from "#/stores/ui";
+import { useHasPermission } from "#/hooks/usePermission";
 import { useOrganizations } from "#/features/organizations/api";
 import { useProjects, createProjectsApi, PROJECTS_KEY } from "#/features/projects/api";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -67,6 +68,11 @@ function EntitiesGroup({
 	const isMobile = useIsMobile();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
+	const canManageOrg = useHasPermission("organization:edit");
+	const canInvite = useHasPermission("member:create");
+	const canCreateProject = useHasPermission("project:create");
+	const canManageProject = useHasPermission("project:edit");
 
 	// Cleanup timers on unmount
 	useEffect(() => {
@@ -293,29 +299,35 @@ function EntitiesGroup({
 			/>
 
 			{/* Org actions */}
-			<div className="flex flex-col gap-0.5 px-1 pb-1">
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8"
-					isDisabled={!selectedOrganization}
-					onPress={() => {
-						useUIStore.getState().openOrgSettings();
-						setMainOpen(false);
-					}}>
-					<GearIcon size={16} />
-					Settings
-				</Button>
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8">
-					<UserPlusIcon size={16} />
-					Invite members
-				</Button>
-			</div>
+			{(canManageOrg || canInvite) && (
+				<div className="flex flex-col gap-0.5 px-1 pb-1">
+					{canManageOrg && (
+						<Button
+							fullWidth
+							variant="ghost"
+							size="sm"
+							className="justify-start h-8"
+							isDisabled={!selectedOrganization}
+							onPress={() => {
+								useUIStore.getState().openOrgSettings();
+								setMainOpen(false);
+							}}>
+							<GearIcon size={16} />
+							Settings
+						</Button>
+					)}
+					{canInvite && (
+						<Button
+							fullWidth
+							variant="ghost"
+							size="sm"
+							className="justify-start h-8">
+							<UserPlusIcon size={16} />
+							Invite members
+						</Button>
+					)}
+				</div>
+			)}
 
 			<Separator className="my-1" />
 
@@ -338,37 +350,41 @@ function EntitiesGroup({
 				subMenuMargin="-ml-1"
 				subMenuBorder="border"
 				bottomContent={
-					<div className="flex flex-col gap-0.5">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="w-full justify-start"
-							onPress={() => {
-								setIsProjectModalOpen(true);
-								setMainOpen(false);
-							}}>
-							<PlusIcon size={14} />
-							Create new project
-						</Button>
-					</div>
+					canCreateProject ? (
+						<div className="flex flex-col gap-0.5">
+							<Button
+								variant="ghost"
+								size="sm"
+								className="w-full justify-start"
+								onPress={() => {
+									setIsProjectModalOpen(true);
+									setMainOpen(false);
+								}}>
+								<PlusIcon size={14} />
+								Create new project
+							</Button>
+						</div>
+					) : undefined
 				}
 			/>
 
 			{/* Project actions */}
 			<div className="flex flex-col gap-0.5 px-1 pb-1">
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8"
-					isDisabled={!selectedProject}
-					onPress={() => {
-						useUIStore.getState().openProjectSettings();
-						setMainOpen(false);
-					}}>
-					<GearIcon size={16} />
-					Settings
-				</Button>
+				{canManageProject && (
+					<Button
+						fullWidth
+						variant="ghost"
+						size="sm"
+						className="justify-start h-8"
+						isDisabled={!selectedProject}
+						onPress={() => {
+							useUIStore.getState().openProjectSettings();
+							setMainOpen(false);
+						}}>
+						<GearIcon size={16} />
+						Settings
+					</Button>
+				)}
 				<Button
 					variant="ghost"
 					size="sm"

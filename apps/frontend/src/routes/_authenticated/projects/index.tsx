@@ -12,6 +12,9 @@ import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useCanCreateProject } from "@/hooks/usePermission";
+
 export const Route = createFileRoute("/_authenticated/projects/")({
 	component: ProjectsIndex,
 });
@@ -19,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsIndex() {
 	const { data, isLoading, isError } = useProjects();
 	const deleteProject = useDeleteProject();
+	const canCreate = useCanCreateProject();
 
 	const projects = data ?? [];
 
@@ -60,10 +64,12 @@ function ProjectsIndex() {
 					<h1 className="text-2xl font-bold text-foreground">Projects</h1>
 					<p className="mt-1 text-sm">Manage your feature flag projects</p>
 				</div>
-				<Button variant="primary" className="gap-2" onPress={handleCreate}>
-					<PlusIcon className="h-4 w-4" />
-					New Project
-				</Button>
+				<PermissionGuard permission="project:create">
+					<Button variant="primary" className="gap-2" onPress={handleCreate}>
+						<PlusIcon className="h-4 w-4" />
+						New Project
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			{isLoading ? (
@@ -80,8 +86,8 @@ function ProjectsIndex() {
 				<EmptyState
 					title="No projects yet"
 					description="Create your first project to start managing feature flags."
-					actionLabel="New Project"
-					onAction={handleCreate}
+					actionLabel={canCreate ? "New Project" : undefined}
+					onAction={canCreate ? handleCreate : undefined}
 				/>
 			) : (
 				<DataTable

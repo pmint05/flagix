@@ -37,6 +37,9 @@ import { TrayIcon } from "@phosphor-icons/react";
 import { EmptyState as HeroUIEmptyState } from "@heroui/react";
 import type { ColumnDef } from "@tanstack/react-table";
 
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useHasPermission } from "@/hooks/usePermission";
+
 export const Route = createFileRoute(
 	"/_authenticated/projects/$projectSlug/environments",
 )({
@@ -48,6 +51,9 @@ function EnvironmentsIndex() {
 	const toggleActive = useToggleEnvironmentActive();
 	const deleteEnvironment = useDeleteEnvironment();
 	const { selectedEnvironment, setEnvironment } = useContextStore();
+
+	const canEditEnv = useHasPermission("environment:edit");
+	const canDeleteEnv = useHasPermission("environment:delete");
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [batchDeleteModalOpen, setBatchDeleteModalOpen] = useState(false);
@@ -120,8 +126,10 @@ function EnvironmentsIndex() {
 				onEdit: handleEdit,
 				onDelete: (env) => setDeletingEnv(env),
 				onToggleActive: handleToggleActive,
+				canEdit: canEditEnv,
+				canDelete: canDeleteEnv,
 			}) as ColumnDef<Environment, unknown>[],
-		[],
+		[canEditEnv, canDeleteEnv],
 	);
 
 	const activeTags = useMemo(() => {
@@ -203,36 +211,44 @@ function EnvironmentsIndex() {
 						<span className="text-sm text-muted-foreground mr-2">
 							{selectedIds.length} selected
 						</span>
-						<ActionButton
-							variant="secondary"
-							size="sm"
-							action={() => handleBatchToggleActive(true)}
-							showToast
-							toastTitle="Updated"
-							toastMessage="Environments set to active">
-							Set Active
-						</ActionButton>
-						<ActionButton
-							variant="secondary"
-							size="sm"
-							action={() => handleBatchToggleActive(false)}
-							showToast
-							toastTitle="Updated"
-							toastMessage="Environments set to inactive">
-							Set Inactive
-						</ActionButton>
-						<Button
-							variant="danger"
-							size="sm"
-							onPress={() => setBatchDeleteModalOpen(true)}>
-							Delete
-						</Button>
+						{canEditEnv && (
+							<>
+								<ActionButton
+									variant="secondary"
+									size="sm"
+									action={() => handleBatchToggleActive(true)}
+									showToast
+									toastTitle="Updated"
+									toastMessage="Environments set to active">
+									Set Active
+								</ActionButton>
+								<ActionButton
+									variant="secondary"
+									size="sm"
+									action={() => handleBatchToggleActive(false)}
+									showToast
+									toastTitle="Updated"
+									toastMessage="Environments set to inactive">
+									Set Inactive
+								</ActionButton>
+							</>
+						)}
+						{canDeleteEnv && (
+							<Button
+								variant="danger"
+								size="sm"
+								onPress={() => setBatchDeleteModalOpen(true)}>
+								Delete
+							</Button>
+						)}
 					</div>
 				)}
-				<Button variant="primary" className="gap-2" onPress={handleCreate}>
-					<PlusIcon className="h-4 w-4" />
-					New Environment
-				</Button>
+				<PermissionGuard permission="environment:create">
+					<Button variant="primary" className="gap-2" onPress={handleCreate}>
+						<PlusIcon className="h-4 w-4" />
+						New Environment
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			{isError ? (

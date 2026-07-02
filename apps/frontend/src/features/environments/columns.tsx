@@ -21,6 +21,8 @@ interface ColumnActions {
 	onEdit: (env: Environment) => void;
 	onDelete: (env: Environment) => void;
 	onToggleActive: (env: Environment) => Promise<void>;
+	canEdit: boolean;
+	canDelete: boolean;
 }
 
 export function createEnvironmentColumns(actions: ColumnActions) {
@@ -98,6 +100,7 @@ export function createEnvironmentColumns(actions: ColumnActions) {
 						showToast
 						actionName="Toggle Status"
 						message={`Environment ${env.name} is now ${!env.isActive ? "active" : "inactive"}`}
+						isDisabled={!actions.canEdit}
 					/>
 				);
 			},
@@ -141,31 +144,35 @@ export function createEnvironmentColumns(actions: ColumnActions) {
 				const env = info.row.original;
 				return (
 					<div className="flex items-center gap-1">
-						<Tooltip>
-							<Tooltip.Trigger>
-								<Button
-									isIconOnly
-									variant="ghost"
-									size="sm"
-									onPress={() => actions.onEdit(env)}>
-									<PencilSimpleIcon className="size-4" />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Edit</Tooltip.Content>
-						</Tooltip>
-						<Tooltip>
-							<Tooltip.Trigger>
-								<Button
-									isIconOnly
-									variant="ghost"
-									className="hover:text-danger hover:bg-danger-soft"
-									size="sm"
-									onPress={() => actions.onDelete(env)}>
-									<TrashSimpleIcon className="size-4" />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Delete</Tooltip.Content>
-						</Tooltip>
+						{actions.canEdit && (
+							<Tooltip>
+								<Tooltip.Trigger>
+									<Button
+										isIconOnly
+										variant="ghost"
+										size="sm"
+										onPress={() => actions.onEdit(env)}>
+										<PencilSimpleIcon className="size-4" />
+									</Button>
+								</Tooltip.Trigger>
+								<Tooltip.Content>Edit</Tooltip.Content>
+							</Tooltip>
+						)}
+						{actions.canDelete && (
+							<Tooltip>
+								<Tooltip.Trigger>
+									<Button
+										isIconOnly
+										variant="ghost"
+										className="hover:text-danger hover:bg-danger-soft"
+										size="sm"
+										onPress={() => actions.onDelete(env)}>
+										<TrashSimpleIcon className="size-4" />
+									</Button>
+								</Tooltip.Trigger>
+								<Tooltip.Content>Delete</Tooltip.Content>
+							</Tooltip>
+						)}
 					</div>
 				);
 			},

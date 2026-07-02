@@ -25,6 +25,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 import { useEnvironments } from "@/features/environments/api";
 
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useHasPermission } from "@/hooks/usePermission";
+
 export const Route = createFileRoute(
 	"/_authenticated/projects/$projectSlug/flags/",
 )({
@@ -83,6 +86,9 @@ function FlagsIndex() {
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
 
+	const canEditFlag = useHasPermission("flag:edit");
+	const canDeleteFlag = useHasPermission("flag:delete");
+
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const [searchQuery, setSearchQuery] = useState(tableState.query || "");
@@ -109,8 +115,10 @@ function FlagsIndex() {
 				onDelete: (flag) => deleteFlag.mutate(flag.id),
 				onStatusChange: (flag, status) =>
 					updateFlagState.mutate({ flagId: flag.id, status }),
+				canEdit: canEditFlag,
+				canDelete: canDeleteFlag,
 			}) as ColumnDef<FeatureFlagListItem, unknown>[],
-		[projectSlug, deleteFlag, updateFlagState],
+		[projectSlug, deleteFlag, updateFlagState, canEditFlag, canDeleteFlag],
 	);
 
 	const hasEnvironments = !!environments && environments.length > 0;
@@ -130,14 +138,16 @@ function FlagsIndex() {
 						Manage feature flags for this environment
 					</p>
 				</div>
-				<Button
-					variant="primary"
-					className="gap-2"
-					isDisabled={!hasEnvironments}
-					onPress={handleCreate}>
-					<PlusIcon className="h-4 w-4" />
-					New Flag
-				</Button>
+				<PermissionGuard permission="flag:create">
+					<Button
+						variant="primary"
+						className="gap-2"
+						isDisabled={!hasEnvironments}
+						onPress={handleCreate}>
+						<PlusIcon className="h-4 w-4" />
+						New Flag
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			{isError ? (

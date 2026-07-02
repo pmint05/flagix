@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { useContextStore, useSidebarStore } from "#/stores";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { useHasPermission } from "@/hooks/usePermission";
 
 const PROJECT_NAV_ITEMS = [
 	{ to: "/projects/$projectSlug/flags", label: "Feature Flags", icon: FlagIcon },
@@ -29,6 +30,27 @@ export function SidebarNav() {
 	const selectedProject = useContextStore((s) => s.selectedProject);
 	const matchRoute = useMatchRoute();
 
+	const canViewFlags = useHasPermission("flag:view");
+	const canViewEnvironments = useHasPermission("environment:view");
+	const canViewSdkKeys = useHasPermission("sdk-key:view");
+	const canViewProjectAnalytics = useHasPermission("project:view");
+	const canViewAuditLogs = useHasPermission("audit-log:view");
+
+	const filteredProjectNavItems = PROJECT_NAV_ITEMS.filter((item) => {
+		if (item.to.includes("flags")) return canViewFlags;
+		if (item.to.includes("environments")) return canViewEnvironments;
+		if (item.to.includes("sdk-keys")) return canViewSdkKeys;
+		if (item.to.includes("analytics")) return canViewProjectAnalytics;
+		return true;
+	});
+
+	const filteredGlobalNavItems = GLOBAL_NAV_ITEMS.filter((item) => {
+		if (item.to.includes("audit-logs")) return canViewAuditLogs;
+		if (item.to.includes("analytics")) return canViewProjectAnalytics;
+		if (item.to.includes("live-events")) return canViewFlags;
+		return true;
+	});
+
 	return (
 		<nav className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
 			{/* Project Section */}
@@ -39,7 +61,7 @@ export function SidebarNav() {
 					</div>
 				)}
 				{selectedProject ? (
-					PROJECT_NAV_ITEMS.map((item) => {
+					filteredProjectNavItems.map((item) => {
 						const to = item.to.replace("$projectSlug", selectedProject.slug);
 						const isActive = !!matchRoute({ to, fuzzy: true });
 						return (
@@ -71,7 +93,7 @@ export function SidebarNav() {
 						Global
 					</div>
 				)}
-				{GLOBAL_NAV_ITEMS.map((item) => {
+				{filteredGlobalNavItems.map((item) => {
 					const isActive = !!matchRoute({ to: item.to, fuzzy: true });
 					return (
 						<SidebarNavItem
