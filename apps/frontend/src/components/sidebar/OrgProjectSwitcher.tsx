@@ -11,11 +11,12 @@ import {
 	UserPlusIcon,
 	PlusIcon,
 	FolderOpenIcon,
+	EnvelopeSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { useUIStore } from "#/stores/ui";
 import { useHasPermission } from "#/hooks/usePermission";
-import { useOrganizations } from "#/features/organizations/api";
+import { useOrganizations, useUserInvitations } from "#/features/organizations/api";
 import { useProjects, createProjectsApi, PROJECTS_KEY } from "#/features/projects/api";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +24,8 @@ import { EntityList } from "./EntityList";
 import { useIsMobile } from "#/hooks/useIsMobile";
 import { OrganizationModal } from "#/features/organizations/OrganizationModal";
 import { ProjectModal } from "#/features/projects/ProjectModal";
+import { InviteMemberModal } from "#/features/organizations/InviteMemberModal";
+import { InvitationAlertModal } from "#/features/organizations/InvitationAlertModal";
 
 interface OrgProjectSwitcherProps {
 	children: React.ReactNode;
@@ -43,6 +46,10 @@ function EntitiesGroup({
 	setMainOpen,
 	setIsOrgModalOpen,
 	setIsProjectModalOpen,
+	setIsInviteModalOpen,
+	setIsInvitationModalOpen,
+	invitations,
+	hasInvitations,
 }: any) {
 	// Search states
 	const [orgSearch, setOrgSearch] = useState("");
@@ -266,6 +273,21 @@ function EntitiesGroup({
 	return (
 		<>
 			{/* ═══════════════════ ORGANIZATION GROUP ═══════════════════ */}
+			{hasInvitations && (
+				<Button
+					fullWidth
+					variant="secondary"
+					size="sm"
+					className="justify-start h-8 mb-1 bg-orange-500/10! border border-orange-500/20 text-orange-600! dark:text-orange-400! hover:bg-orange-500/20"
+					onPress={() => {
+						setIsInvitationModalOpen(true);
+						setMainOpen(false);
+					}}>
+					<EnvelopeSimpleIcon size={16} className="text-orange-500" />
+					Lời mời mới ({invitations.length})
+				</Button>
+			)}
+
 			<EntityList
 				label="Organization"
 				items={orgs}
@@ -321,7 +343,11 @@ function EntitiesGroup({
 							fullWidth
 							variant="ghost"
 							size="sm"
-							className="justify-start h-8">
+							className="justify-start h-8"
+							onPress={() => {
+								setIsInviteModalOpen(true);
+								setMainOpen(false);
+							}}>
 							<UserPlusIcon size={16} />
 							Invite members
 						</Button>
@@ -414,10 +440,14 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 
 	const { data: orgs, isLoading: orgsLoading } = useOrganizations();
 	const { data: projects, isLoading: projectsLoading } = useProjects();
+	const { data: invitations } = useUserInvitations();
+	const hasInvitations = invitations && invitations.length > 0;
 
 	const [mainOpen, setMainOpen] = useState(false);
 	const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
 	const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+	const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
 
 	const isMobile = useIsMobile();
 
@@ -446,6 +476,10 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 								setMainOpen={setMainOpen}
 								setIsOrgModalOpen={setIsOrgModalOpen}
 								setIsProjectModalOpen={setIsProjectModalOpen}
+								setIsInviteModalOpen={setIsInviteModalOpen}
+								setIsInvitationModalOpen={setIsInvitationModalOpen}
+								invitations={invitations}
+								hasInvitations={hasInvitations}
 							/>
 						</div>
 					</Popover.Dialog>
@@ -459,6 +493,15 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 			<ProjectModal
 				isOpen={isProjectModalOpen}
 				onClose={() => setIsProjectModalOpen(false)}
+			/>
+			<InviteMemberModal
+				isOpen={isInviteModalOpen}
+				onClose={() => setIsInviteModalOpen(false)}
+				orgId={selectedOrganization?.id ?? ""}
+			/>
+			<InvitationAlertModal
+				isOpen={isInvitationModalOpen}
+				onClose={() => setIsInvitationModalOpen(false)}
 			/>
 		</>
 	);

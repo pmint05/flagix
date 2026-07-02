@@ -4,10 +4,13 @@ import { generateAvatarColor } from "#/lib/color-from-string";
 import { getInitials, truncateText } from "#/lib/string-utils";
 import { OrgProjectSwitcher } from "./OrgProjectSwitcher";
 import { Button, cn } from "@heroui/react";
+import { useUserInvitations } from "#/features/organizations/api";
 
 export function SidebarHeader() {
 	const { selectedOrganization, selectedProject } = useContextStore();
 	const { isCollapsed } = useSidebarStore();
+	const { data: invitations } = useUserInvitations();
+	const hasInvitations = invitations && invitations.length > 0;
 
 	const { bg, fg } = selectedOrganization
 		? generateAvatarColor(selectedOrganization.name)
@@ -39,13 +42,18 @@ export function SidebarHeader() {
 				})}>
 				{selectedOrganization ? (
 					<>
-						<div
-							className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl text-xs font-semibold align-middle leading-none"
-							style={{
-								backgroundColor: bg,
-								color: fg,
-							}}>
-							{initials}
+						<div className="relative shrink-0">
+							<div
+								className="flex h-8 w-8 items-center justify-center rounded-2xl text-xs font-semibold align-middle leading-none"
+								style={{
+									backgroundColor: bg,
+									color: fg,
+								}}>
+								{initials}
+							</div>
+							{hasInvitations && (
+								<span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-background animate-pulse" />
+							)}
 						</div>
 						<div
 							className={cn(

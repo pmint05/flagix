@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, and, isNull } from 'drizzle-orm';
-import { organizations, organizationMembers, authUser } from '@/db/schema';
+import { organizations, organizationMembers, authUser, organizationInvitations } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type {
@@ -11,6 +11,15 @@ import type {
 @Injectable()
 export class OrganizationsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async findUserByEmail(email: string) {
+    const [usr] = await this.db
+      .select()
+      .from(authUser)
+      .where(eq(authUser.email, email))
+      .limit(1);
+    return usr ?? null;
+  }
 
   async findById(id: string) {
     const [org] = await this.db
@@ -127,6 +136,7 @@ export class OrganizationsRepository {
         role: organizationMembers.role,
         name: authUser.name,
         email: authUser.email,
+        createdAt: organizationMembers.createdAt,
       })
       .from(organizationMembers)
       .innerJoin(authUser, eq(organizationMembers.userId, authUser.id))
@@ -136,5 +146,131 @@ export class OrganizationsRepository {
           isNull(organizationMembers.deletedAt),
         ),
       );
+  }
+
+  async findInvitationById(id: string) {
+    const [invitation] = await this.db
+      .select()
+      .from(organizationInvitations)
+      .where(and(eq(organizationInvitations.id, id), isNull(organizationInvitations.deletedAt)))
+      .limit(1);
+    return invitation ?? null;
+  }
+
+  async findInvitationByOrgAndEmail(orgId: string, email: string) {
+    const [invitation] = await this.db
+      .select()
+      .from(organizationInvitations)
+      .where(
+        and(
+          eq(organizationInvitations.organizationId, orgId),
+          eq(organizationInvitations.email, email),
+          eq(organizationInvitations.status, 'pending'),
+          isNull(organizationInvitations.deletedAt),
+        ),
+      )
+      .limit(1);
+    return invitation ?? null;
+  }
+
+  async createInvitation(
+    orgId: string,
+    invitedBy: string,
+    email: string,
+    role: 'admin' | 'editor' | 'viewer',
+  ) {
+    const [invitation] = await this.db
+      .insert(organizationInvitations)
+      .values({
+        organizationId: orgId,
+        invitedBy,
+        email,
+        role,
+        status: 'pending',
+      })
+      .returning();
+    return invitation;
+  }
+
+  async findPendingInvitationsByEmail(email: string) {
+    return this.db
+      .select({
+        id: organizationInvitations.id,
+        email: organizationInvitations.email,
+        role: organizationInvitations.role,
+        status: organizationInvitations.status,
+        createdAt: organizationInvitations.createdAt,
+        organization: {
+          id: organizations.id,
+          name: organizations.name,
+          slug: organizations.slug,
+        },
+        sender: {
+          id: authUser.id,
+          name: authUser.name,
+          email: authUser.email,
+        },
+      })
+      .from(organizationInvitations)
+      .innerJoin(organizations, eq(organizationInvitations.organizationId, organizations.id))
+      .innerJoin(authUser, eq(organizationInvitations.invitedBy, authUser.id))
+      .where(
+        and(
+          eq(organizationInvitations.email, email),
+          eq(organizationInvitations.status, 'pending'),
+          isNull(organizationInvitations.deletedAt),
+        ),
+      );
+  }
+
+  async findInvitationsByOrg(orgId: string) {
+    return this.db
+      .select({
+        id: organizationInvitations.id,
+        email: organizationInvitations.email,
+        role: organizationInvitations.role,
+        status: organizationInvitations.status,
+        createdAt: organizationInvitations.createdAt,
+        sender: {
+          id: authUser.id,
+          name: authUser.name,
+          email: authUser.email,
+        },
+      })
+      .from(organizationInvitations)
+      .innerJoin(authUser, eq(organizationInvitations.invitedBy, authUser.id))
+      .where(
+        and(
+          eq(organizationInvitations.organizationId, orgId),
+          isNull(organizationInvitations.deletedAt),
+        ),
+      );
+  }
+
+  async updateInvitationStatus(id: string, status: 'pending' | 'accepted' | 'rejected' | 'cancelled') {
+    const [invitation] = await this.db
+      .update(organizationInvitations)
+      .set({ status })
+      .where(eq(organizationInvitations.id, id))
+      .returning();
+    return invitation ?? null;
+  }
+
+  async updateMemberRole(id: string, role: 'admin' | 'editor' | 'viewer') {
+    const [member] = await this.db
+      .update(organizationMembers)
+      .set({ role })
+      .where(eq(organizationMembers.id, id))
+      .returning();
+    return member ?? null;
+  }
+
+  async removeMember(id: string) {
+    const [member] = await this.db
+      .update(organizationMembers)
+      .set({ deletedAt: new Date() })
+      .where(eq(organizationMembers.id, id))
+      .returning();
+    return member ?? null;
   }
 }

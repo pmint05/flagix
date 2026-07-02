@@ -7,6 +7,7 @@ import {
 	ChartBarIcon,
 	BroadcastIcon,
 	ChartLineIcon,
+	UsersThreeIcon,
 } from "@phosphor-icons/react";
 import { useContextStore, useSidebarStore } from "#/stores";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -16,6 +17,7 @@ const PROJECT_NAV_ITEMS = [
 	{ to: "/projects/$projectSlug/flags", label: "Feature Flags", icon: FlagIcon },
 	{ to: "/projects/$projectSlug/environments", label: "Environments", icon: TreeStructureIcon },
 	{ to: "/projects/$projectSlug/sdk-keys", label: "SDK Keys", icon: KeyIcon },
+	{ to: "/projects/$projectSlug/members", label: "Members", icon: UsersThreeIcon },
 	{ to: "/projects/$projectSlug/analytics", label: "Project Analytics", icon: ChartLineIcon },
 ];
 
@@ -33,6 +35,7 @@ export function SidebarNav() {
 	const canViewFlags = useHasPermission("flag:view");
 	const canViewEnvironments = useHasPermission("environment:view");
 	const canViewSdkKeys = useHasPermission("sdk-key:view");
+	const canViewMembers = useHasPermission("member:view");
 	const canViewProjectAnalytics = useHasPermission("project:view");
 	const canViewAuditLogs = useHasPermission("audit-log:view");
 
@@ -40,6 +43,7 @@ export function SidebarNav() {
 		if (item.to.includes("flags")) return canViewFlags;
 		if (item.to.includes("environments")) return canViewEnvironments;
 		if (item.to.includes("sdk-keys")) return canViewSdkKeys;
+		if (item.to.includes("members")) return canViewMembers;
 		if (item.to.includes("analytics")) return canViewProjectAnalytics;
 		return true;
 	});
