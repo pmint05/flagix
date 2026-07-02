@@ -43,3 +43,5 @@ pnpm-debug.log*
 .idea/
 .vscode/
 .tanstack/
+
+.heroui-docs
