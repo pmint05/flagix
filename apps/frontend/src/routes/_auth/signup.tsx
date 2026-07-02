@@ -76,9 +76,8 @@ function SignupPage() {
 				return;
 			}
 
-			toast.success("Account created successfully", {
-				onClose: () => navigate({ to: "/" }),
-			});
+			toast.success("Account created successfully");
+			navigate({ to: "/" });
 		} catch (error) {
 			toast.danger("An unexpected error occurred");
 		} finally {

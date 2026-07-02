@@ -110,6 +110,20 @@ function EntitiesGroup({
 		}
 	}, [prjMenuOpen]);
 
+	// Sync selectedOrganization (e.g. role/name changes) with latest data from backend
+	useEffect(() => {
+		if (orgs && selectedOrganization) {
+			const currentOrg = orgs.find((o: any) => o.id === selectedOrganization.id);
+			if (
+				currentOrg &&
+				(currentOrg.role !== selectedOrganization.role ||
+					currentOrg.name !== selectedOrganization.name)
+			) {
+				setOrganization(currentOrg);
+			}
+		}
+	}, [orgs, selectedOrganization, setOrganization]);
+
 	const handleOrgSelect = async (org: any) => {
 		if (selectedOrganization?.id !== org.id) {
 			setOrganization(org);
@@ -284,7 +298,7 @@ function EntitiesGroup({
 						setMainOpen(false);
 					}}>
 					<EnvelopeSimpleIcon size={16} className="text-orange-500" />
-					Lời mời mới ({invitations.length})
+					New Invitations ({invitations.length})
 				</Button>
 			)}
 

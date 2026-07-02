@@ -1,4 +1,4 @@
-import { Modal, Button, toast, Spinner } from "@heroui/react";
+import { Modal, toast, Spinner } from "@heroui/react";
 import {
 	useUserInvitations,
 	useAcceptInvitation,
@@ -61,34 +61,34 @@ export function InvitationAlertModal({
 					<Modal.Dialog className="max-w-md">
 						<Modal.CloseTrigger />
 						<Modal.Header>
-							<Modal.Heading>Lời mời tham gia tổ chức</Modal.Heading>
+							<Modal.Heading>Organization Invitations</Modal.Heading>
 						</Modal.Header>
-						<Modal.Body className="py-4 space-y-4">
+						<Modal.Body className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
 							{isLoading ? (
 								<div className="flex items-center justify-center py-8">
 									<Spinner size="md" />
 								</div>
 							) : !invitations || invitations.length === 0 ? (
-								<p className="text-default-500 text-center py-6 text-sm">
-									Bạn không có lời mời nào chưa giải quyết.
+								<p className="text-center py-6 text-sm">
+									You have no pending invitations.
 								</p>
 							) : (
-								<div className="space-y-4 divide-y divide-divider">
+								<div className="space-y-4">
 									{invitations.map((inv, idx) => (
 										<div
 											key={inv.id}
-											className={`flex flex-col space-y-3 ${idx > 0 ? "pt-4" : ""}`}>
-											<p className="text-default-700 text-sm leading-relaxed">
+											className={`flex flex-col space-y-3 ${idx > 0 ? "pt-4 border-t" : ""}`}>
+											<p className="text-sm leading-relaxed">
 												<span className="font-semibold text-foreground">
 													{inv.sender.name}
 												</span>{" "}
-												đã mời bạn làm{" "}
-												<span className="font-semibold text-primary">
-													{roleLabel(inv.role)}
-												</span>{" "}
-												trong tổ chức{" "}
+												invited you to join{" "}
 												<span className="font-semibold text-foreground">
 													{inv.organization.name}
+												</span>{" "}
+												as{" "}
+												<span className="font-semibold text-accent">
+													{roleLabel(inv.role)}
 												</span>
 												.
 											</p>
@@ -102,7 +102,7 @@ export function InvitationAlertModal({
 														rejectInvitation.isPending
 													}
 													onPress={() => handleReject(inv.id)}>
-													Từ chối
+													Reject
 												</ActionButton>
 												<ActionButton
 													variant="primary"
@@ -113,7 +113,7 @@ export function InvitationAlertModal({
 														rejectInvitation.isPending
 													}
 													onPress={() => handleAccept(inv.id)}>
-													Chấp nhận
+													Accept
 												</ActionButton>
 											</div>
 										</div>
@@ -121,11 +121,6 @@ export function InvitationAlertModal({
 								</div>
 							)}
 						</Modal.Body>
-						<Modal.Footer>
-							<Button variant="ghost" onPress={onClose}>
-								Đóng
-							</Button>
-						</Modal.Footer>
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>

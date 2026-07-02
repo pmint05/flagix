@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrgRolesGuard } from '@/common/guards/org-roles.guard';
 import { PlatformOrgRoles } from '@/common/decorators/org-roles.decorator';
@@ -12,7 +12,7 @@ import { Auth } from '@/common/decorators/auth.decorator';
 @ApiTags('Audit Logs')
 @Controller('organizations/:organizationId/audit-logs')
 @UseGuards(OrgRolesGuard)
-@PlatformOrgRoles(['admin'])
+@PlatformOrgRoles(['admin', 'editor', 'viewer'])
 @Auth()
 export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
@@ -37,6 +37,12 @@ export class AuditLogsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
+    if (ctx.role !== 'admin' && !projectId) {
+      throw new ForbiddenException(
+        'Only admins can view general organization-wide audit logs.',
+      );
+    }
+
     const result = await this.auditLogsService.list({
       orgId: ctx.organizationId,
       projectId,
@@ -73,6 +79,13 @@ export class AuditLogsController {
       ctx.organizationId,
       ctx.logId!,
     );
+    
+    if (ctx.role !== 'admin' && !log.projectId) {
+      throw new ForbiddenException(
+        'Only admins can view general organization-wide audit log entries.',
+      );
+    }
+
     return log;
   }
 }

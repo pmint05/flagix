@@ -27,6 +27,7 @@ import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../../schema";
 import { VariationSelector } from "../VariationSelector";
 import { TYPE_OPTIONS, OPERATORS_BY_TYPE } from "../../constants";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface CustomRuleContentProps {
 	flag: FeatureFlag;
@@ -47,12 +48,14 @@ function ContextKeyInput({
 	placeholder,
 	isInvalid,
 	error,
+	readOnly,
 }: {
 	value: string;
 	onChange: (v: string) => void;
 	placeholder: string;
 	isInvalid: boolean;
 	error: any;
+	readOnly?: boolean;
 }) {
 	const [localVal, setLocalVal] = useState(value || "");
 
@@ -66,6 +69,7 @@ function ContextKeyInput({
 				<InputGroup.Input
 					placeholder={placeholder}
 					value={localVal}
+					readOnly={readOnly}
 					onChange={(e) => setLocalVal(e.target.value)}
 					onBlur={() => {
 						if (localVal !== value) {
@@ -87,6 +91,7 @@ function ConditionValueInput({
 	placeholder,
 	isInvalid,
 	error,
+	readOnly,
 }: {
 	value: any;
 	onChange: (v: any) => void;
@@ -94,6 +99,7 @@ function ConditionValueInput({
 	placeholder: string;
 	isInvalid: boolean;
 	error: any;
+	readOnly?: boolean;
 }) {
 	const [localVal, setLocalVal] = useState(value !== undefined ? String(value) : "");
 
@@ -108,6 +114,7 @@ function ConditionValueInput({
 					type={type}
 					placeholder={placeholder}
 					value={localVal}
+					readOnly={readOnly}
 					onChange={(e) => setLocalVal(e.target.value)}
 					onBlur={() => {
 						const finalVal =
@@ -133,11 +140,13 @@ function JsonValueTextArea({
 	onChange,
 	placeholder,
 	error,
+	readOnly,
 }: {
 	value: string;
 	onChange: (v: string) => void;
 	placeholder: string;
 	error: any;
+	readOnly?: boolean;
 }) {
 	const [localVal, setLocalVal] = useState(value || "");
 
@@ -151,6 +160,7 @@ function JsonValueTextArea({
 				variant="secondary"
 				placeholder={placeholder}
 				value={localVal}
+				readOnly={readOnly}
 				onChange={(e) => setLocalVal(e.target.value)}
 				onBlur={() => {
 					if (localVal !== value) {
@@ -177,6 +187,7 @@ interface ConditionRowProps {
 	errors: any;
 	remove: (index: number) => void;
 	fieldsLength: number;
+	canEditFlags: boolean;
 }
 
 function ConditionRow({
@@ -188,6 +199,7 @@ function ConditionRow({
 	errors,
 	remove,
 	fieldsLength,
+	canEditFlags,
 }: ConditionRowProps) {
 	const condType = (useWatch({
 		name: `rules.${ruleIndex}.conditions.conditions.${idx}.type` as any,
@@ -218,6 +230,7 @@ function ConditionRow({
 							placeholder="Context key (e.g. user.email)"
 							isInvalid={!!condErrors?.contextKey}
 							error={condErrors?.contextKey}
+							readOnly={!canEditFlags}
 						/>
 					)}
 				/>
@@ -233,6 +246,7 @@ function ConditionRow({
 							variant="secondary"
 							placeholder="Type"
 							value={typeField.value}
+							isDisabled={!canEditFlags}
 							onChange={(val) => {
 								typeField.onChange(val);
 								// Automatically pick the first valid operator when type changes
@@ -282,6 +296,7 @@ function ConditionRow({
 							variant="secondary"
 							placeholder="Operator"
 							value={opField.value}
+							isDisabled={!canEditFlags}
 							onChange={(val) => {
 								const prevOp = opField.value as string;
 								const nextOp = val as string;
@@ -362,6 +377,7 @@ function ConditionRow({
 											values={valuesField.value || []}
 											onChange={valuesField.onChange}
 											type={condType === "number" ? "number" : "string"}
+											isDisabled={!canEditFlags}
 										/>
 										{getValuesErrorMessage(condErrors?.values) && (
 											<FieldError className="text-xs text-danger">
@@ -387,6 +403,7 @@ function ConditionRow({
 												valField.value === true ||
 												valField.value === "true"
 											}
+											isDisabled={!canEditFlags}
 											onChange={(checked: boolean) =>
 												valField.onChange(checked)
 											}>
@@ -417,6 +434,7 @@ function ConditionRow({
 									<JsonValueTextArea
 										value={valField.value || ""}
 										onChange={valField.onChange}
+										readOnly={!canEditFlags}
 										placeholder='{"key": "value"}'
 										error={condErrors?.value}
 									/>
@@ -433,6 +451,7 @@ function ConditionRow({
 								<ConditionValueInput
 									value={valField.value}
 									onChange={valField.onChange}
+									readOnly={!canEditFlags}
 									type={condType === "number" ? "number" : "text"}
 									placeholder="Enter value"
 									isInvalid={!!condErrors?.value}
@@ -444,7 +463,7 @@ function ConditionRow({
 				})()}
 			</div>
 
-			{fieldsLength > 1 && (
+			{canEditFlags && fieldsLength > 1 && (
 				<Tooltip>
 					<Tooltip.Trigger tabIndex={-1}>
 						<Button
@@ -470,6 +489,7 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 		setValue,
 		formState: { errors },
 	} = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const { fields, append, remove } = useFieldArray({
 		control,
@@ -554,14 +574,17 @@ export function CustomRuleContent({ flag, ruleIndex }: CustomRuleContentProps) {
 						errors={errors}
 						remove={remove}
 						fieldsLength={fields.length}
+						canEditFlags={canEditFlags}
 					/>
 				))}
 			</div>
 
-			<Button size="sm" variant="outline" onPress={handleAddCondition}>
-				<PlusIcon className="size-4 mr-1.5" weight="bold" />
-				Add Condition
-			</Button>
+			{canEditFlags && (
+				<Button size="sm" variant="outline" onPress={handleAddCondition}>
+					<PlusIcon className="size-4 mr-1.5" weight="bold" />
+					Add Condition
+				</Button>
+			)}
 
 			<div className="flex items-center gap-2 pl-4 pt-2 border-t border-divider/50">
 				<span className="text-sm font-semibold ">then resolve</span>
@@ -578,9 +601,10 @@ interface MultiValueInputProps {
 	values: any[];
 	onChange: (values: any[]) => void;
 	type: "string" | "number";
+	isDisabled?: boolean;
 }
 
-function MultiValueInput({ values, onChange, type }: MultiValueInputProps) {
+function MultiValueInput({ values, onChange, type, isDisabled }: MultiValueInputProps) {
 	const [input, setInput] = useState("");
 
 	const handleAdd = () => {
@@ -608,7 +632,7 @@ function MultiValueInput({ values, onChange, type }: MultiValueInputProps) {
 	return (
 		<div className="flex flex-col gap-2 min-w-48 max-w-xs">
 			{values.length > 0 && (
-				<TagGroup selectionMode="none" onRemove={handleRemove}>
+				<TagGroup selectionMode="none" onRemove={isDisabled ? undefined : handleRemove}>
 					<TagGroup.List
 						items={values.map((v, i) => ({ id: i, label: String(v) }))}>
 						{(item) => (
@@ -619,25 +643,27 @@ function MultiValueInput({ values, onChange, type }: MultiValueInputProps) {
 					</TagGroup.List>
 				</TagGroup>
 			)}
-			<ButtonGroup>
-				<Input
-					variant="secondary"
-					aria-label="Add value"
-					placeholder={type === "number" ? "Enter number" : "Enter text"}
-					value={input}
-					onChange={(e) => setInput(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") {
-							e.preventDefault();
-							handleAdd();
-						}
-					}}
-					className="w-full rounded-r-none"
-				/>
-				<Button isIconOnly variant="tertiary" onPress={handleAdd}>
-					<PlusIcon className="size-3.5" weight="bold" />
-				</Button>
-			</ButtonGroup>
+			{!isDisabled && (
+				<ButtonGroup>
+					<Input
+						variant="secondary"
+						aria-label="Add value"
+						placeholder={type === "number" ? "Enter number" : "Enter text"}
+						value={input}
+						onChange={(e) => setInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								handleAdd();
+							}
+						}}
+						className="w-full rounded-r-none"
+					/>
+					<Button isIconOnly variant="tertiary" onPress={handleAdd}>
+						<PlusIcon className="size-3.5" weight="bold" />
+					</Button>
+				</ButtonGroup>
+			)}
 		</div>
 	);
 }

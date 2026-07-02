@@ -24,6 +24,7 @@ import { PercentageContent } from "./rule-contents/PercentageContent";
 import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
 import { getVariationColorClass } from "#/lib/variation-colors";
 import { RolloutBar } from "./RolloutBar";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface RuleCardProps {
 	ruleId: string;
@@ -49,6 +50,7 @@ function RuleCardComponent({
 	dragHandleProps,
 }: RuleCardProps) {
 	const { control, setValue } = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const isEnabled = useWatch({ name: `rules.${index}.isEnabled`, control });
 	const ruleType = useWatch({ name: `rules.${index}.ruleType`, control });
@@ -98,7 +100,7 @@ function RuleCardComponent({
 		<div
 			id={ruleId}
 			className={cn("relative group w-full", {
-				// "opacity-60": !isEnabled,
+				"my-2": !canEditFlags,
 			})}>
 			<Accordion className="px-0 w-full relative">
 				<div
@@ -118,6 +120,9 @@ function RuleCardComponent({
 						<Accordion.Trigger
 							className={cn(
 								"flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0",
+								{
+									"pr-4": !canEditFlags,
+								},
 							)}>
 							{ruleType === "kill_switch" && (
 								<Button
@@ -125,6 +130,7 @@ function RuleCardComponent({
 									variant="ghost"
 									size="sm"
 									onPress={toggleEnabled}
+									isDisabled={!canEditFlags}
 									className={cn(
 										"text-danger ml-2 hover:bg-danger-soft/80 hover:text-danger",
 										{
@@ -187,75 +193,79 @@ function RuleCardComponent({
 							</div>
 
 							<Accordion.Indicator />
-							<div
-								className="px-3 flex items-center gap-2 self-stretch shrink-0"
-								onClick={(e) => e.stopPropagation()}>
-								<Dropdown>
-									<Dropdown.Trigger>
-										<Button isIconOnly variant="ghost" size="sm">
-											<DotsThreeIcon className="h-5 w-5" weight="bold" />
-										</Button>
-									</Dropdown.Trigger>
+							{canEditFlags && (
+								<div
+									className="px-3 flex items-center gap-2 self-stretch shrink-0"
+									onClick={(e) => e.stopPropagation()}>
+									<Dropdown>
+										<Dropdown.Trigger>
+											<Button isIconOnly variant="ghost" size="sm">
+												<DotsThreeIcon className="h-5 w-5" weight="bold" />
+											</Button>
+										</Dropdown.Trigger>
 
-									<Dropdown.Popover>
-										<Dropdown.Menu
-											onAction={(key) => {
-												if (key === "toggle") toggleEnabled();
-												else if (key === "duplicate") onDuplicate();
-												else if (key === "moveUp") onMoveUp?.();
-												else if (key === "moveDown") onMoveDown?.();
-												else if (key === "delete") onRemove();
-											}}>
-											<Dropdown.Item
-												id="toggle"
-												textValue={isEnabled ? "Disable Rule" : "Enable Rule"}>
-												{isEnabled ? (
-													<EyeSlashIcon className="size-4 text-default-500" />
-												) : (
-													<EyeIcon className="size-4 text-default-500" />
-												)}
-												<Label>
-													{isEnabled ? "Disable Rule" : "Enable Rule"}
-												</Label>
-											</Dropdown.Item>
-											<Dropdown.Item
-												id="duplicate"
-												textValue="Duplicate"
-												isDisabled={ruleType === "kill_switch"}>
-												<CopyIcon className="size-4 text-default-500" />
-												<Label>Duplicate</Label>
-											</Dropdown.Item>
-											<Dropdown.Item
-												id="moveUp"
-												textValue="Move Up"
-												isDisabled={ruleType === "kill_switch" || !onMoveUp}>
-												<ArrowUpIcon className="size-4 text-default-500" />
-												<Label>Move Up</Label>
-											</Dropdown.Item>
-											<Dropdown.Item
-												id="moveDown"
-												textValue="Move Down"
-												isDisabled={ruleType === "kill_switch" || !onMoveDown}>
-												<ArrowDownIcon className="size-4 text-default-500" />
-												<Label>Move Down</Label>
-											</Dropdown.Item>
-											<Dropdown.Item
-												id="delete"
-												textValue="Delete"
-												variant="danger">
-												<TrashIcon className="size-4 text-danger" />
-												<Label>Delete</Label>
-											</Dropdown.Item>
-										</Dropdown.Menu>
-									</Dropdown.Popover>
-								</Dropdown>
-							</div>
+										<Dropdown.Popover>
+											<Dropdown.Menu
+												onAction={(key) => {
+													if (key === "toggle") toggleEnabled();
+													else if (key === "duplicate") onDuplicate();
+													else if (key === "moveUp") onMoveUp?.();
+													else if (key === "moveDown") onMoveDown?.();
+													else if (key === "delete") onRemove();
+												}}>
+												<Dropdown.Item
+													id="toggle"
+													textValue={
+														isEnabled ? "Disable Rule" : "Enable Rule"
+													}>
+													{isEnabled ? (
+														<EyeSlashIcon className="size-4 text-default-500" />
+													) : (
+														<EyeIcon className="size-4 text-default-500" />
+													)}
+													<Label>
+														{isEnabled ? "Disable Rule" : "Enable Rule"}
+													</Label>
+												</Dropdown.Item>
+												<Dropdown.Item
+													id="duplicate"
+													textValue="Duplicate"
+													isDisabled={ruleType === "kill_switch"}>
+													<CopyIcon className="size-4 text-default-500" />
+													<Label>Duplicate</Label>
+												</Dropdown.Item>
+												<Dropdown.Item
+													id="moveUp"
+													textValue="Move Up"
+													isDisabled={ruleType === "kill_switch" || !onMoveUp}>
+													<ArrowUpIcon className="size-4 text-default-500" />
+													<Label>Move Up</Label>
+												</Dropdown.Item>
+												<Dropdown.Item
+													id="moveDown"
+													textValue="Move Down"
+													isDisabled={
+														ruleType === "kill_switch" || !onMoveDown
+													}>
+													<ArrowDownIcon className="size-4 text-default-500" />
+													<Label>Move Down</Label>
+												</Dropdown.Item>
+												<Dropdown.Item
+													id="delete"
+													textValue="Delete"
+													variant="danger">
+													<TrashIcon className="size-4 text-danger" />
+													<Label>Delete</Label>
+												</Dropdown.Item>
+											</Dropdown.Menu>
+										</Dropdown.Popover>
+									</Dropdown>
+								</div>
+							)}
 						</Accordion.Trigger>
 					</Accordion.Heading>
 					<Accordion.Panel className="mt-0 border border-t-0 bg-surface rounded-b-3xl overflow-hidden">
-						<Accordion.Body className="p-4 ">
-							{renderContent()}
-						</Accordion.Body>
+						<Accordion.Body className="p-4 ">{renderContent()}</Accordion.Body>
 					</Accordion.Panel>
 				</Accordion.Item>
 			</Accordion>

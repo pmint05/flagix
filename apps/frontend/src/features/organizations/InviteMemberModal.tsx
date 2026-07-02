@@ -8,7 +8,7 @@ import {
 	Label,
 	TextField,
 	Input,
-	Drawer,
+	Modal,
 	toast,
 	Select,
 	ListBox,
@@ -70,15 +70,16 @@ export function InviteMemberModal({
 	};
 
 	return (
-		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Drawer.Backdrop>
-				<Drawer.Content placement="right">
-					<Drawer.Dialog>
-						<Drawer.Header>
-							<Drawer.Heading>Invite Member</Drawer.Heading>
-						</Drawer.Header>
-						<Drawer.Body>
-							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+		<Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Modal.Backdrop>
+				<Modal.Container>
+					<Modal.Dialog className="max-w-md">
+						<Modal.CloseTrigger />
+						<Modal.Header>
+							<Modal.Heading>Invite Member</Modal.Heading>
+						</Modal.Header>
+						<Modal.Body>
+							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-4">
 								<Controller
 									name="email"
 									control={control}
@@ -130,7 +131,7 @@ export function InviteMemberModal({
 									)}
 								/>
 
-								<Drawer.Footer>
+								<Modal.Footer className="px-0 pt-4">
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
@@ -141,12 +142,12 @@ export function InviteMemberModal({
 										isDisabled={createInvitation.isPending}>
 										Send Invitation
 									</ActionButton>
-								</Drawer.Footer>
+								</Modal.Footer>
 							</Form>
-						</Drawer.Body>
-					</Drawer.Dialog>
-				</Drawer.Content>
-			</Drawer.Backdrop>
-		</Drawer>
+						</Modal.Body>
+					</Modal.Dialog>
+				</Modal.Container>
+			</Modal.Backdrop>
+		</Modal>
 	);
 }

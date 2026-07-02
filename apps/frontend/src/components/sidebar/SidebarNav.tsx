@@ -17,7 +17,6 @@ const PROJECT_NAV_ITEMS = [
 	{ to: "/projects/$projectSlug/flags", label: "Feature Flags", icon: FlagIcon },
 	{ to: "/projects/$projectSlug/environments", label: "Environments", icon: TreeStructureIcon },
 	{ to: "/projects/$projectSlug/sdk-keys", label: "SDK Keys", icon: KeyIcon },
-	{ to: "/projects/$projectSlug/members", label: "Members", icon: UsersThreeIcon },
 	{ to: "/projects/$projectSlug/analytics", label: "Project Analytics", icon: ChartLineIcon },
 ];
 
@@ -25,6 +24,7 @@ const GLOBAL_NAV_ITEMS = [
 	{ to: "/analytics", label: "Analytics", icon: ChartBarIcon, keepSearch: false },
 	{ to: "/live-events", label: "Live Events", icon: BroadcastIcon, keepSearch: false },
 	{ to: "/audit-logs", label: "Audit Logs", icon: ClockCounterClockwiseIcon, keepSearch: false },
+	{ to: "/members", label: "Members", icon: UsersThreeIcon, keepSearch: false },
 ];
 
 export function SidebarNav() {
@@ -43,7 +43,6 @@ export function SidebarNav() {
 		if (item.to.includes("flags")) return canViewFlags;
 		if (item.to.includes("environments")) return canViewEnvironments;
 		if (item.to.includes("sdk-keys")) return canViewSdkKeys;
-		if (item.to.includes("members")) return canViewMembers;
 		if (item.to.includes("analytics")) return canViewProjectAnalytics;
 		return true;
 	});
@@ -52,6 +51,7 @@ export function SidebarNav() {
 		if (item.to.includes("audit-logs")) return canViewAuditLogs;
 		if (item.to.includes("analytics")) return canViewProjectAnalytics;
 		if (item.to.includes("live-events")) return canViewFlags;
+		if (item.to.includes("members")) return canViewMembers;
 		return true;
 	});
 
@@ -82,10 +82,10 @@ export function SidebarNav() {
 					})
 				) : (
 					<div
-						className={`px-3 py-2 text-sm transition-all ${
+						className={`px-3 py-2 text-sm transition-all italic text-muted ${
 							isCollapsed ? "hidden" : "block"
 						}`}>
-						Select a project
+						Select or create a project
 					</div>
 				)}
 			</div>

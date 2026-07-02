@@ -39,6 +39,7 @@ export class SdkKeysController {
   }
 
   @Get()
+  @PlatformOrgRoles(['admin'])
   @ApiOperation({ summary: 'List SDK keys' })
   async findAll(@CurrentContext() ctx: OrgContext) {
     const sdkKeys = await this.sdkKeysService.findAllForEnv(

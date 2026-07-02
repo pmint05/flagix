@@ -14,6 +14,7 @@ import { Route as NoOrgRouteImport } from './routes/noOrg'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
@@ -27,7 +28,6 @@ import { Route as AuthenticatedProjectsProjectSlugFlagsIndexRouteImport } from '
 import { Route as AuthenticatedProjectsProjectSlugAnalyticsIndexRouteImport } from './routes/_authenticated/projects/$projectSlug/analytics/index'
 import { Route as AuthenticatedProjectsProjectSlugFlagsFlagSlugRouteImport } from './routes/_authenticated/projects/$projectSlug/flags/$flagSlug'
 import { Route as AuthenticatedProjectsProjectSlugAdminSdkKeysRouteImport } from './routes/_authenticated/projects/$projectSlug/_admin/sdk-keys'
-import { Route as AuthenticatedProjectsProjectSlugAdminMembersRouteImport } from './routes/_authenticated/projects/$projectSlug/_admin/members'
 
 const OrgSelectRoute = OrgSelectRouteImport.update({
   id: '/orgSelect',
@@ -50,6 +50,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
@@ -127,12 +132,6 @@ const AuthenticatedProjectsProjectSlugAdminSdkKeysRoute =
     path: '/sdk-keys',
     getParentRoute: () => AuthenticatedProjectsProjectSlugAdminRoute,
   } as any)
-const AuthenticatedProjectsProjectSlugAdminMembersRoute =
-  AuthenticatedProjectsProjectSlugAdminMembersRouteImport.update({
-    id: '/members',
-    path: '/members',
-    getParentRoute: () => AuthenticatedProjectsProjectSlugAdminRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -140,13 +139,13 @@ export interface FileRoutesByFullPath {
   '/orgSelect': typeof OrgSelectRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/members': typeof AuthenticatedMembersRoute
   '/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/audit-logs/': typeof AuthenticatedAuditLogsIndexRoute
   '/live-events/': typeof AuthenticatedLiveEventsIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectSlug/environments': typeof AuthenticatedProjectsProjectSlugEnvironmentsRoute
-  '/projects/$projectSlug/members': typeof AuthenticatedProjectsProjectSlugAdminMembersRoute
   '/projects/$projectSlug/sdk-keys': typeof AuthenticatedProjectsProjectSlugAdminSdkKeysRoute
   '/projects/$projectSlug/flags/$flagSlug': typeof AuthenticatedProjectsProjectSlugFlagsFlagSlugRoute
   '/projects/$projectSlug/analytics/': typeof AuthenticatedProjectsProjectSlugAnalyticsIndexRoute
@@ -158,13 +157,13 @@ export interface FileRoutesByTo {
   '/orgSelect': typeof OrgSelectRoute
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
+  '/members': typeof AuthenticatedMembersRoute
   '/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/audit-logs': typeof AuthenticatedAuditLogsIndexRoute
   '/live-events': typeof AuthenticatedLiveEventsIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectSlug/environments': typeof AuthenticatedProjectsProjectSlugEnvironmentsRoute
-  '/projects/$projectSlug/members': typeof AuthenticatedProjectsProjectSlugAdminMembersRoute
   '/projects/$projectSlug/sdk-keys': typeof AuthenticatedProjectsProjectSlugAdminSdkKeysRoute
   '/projects/$projectSlug/flags/$flagSlug': typeof AuthenticatedProjectsProjectSlugFlagsFlagSlugRoute
   '/projects/$projectSlug/analytics': typeof AuthenticatedProjectsProjectSlugAnalyticsIndexRoute
@@ -178,6 +177,7 @@ export interface FileRoutesById {
   '/orgSelect': typeof OrgSelectRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
+  '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$projectSlug': typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
@@ -186,7 +186,6 @@ export interface FileRoutesById {
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/projects/$projectSlug/_admin': typeof AuthenticatedProjectsProjectSlugAdminRouteWithChildren
   '/_authenticated/projects/$projectSlug/environments': typeof AuthenticatedProjectsProjectSlugEnvironmentsRoute
-  '/_authenticated/projects/$projectSlug/_admin/members': typeof AuthenticatedProjectsProjectSlugAdminMembersRoute
   '/_authenticated/projects/$projectSlug/_admin/sdk-keys': typeof AuthenticatedProjectsProjectSlugAdminSdkKeysRoute
   '/_authenticated/projects/$projectSlug/flags/$flagSlug': typeof AuthenticatedProjectsProjectSlugFlagsFlagSlugRoute
   '/_authenticated/projects/$projectSlug/analytics/': typeof AuthenticatedProjectsProjectSlugAnalyticsIndexRoute
@@ -200,13 +199,13 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/login'
     | '/signup'
+    | '/members'
     | '/projects/$projectSlug'
     | '/analytics/'
     | '/audit-logs/'
     | '/live-events/'
     | '/projects/'
     | '/projects/$projectSlug/environments'
-    | '/projects/$projectSlug/members'
     | '/projects/$projectSlug/sdk-keys'
     | '/projects/$projectSlug/flags/$flagSlug'
     | '/projects/$projectSlug/analytics/'
@@ -218,13 +217,13 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/login'
     | '/signup'
+    | '/members'
     | '/projects/$projectSlug'
     | '/analytics'
     | '/audit-logs'
     | '/live-events'
     | '/projects'
     | '/projects/$projectSlug/environments'
-    | '/projects/$projectSlug/members'
     | '/projects/$projectSlug/sdk-keys'
     | '/projects/$projectSlug/flags/$flagSlug'
     | '/projects/$projectSlug/analytics'
@@ -237,6 +236,7 @@ export interface FileRouteTypes {
     | '/orgSelect'
     | '/_auth/login'
     | '/_auth/signup'
+    | '/_authenticated/members'
     | '/_authenticated/'
     | '/_authenticated/projects/$projectSlug'
     | '/_authenticated/analytics/'
@@ -245,7 +245,6 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/'
     | '/_authenticated/projects/$projectSlug/_admin'
     | '/_authenticated/projects/$projectSlug/environments'
-    | '/_authenticated/projects/$projectSlug/_admin/members'
     | '/_authenticated/projects/$projectSlug/_admin/sdk-keys'
     | '/_authenticated/projects/$projectSlug/flags/$flagSlug'
     | '/_authenticated/projects/$projectSlug/analytics/'
@@ -294,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/members': {
+      id: '/_authenticated/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof AuthenticatedMembersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_auth/signup': {
@@ -387,13 +393,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectSlugAdminSdkKeysRouteImport
       parentRoute: typeof AuthenticatedProjectsProjectSlugAdminRoute
     }
-    '/_authenticated/projects/$projectSlug/_admin/members': {
-      id: '/_authenticated/projects/$projectSlug/_admin/members'
-      path: '/members'
-      fullPath: '/projects/$projectSlug/members'
-      preLoaderRoute: typeof AuthenticatedProjectsProjectSlugAdminMembersRouteImport
-      parentRoute: typeof AuthenticatedProjectsProjectSlugAdminRoute
-    }
   }
 }
 
@@ -410,14 +409,11 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedProjectsProjectSlugAdminRouteChildren {
-  AuthenticatedProjectsProjectSlugAdminMembersRoute: typeof AuthenticatedProjectsProjectSlugAdminMembersRoute
   AuthenticatedProjectsProjectSlugAdminSdkKeysRoute: typeof AuthenticatedProjectsProjectSlugAdminSdkKeysRoute
 }
 
 const AuthenticatedProjectsProjectSlugAdminRouteChildren: AuthenticatedProjectsProjectSlugAdminRouteChildren =
   {
-    AuthenticatedProjectsProjectSlugAdminMembersRoute:
-      AuthenticatedProjectsProjectSlugAdminMembersRoute,
     AuthenticatedProjectsProjectSlugAdminSdkKeysRoute:
       AuthenticatedProjectsProjectSlugAdminSdkKeysRoute,
   }
@@ -455,6 +451,7 @@ const AuthenticatedProjectsProjectSlugRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedProjectsProjectSlugRouteRoute: typeof AuthenticatedProjectsProjectSlugRouteRouteWithChildren
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
@@ -464,6 +461,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProjectsProjectSlugRouteRoute:
     AuthenticatedProjectsProjectSlugRouteRouteWithChildren,

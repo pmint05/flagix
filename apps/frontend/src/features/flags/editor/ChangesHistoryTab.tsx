@@ -45,6 +45,7 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 	);
 
 	const { data, isLoading } = useAuditLogs({
+		projectId: flag.projectId,
 		entityType: "feature_flag",
 		entityId: flag.id,
 		limit: tableState.pageSize,

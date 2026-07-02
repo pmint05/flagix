@@ -14,6 +14,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../../schema";
 import { VariationSelector } from "../VariationSelector";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface UserTargetingContentProps {
 	flag: FeatureFlag;
@@ -24,7 +25,12 @@ export function UserTargetingContent({
 	flag,
 	ruleIndex,
 }: UserTargetingContentProps) {
-	const { control, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const {
+		control,
+		setValue,
+		formState: { errors },
+	} = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 	const userIds =
 		useWatch({ name: `rules.${ruleIndex}.conditions.userIds`, control }) ?? [];
 	const userIdsError = (errors?.rules as any)?.[ruleIndex]?.conditions?.userIds;
@@ -48,15 +54,19 @@ export function UserTargetingContent({
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center gap-2 flex-wrap">
-				<span className="text-sm font-medium text-default-700">IF</span>
-				<span className="text-sm text-default-600">user ID is one of</span>
+				<span className="text-sm font-medium text-muted">IF</span>
+				<span className="text-sm">user ID is one of</span>
 			</div>
 			<div className="flex flex-col gap-1 pl-6">
 				<div className="flex items-center gap-2 flex-wrap">
-					<TagGroup selectionMode="single" onRemove={onRemoveUserIds}>
+					<TagGroup
+						selectionMode="none"
+						onRemove={canEditFlags ? onRemoveUserIds : undefined}>
 						<TagGroup.List
 							items={userIds.map((id, idx) => ({ id: idx, name: id }))}
-							renderEmptyState={() => <span>No users added</span>}>
+							renderEmptyState={() => (
+								<span className="text-xs">No users added</span>
+							)}>
 							{(item) => (
 								<Tag key={item.id} id={item.id} textValue={item.name} size="lg">
 									{item.name}
@@ -64,7 +74,7 @@ export function UserTargetingContent({
 							)}
 						</TagGroup.List>
 					</TagGroup>
-					<AddUserIdInput onAdd={addUserId} />
+					{canEditFlags && <AddUserIdInput onAdd={addUserId} />}
 				</div>
 				{userIdsError && (
 					<FieldError className="text-xs text-danger">
@@ -73,7 +83,7 @@ export function UserTargetingContent({
 				)}
 			</div>
 			<div className="flex items-center gap-2 pl-6">
-				<span className="text-sm text-default-600">then resolve</span>
+				<span className="text-sm">then resolve</span>
 				<VariationSelector
 					flag={flag}
 					name={`rules.${ruleIndex}.variationId`}

@@ -17,6 +17,9 @@ import { useCanCreateProject } from "@/hooks/usePermission";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
 	component: ProjectsIndex,
+	staticData: {
+		hideEnvironmentSwitcher: true,
+	}
 });
 
 function ProjectsIndex() {

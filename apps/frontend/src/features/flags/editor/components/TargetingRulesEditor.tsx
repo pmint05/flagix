@@ -5,6 +5,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { RuleCard } from "./RuleCard";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../schema";
+import { useHasPermission } from "@/hooks/usePermission";
 
 import {
 	DndContext,
@@ -57,6 +58,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 		control,
 		name: "rules",
 	});
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const fieldIds = fields.map((f) => f.id);
 	const hasKillSwitch = fields.some((f) => f.ruleType === "kill_switch");
@@ -164,7 +166,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 						items={fieldIds}
 						strategy={verticalListSortingStrategy}>
 						{/* Top add-rule button (only when items exist and the first rule is not a kill switch) */}
-						{fields.length > 0 && fields[0]?.ruleType !== "kill_switch" && (
+						{canEditFlags && fields.length > 0 && fields[0]?.ruleType !== "kill_switch" && (
 							<div className="pb-4 w-full flex justify-center">
 								<AddRuleButton
 									onAdd={(type) => handleAddRule(0, type)}
@@ -194,7 +196,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 				</DndContext>
 
 				{/* Empty state add button */}
-				{fields.length === 0 && isFlagOn && (
+				{canEditFlags && fields.length === 0 && isFlagOn && (
 					<div className="w-full flex justify-center">
 						<AddRuleButton
 							onAdd={(type) => handleAddRule(0, type)}
@@ -235,6 +237,7 @@ function SortableRuleItem({
 	hasKillSwitch,
 	firstRuleType,
 }: SortableRuleItemProps) {
+	const canEditFlags = useHasPermission("flag:edit");
 	const {
 		attributes,
 		listeners,
@@ -244,7 +247,7 @@ function SortableRuleItem({
 		isDragging,
 	} = useSortable({
 		id: rule.id,
-		disabled: rule.ruleType === "kill_switch",
+		disabled: rule.ruleType === "kill_switch" || !canEditFlags,
 	});
 
 	const style = {
@@ -287,24 +290,26 @@ function SortableRuleItem({
 				onMoveDown={onMoveDown}
 				totalRules={fieldsLength}
 				dragHandleProps={
-					rule.ruleType !== "kill_switch"
+					canEditFlags && rule.ruleType !== "kill_switch"
 						? { ...attributes, ...listeners }
 						: undefined
 				}
 			/>
-			<div
-				className={cn(
-					"py-4 w-full flex justify-center transition-opacity duration-150",
-					{
-						"opacity-0 pointer-events-none": isDragging,
-					},
-				)}>
-				<AddRuleButton
-					onAdd={(type) => handleAddRule(formIndex + 1, type)}
-					isDisabled={!isFlagOn}
-					hasKillSwitch={hasKillSwitch}
-				/>
-			</div>
+			{canEditFlags && (
+				<div
+					className={cn(
+						"py-4 w-full flex justify-center transition-opacity duration-150",
+						{
+							"opacity-0 pointer-events-none": isDragging,
+						},
+					)}>
+					<AddRuleButton
+						onAdd={(type) => handleAddRule(formIndex + 1, type)}
+						isDisabled={!isFlagOn}
+						hasKillSwitch={hasKillSwitch}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

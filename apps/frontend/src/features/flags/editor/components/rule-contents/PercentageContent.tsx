@@ -13,6 +13,7 @@ import { Reorder, useDragControls } from "motion/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../../schema";
 import { VariationSelector } from "../VariationSelector";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface PercentageContentProps {
 	flag: FeatureFlag;
@@ -29,15 +30,17 @@ interface SortableRolloutRowProps {
 	onRemove: () => void;
 	isRemoveDisabled: boolean;
 	onDragEnd: () => void;
+	canEditFlags: boolean;
 }
 
 interface RolloutSliderProps {
 	value: number;
 	onChange: (val: number) => void;
 	rolloutRange: { start: number; end: number };
+	isDisabled?: boolean;
 }
 
-function RolloutSlider({ value, onChange, rolloutRange }: RolloutSliderProps) {
+function RolloutSlider({ value, onChange, rolloutRange, isDisabled }: RolloutSliderProps) {
 	const [localVal, setLocalVal] = useState(value);
 
 	useEffect(() => {
@@ -56,6 +59,7 @@ function RolloutSlider({ value, onChange, rolloutRange }: RolloutSliderProps) {
 				minValue={0}
 				maxValue={100}
 				step={1}
+				isDisabled={isDisabled}
 				className="flex-1">
 				<Slider.Track>
 					<Slider.Fill />
@@ -90,6 +94,7 @@ function SortableRolloutRow({
 	onRemove,
 	isRemoveDisabled,
 	onDragEnd,
+	canEditFlags,
 }: SortableRolloutRowProps) {
 	const controls = useDragControls();
 
@@ -102,12 +107,14 @@ function SortableRolloutRow({
 			onDragEnd={onDragEnd}
 			className="flex items-center gap-4 flex-wrap p-3 rounded-3xl border border-divider bg-surface select-none"
 			layout>
-			<button
-				type="button"
-				className="cursor-grab touch-none active:cursor-grabbing p-1.5 hover:bg-default rounded-2xl transition-colors shrink-0"
-				onPointerDown={(e) => controls.start(e)}>
-				<DotsSixVerticalIcon className="size-4 text-default-400" />
-			</button>
+			{canEditFlags && (
+				<button
+					type="button"
+					className="cursor-grab touch-none active:cursor-grabbing p-1.5 hover:bg-default rounded-2xl transition-colors shrink-0"
+					onPointerDown={(e) => controls.start(e)}>
+					<DotsSixVerticalIcon className="size-4 text-default-400" />
+				</button>
+			)}
 			<span className="text-sm font-semibold text-default-600">Resolve</span>
 			<div className="min-w-48 flex-1">
 				<Controller
@@ -120,6 +127,7 @@ function SortableRolloutRow({
 							value={pctField.value ?? 0}
 							onChange={pctField.onChange}
 							rolloutRange={rolloutRange}
+							isDisabled={!canEditFlags}
 						/>
 					)}
 				/>
@@ -129,7 +137,7 @@ function SortableRolloutRow({
 				flag={flag}
 				name={`rules.${ruleIndex}.conditions.rollouts.${idx}.variationId`}
 			/>
-			{!isRemoveDisabled && (
+			{canEditFlags && !isRemoveDisabled && (
 				<Tooltip>
 					<Tooltip.Trigger>
 						<Button
@@ -150,6 +158,7 @@ function SortableRolloutRow({
 
 export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
 	const { control, getValues, setValue } = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const { fields, append, remove, move } = useFieldArray({
 		control,
@@ -286,48 +295,51 @@ export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
 							onRemove={() => remove(idx)}
 							isRemoveDisabled={fields.length <= 1}
 							onDragEnd={commitRolloutOrder}
+							canEditFlags={canEditFlags}
 						/>
 					);
 				})}
 			</Reorder.Group>
 
-			<div className="flex items-center justify-between gap-4 pt-2 border-t border-divider/50">
-				<Button size="sm" variant="outline" onPress={handleAddRollout}>
-					<PlusIcon className="size-4 mr-1.5" weight="bold" />
-					Add Rollout Variation
-				</Button>
+			{canEditFlags && (
+				<div className="flex items-center justify-between gap-4 pt-2 border-t border-divider/50">
+					<Button size="sm" variant="outline" onPress={handleAddRollout}>
+						<PlusIcon className="size-4 mr-1.5" weight="bold" />
+						Add Rollout Variation
+					</Button>
 
-				<ButtonGroup size="sm">
-					<Tooltip>
-						<Tooltip.Trigger>
-							<Button
-								isIconOnly
-								variant="secondary"
-								className="rounded-r-none"
-								onPress={handleEqualizeVariations}>
-								<ScalesIcon className="size-4" />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content>
-							Equalize set variations (100% total)
-						</Tooltip.Content>
-					</Tooltip>
-					<Tooltip>
-						<Tooltip.Trigger>
-							<Button
-								isIconOnly
-								variant="secondary"
-								className="rounded-l-none"
-								onPress={handleEqualizeAll}>
-								<DivideIcon className="size-4" />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content>
-							Equalize variations & next rule (incl. remaining traffic)
-						</Tooltip.Content>
-					</Tooltip>
-				</ButtonGroup>
-			</div>
+					<ButtonGroup size="sm">
+						<Tooltip>
+							<Tooltip.Trigger>
+								<Button
+									isIconOnly
+									variant="secondary"
+									className="rounded-r-none"
+									onPress={handleEqualizeVariations}>
+									<ScalesIcon className="size-4" />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								Equalize set variations (100% total)
+							</Tooltip.Content>
+						</Tooltip>
+						<Tooltip>
+							<Tooltip.Trigger>
+								<Button
+									isIconOnly
+									variant="secondary"
+									className="rounded-l-none"
+									onPress={handleEqualizeAll}>
+									<DivideIcon className="size-4" />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								Equalize variations & next rule (incl. remaining traffic)
+							</Tooltip.Content>
+						</Tooltip>
+					</ButtonGroup>
+				</div>
+			)}
 
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
