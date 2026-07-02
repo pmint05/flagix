@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Key } from "@heroui/react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import {
 	Button,
 	Input,
@@ -36,8 +36,8 @@ export function RoleTargetingContent({
 	flag,
 	ruleIndex,
 }: RoleTargetingContentProps) {
-	const { watch, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
-	const roles: string[] = watch(`rules.${ruleIndex}.conditions.roles`) ?? [];
+	const { control, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const roles = useWatch({ name: `rules.${ruleIndex}.conditions.roles`, control }) ?? [];
 	const rolesError = (errors?.rules as any)?.[ruleIndex]?.conditions?.roles;
 
 	const onRemoveRoles = (keys: Set<Key>) => {

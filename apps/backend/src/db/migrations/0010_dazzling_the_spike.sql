@@ -1,0 +1,1 @@
+ALTER TABLE "feature_flags" ADD COLUMN "is_temporary" boolean DEFAULT false NOT NULL;

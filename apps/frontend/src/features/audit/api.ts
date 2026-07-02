@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { type AuditLog, auditLogSchema } from "@/types/audit-log";
-import type { Paginated } from "@/types/base";
+import { paginatedSchema, type Paginated } from "@/types/base";
 import { useContextStore } from "@/stores";
-import { z } from "zod";
 
 export interface AuditLogQueryParams {
 	projectId?: string;
@@ -15,19 +14,13 @@ export interface AuditLogQueryParams {
 	offset?: number;
 	from?: string;
 	to?: string;
+	actorId?: string;
+	actorEmail?: string;
+	search?: string;
+	sort?: string;
+	page?: number;
+	pageSize?: number;
 }
-
-const auditLogListSchema = z.object({
-	logs: z.array(auditLogSchema),
-	total: z.number(),
-	limit: z.number(),
-	offset: z.number(),
-}).transform((val) => ({
-	data: val.logs,
-	total: val.total,
-	page: val.offset > 0 ? Math.floor(val.offset / val.limit) + 1 : 1,
-	pageSize: val.limit,
-}));
 
 export const createAuditLogsApi = (orgId: string) => {
 	const basePath = `organizations/${orgId}/audit-logs`;
@@ -44,7 +37,7 @@ export const createAuditLogsApi = (orgId: string) => {
 
 			return api.get(basePath, {
 				searchParams,
-				schema: auditLogListSchema,
+				schema: paginatedSchema(auditLogSchema),
 			});
 		},
 		get: (id: string): Promise<AuditLog> =>

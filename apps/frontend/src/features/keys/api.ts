@@ -49,6 +49,19 @@ export const keysApi = {
 		api
 			.delete(`${basePath(orgId, envId)}/${keyId}`, { schema: successSchema })
 			.then(() => {}),
+
+	toggleActive: (
+		orgId: string,
+		envId: string,
+		keyId: string,
+		isActive: boolean,
+	): Promise<void> =>
+		api
+			.patch(`${basePath(orgId, envId)}/${keyId}/toggle`, {
+				json: { isActive },
+				schema: successSchema,
+			})
+			.then(() => {}),
 };
 
 // --- Query Hooks ---
@@ -75,6 +88,24 @@ export function useCreateSdkKey() {
 		mutationFn: (input: CreateSdkKeyInput) => {
 			if (!orgId || !envId) throw new Error("Missing context");
 			return keysApi.create(orgId, envId, input);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: [...SDK_KEY_LIST_KEY, orgId, envId],
+			});
+		},
+	});
+}
+
+export function useToggleActiveSdkKey() {
+	const queryClient = useQueryClient();
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
+	const envId = useContextStore((s) => s.selectedEnvironment?.id);
+
+	return useMutation({
+		mutationFn: ({ keyId, isActive }: { keyId: string; isActive: boolean }) => {
+			if (!orgId || !envId) throw new Error("Missing context");
+			return keysApi.toggleActive(orgId, envId, keyId, isActive);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({

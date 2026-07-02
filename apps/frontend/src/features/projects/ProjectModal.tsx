@@ -12,11 +12,12 @@ import {
 	Drawer,
 	toast,
 } from "@heroui/react";
-import { useCreateProject, useUpdateProject } from "./api";
+import { useCreateProject, useUpdateProject, useProjects } from "./api";
 import { useContextStore } from "@/stores";
 import type { Project } from "@/types/project";
 import { slugify } from "#/lib/utils";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useNavigate } from "@tanstack/react-router";
 
 const projectFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
@@ -40,6 +41,8 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	const isEditing = !!project;
 	const createProject = useCreateProject();
 	const updateProject = useUpdateProject();
+	const { data: projects } = useProjects();
+	const navigate = useNavigate();
 	const organizationId = useContextStore((s) => s.selectedOrganization?.id);
 
 	const {
@@ -69,8 +72,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 					toast.danger("No organization selected");
 					return;
 				}
-				await createProject.mutateAsync(data);
+				const newProject = await createProject.mutateAsync(data);
 				toast.success("Project created successfully");
+
+				if (!projects || projects.length === 0) {
+					useContextStore.getState().setProject(newProject);
+					void navigate({
+						to: "/projects/$projectSlug/flags",
+						params: { projectSlug: newProject.slug },
+					});
+				}
 			}
 			onClose();
 		} catch {

@@ -3,6 +3,7 @@ export type FlagChangeEventType =
   | 'flag.updated'
   | 'flag.toggled'
   | 'flag.archived'
+  | 'flag.restored'
   | 'flag.deleted'
   | 'rule.created'
   | 'rule.updated'

@@ -7,7 +7,7 @@ import {
 	featureFlagSchema,
 	featureFlagListItemSchema,
 } from "@/types/feature-flag";
-import { z } from "zod";
+import { paginatedSchema, type Paginated } from "@/types/base";
 import { useContextStore } from "@/stores";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
 
@@ -16,6 +16,7 @@ export interface CreateFlagInput {
 	name: string;
 	description?: string;
 	flagType: "boolean" | "multivariate";
+	visibility?: "all" | "client_only" | "server_only";
 	variations?: Array<{
 		key: string;
 		value: boolean | string | Record<string, unknown>;
@@ -26,11 +27,27 @@ export interface CreateFlagInput {
 export interface UpdateFlagInput {
 	name?: string;
 	description?: string;
+	visibility?: "all" | "client_only" | "server_only";
+	isTemporary?: boolean;
 }
 
 export interface UpdateFlagStateInput {
 	isEnabled?: boolean;
 	status?: "draft" | "active" | "archived";
+}
+
+export interface FlagListParams {
+	q?: string;
+	status?: string | string[];
+	flagType?: string | string[];
+	visibility?: string | string[];
+	isTemporary?: boolean;
+	creator?: string;
+	createdAtFrom?: string;
+	createdAtTo?: string;
+	sort?: string;
+	page?: number;
+	pageSize?: number;
 }
 
 export const createFlagsApi = (
@@ -39,16 +56,25 @@ export const createFlagsApi = (
 ) => {
 	const basePath = `organizations/${orgId}/projects/${projectId}/flags`;
 	return {
-		list: (envId: string, status?: string): Promise<FeatureFlagListItem[]> =>
-			api
-				.get(basePath, {
-					searchParams: status ? { envId, status } : { envId },
-					schema: z.object({
-						flags: z.array(featureFlagListItemSchema),
-						total: z.number(),
-					}),
-				})
-				.then((res) => res.flags),
+		list: (
+			envId: string,
+			params?: FlagListParams,
+		): Promise<Paginated<FeatureFlagListItem>> => {
+			const searchParams = new URLSearchParams();
+			searchParams.append("envId", envId);
+			for (const [key, value] of Object.entries(params ?? {})) {
+				if (value === undefined || value === null) continue;
+				if (Array.isArray(value)) {
+					for (const item of value) searchParams.append(key, String(item));
+				} else {
+					searchParams.append(key, String(value));
+				}
+			}
+			return api.get(basePath, {
+				searchParams,
+				schema: paginatedSchema(featureFlagListItemSchema),
+			});
+		},
 		get: (flagId: string, envId?: string): Promise<FeatureFlag> =>
 			api.get(`organizations/${orgId}/flags/${flagId}`, {
 				searchParams: envId ? { envId } : {},
@@ -96,14 +122,14 @@ export const createFlagsApi = (
 
 export const FLAGS_KEY = ["flags"] as const;
 
-export function useFlags(status?: string) {
+export function useFlags(params?: FlagListParams) {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const projectId = useCurrentProject()?.id;
 	const envId = useContextStore((s) => s.selectedEnvironment?.id);
 
 	return useQuery({
-		queryKey: [...FLAGS_KEY, orgId, projectId, envId, { status }],
-		queryFn: () => createFlagsApi(orgId!, projectId!).list(envId!, status),
+		queryKey: [...FLAGS_KEY, orgId, projectId, envId, params],
+		queryFn: () => createFlagsApi(orgId!, projectId!).list(envId!, params),
 		enabled: !!orgId && !!projectId && !!envId,
 	});
 }
@@ -161,34 +187,36 @@ export function useUpdateFlagState() {
 				queryKey: [...FLAGS_KEY, orgId, projectId, envId],
 			});
 
-			const previousFlags = queryClient.getQueryData<FeatureFlagListItem[]>([
-				...FLAGS_KEY,
-				orgId,
-				projectId,
-				envId,
-			]);
+			const previousData = queryClient.getQueryData<
+				Paginated<FeatureFlagListItem>
+			>([...FLAGS_KEY, orgId, projectId, envId]);
 
-			queryClient.setQueryData<FeatureFlagListItem[]>(
+			queryClient.setQueryData<Paginated<FeatureFlagListItem>>(
 				[...FLAGS_KEY, orgId, projectId, envId],
 				(old) =>
-					old?.map((flag) =>
-						flag.id === flagId
-							? { ...flag, isEnabled: isEnabled ?? flag.isEnabled }
-							: flag,
-					),
+					old
+						? {
+								...old,
+								data: old.data.map((flag) =>
+									flag.id === flagId
+										? { ...flag, isEnabled: isEnabled ?? flag.isEnabled }
+										: flag,
+								),
+							}
+						: old,
 			);
 
-			return { previousFlags };
+			return { previousData };
 		},
 		onError: (_err, _vars, context) => {
 			toast.danger("Failed to update flag state", {
 				description: "Your change has been reverted.",
 			});
 
-			if (context?.previousFlags) {
+			if (context?.previousData) {
 				queryClient.setQueryData(
 					[...FLAGS_KEY, orgId, projectId, envId],
-					context.previousFlags,
+					context.previousData,
 				);
 			}
 		},

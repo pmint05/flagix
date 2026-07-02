@@ -23,8 +23,8 @@ export const createProjectsApi = (orgId: string) => {
 	return {
 		list: (): Promise<Project[]> =>
 			api.get(basePath, {
-				schema: z.object({ projects: z.array(projectSchema), total: z.number() }),
-			}).then(res => res.projects),
+				schema: z.object({ data: z.array(projectSchema), total: z.number() }),
+			}).then(res => res.data),
 		get: (id: string): Promise<Project> =>
 			api.get(`${basePath}/${id}`, { schema: projectSchema }),
 		getBySlug: (slug: string): Promise<Project> =>

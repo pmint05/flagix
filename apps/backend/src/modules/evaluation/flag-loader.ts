@@ -71,6 +71,7 @@ export class FlagLoader {
           isEnabled: r.isEnabled,
         }),
       ),
+      visibility: flag.visibility,
     };
   }
 
@@ -134,6 +135,7 @@ export class FlagLoader {
               isEnabled: r.isEnabled,
             }),
           ),
+          visibility: flag.visibility,
         };
       });
   }

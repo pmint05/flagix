@@ -35,6 +35,7 @@ export interface LoadedFlag {
   defaultVariationId?: string | null;
   variations: LoadedFlagVariation[];
   rules: LoadedFlagRule[];
+  visibility: 'all' | 'client_only' | 'server_only';
 }
 
 export function buildSafeDefault(
@@ -52,10 +53,11 @@ export function buildSafeDefault(
     };
   }
 
-  // Resolve environment-specific offVariationId first, fall back to global default variation
-  let variation = flag.offVariationId ? flag.variations.find((v) => v.id === flag.offVariationId) : undefined;
-  if (!variation) {
-    variation = flag.variations.find((v) => v.isDefault);
+  let variation = flag.offVariationId
+    ? flag.variations.find((v) => v.id === flag.offVariationId)
+    : undefined;
+  if (!variation && flag.defaultVariationId) {
+    variation = flag.variations.find((v) => v.id === flag.defaultVariationId);
   }
 
   if (!variation) {

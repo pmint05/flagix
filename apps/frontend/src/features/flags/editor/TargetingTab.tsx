@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button, Surface } from "@heroui/react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "./schema";
 import { FlagStatusCard } from "./components/FlagStatusCard";
@@ -13,8 +13,9 @@ interface TargetingTabProps {
 }
 
 export function TargetingTab({ flag }: TargetingTabProps) {
-	const { watch } = useFormContext<FlagEditorFormValues>();
-	const isFlagOn = watch("isFlagOn");
+	const { control } = useFormContext<FlagEditorFormValues>();
+	const isFlagOn = useWatch({ name: "isFlagOn", control });
+	const rules = useWatch({ name: "rules", control }) || [];
 	const [showRulesWhenOff, setShowRulesWhenOff] = useState(false);
 
 	const shouldShowRules = isFlagOn || showRulesWhenOff;
@@ -35,16 +36,17 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 					<div className="flex items-center justify-between px-4 py-3 bg-surface rounded-3xl border border-divider mt-4">
 						<div>
 							<p className="text-sm text-default-600">
-								Targeting rules are hidden because the flag is OFF. All users
-								resolve to the off variation.
+								Targeting rules are hidden because the flag is OFF.
 							</p>
 						</div>
-						<Button
-							size="sm"
-							variant="ghost"
-							onPress={() => setShowRulesWhenOff(true)}>
-							Show targeting rules
-						</Button>
+						{rules.length > 0 && (
+							<Button
+								size="sm"
+								variant="ghost"
+								onPress={() => setShowRulesWhenOff(true)}>
+								Show targeting rules
+							</Button>
+						)}
 					</div>
 				)}
 
@@ -65,9 +67,9 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 				{shouldShowRules && (
 					<div className={!isFlagOn ? "opacity-50 pointer-events-none" : ""}>
 						<TargetingRulesEditor flag={flag} />
-						<DefaultRuleCard flag={flag} />
 					</div>
 				)}
+				<DefaultRuleCard flag={flag} />
 			</Surface>
 		</div>
 	);

@@ -13,8 +13,8 @@ import {
 	TextField,
 	Fieldset,
 	Card,
+	toast,
 } from "@heroui/react";
-import { toast } from "sonner";
 import { signUp } from "@/lib/auth-client";
 import {
 	EnvelopeSimpleIcon,
@@ -28,15 +28,10 @@ import {
 const signupSchema = z
 	.object({
 		name: z.string().min(1, "Name is required"),
-		email: z
-			.string()
-			.min(1, "Email is required")
-			.email("Invalid email address"),
-		password: z
-			.string()
-			.min(8, "Password must be at least 8 characters")
-			.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-			.regex(/[0-9]/, "Password must contain at least one number"),
+		email: z.email("Invalid email address").min(1, "Email is required"),
+		password: z.string().min(8, "Password must be at least 8 characters"),
+		// .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+		// .regex(/[0-9]/, "Password must contain at least one number"),
 		confirmPassword: z.string().min(1, "Please confirm your password"),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
@@ -77,14 +72,15 @@ function SignupPage() {
 			});
 
 			if (result.error) {
-				toast.error(result.error.message ?? "Sign up failed");
+				toast.danger(result.error.message ?? "Sign up failed");
 				return;
 			}
 
-			toast.success("Account created successfully");
-			navigate({ to: "/" });
+			toast.success("Account created successfully", {
+				onClose: () => navigate({ to: "/" }),
+			});
 		} catch (error) {
-			toast.error("An unexpected error occurred");
+			toast.danger("An unexpected error occurred");
 		} finally {
 			setIsLoading(false);
 		}
@@ -169,10 +165,7 @@ function SignupPage() {
 								<Label>Confirm Password</Label>
 								<InputGroup variant="secondary">
 									<InputGroup.Prefix>
-										<LockKeyIcon
-											weight="bold"
-											size={18}
-										/>
+										<LockKeyIcon weight="bold" size={18} />
 									</InputGroup.Prefix>
 									<InputGroup.Input
 										{...register("confirmPassword")}

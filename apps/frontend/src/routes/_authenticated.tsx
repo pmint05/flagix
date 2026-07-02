@@ -26,7 +26,8 @@ import { Panel, Group as PanelGroup } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useProjects } from "@/features/projects/api";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 	const headers = getRequestHeaders();
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/_authenticated")({
 			throw redirect({ to: "/login" });
 		}
 
-		useAuthStore.getState().setSession(session.data.session, session.data.user);
+		useAuthStore.getState().setSession(session.data.session as any, session.data.user as any);
 	},
 });
 
@@ -68,14 +69,25 @@ function AuthenticatedLayout() {
 	const { isCollapsed, size, setCollapsed, setSize } = useSidebarStore();
 	const panelRef = useRef<PanelImperativeHandle>(null);
 	const navigate = useNavigate();
+	const location = useLocation();
 
-	// Check org selection - redirect if no org selected (after hydration)
+	const { data: projects, isLoading: isProjectsLoading } = useProjects();
+
+	// Check org selection & project existence - redirect if needed (after hydration)
 	useEffect(() => {
 		if (!isHydrated) return;
 		if (!selectedOrganization) {
 			void navigate({ to: "/orgSelect", replace: true });
+			return;
 		}
-	}, [isHydrated, selectedOrganization, navigate]);
+
+		if (isProjectsLoading) return;
+
+		const isAtProjectsPage = location.pathname === "/projects" || location.pathname === "/projects/";
+		if (projects && projects.length === 0 && !isAtProjectsPage) {
+			void navigate({ to: "/projects", replace: true });
+		}
+	}, [isHydrated, selectedOrganization, projects, isProjectsLoading, location.pathname, navigate]);
 
 	// Sync imperative panel API when toggle buttons are clicked
 	useEffect(() => {

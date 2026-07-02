@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   UseGuards,
@@ -17,6 +18,7 @@ import {
 } from '@/common/decorators/current-context.decorator';
 import { SdkKeysService } from './sdk-keys.service';
 import { CreateSdkKeyDto } from './dto/create-sdk-key.dto';
+import { ToggleSdkKeyDto } from './dto/toggle-sdk-key.dto';
 import { Auth } from '@/common/decorators/auth.decorator';
 
 @ApiTags('SDK Keys')
@@ -44,6 +46,21 @@ export class SdkKeysController {
       ctx.envId!,
     );
     return { sdkKeys };
+  }
+
+  @Patch(':keyId/toggle')
+  @PlatformOrgRoles(['admin'])
+  @ApiOperation({ summary: 'Toggle SDK key status' })
+  async toggleActive(
+    @CurrentContext() ctx: OrgContext,
+    @Body() body: ToggleSdkKeyDto,
+  ) {
+    return this.sdkKeysService.toggleActive(
+      ctx.organizationId,
+      ctx.envId!,
+      ctx.keyId!,
+      body.isActive,
+    );
   }
 
   @Delete(':keyId')

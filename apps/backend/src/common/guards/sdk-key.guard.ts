@@ -17,6 +17,7 @@ interface RequestWithSdkEnv {
     environmentId: string;
     organizationId: string;
     projectId: string;
+    keyType?: 'client' | 'server';
   };
 }
 
@@ -58,7 +59,7 @@ export class SdkKeyGuard implements CanActivate {
     }
 
     if (!sdkKey.isActive) {
-      throw new UnauthorizedException('SDK key has been revoked');
+      throw new UnauthorizedException('SDK key is inactive');
     }
 
     const [env] = await this.db
@@ -80,7 +81,18 @@ export class SdkKeyGuard implements CanActivate {
       environmentId: sdkKey.environmentId,
       organizationId: sdkKey.organizationId,
       projectId: env.projectId,
+      keyType: sdkKey.type,
     };
+
+    // Asynchronously update lastUsedAt in the background
+    this.db
+      .update(sdkKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(sdkKeys.id, sdkKey.id))
+      .execute()
+      .catch((err) => {
+        console.error('Failed to update SDK key lastUsedAt:', err);
+      });
 
     return true;
   }

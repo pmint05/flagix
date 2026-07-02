@@ -46,7 +46,7 @@ export class EnvironmentsController {
       ctx.organizationId,
       ctx.projectId!,
     );
-    return { environments, total: environments.length };
+    return { data: environments, total: environments.length };
   }
 
   @Get('by-slug/:slug')
@@ -55,11 +55,7 @@ export class EnvironmentsController {
     @CurrentContext() ctx: OrgContext,
     @Param('slug') slug: string,
   ) {
-    return this.envService.findBySlug(
-      ctx.organizationId,
-      ctx.projectId!,
-      slug,
-    );
+    return this.envService.findBySlug(ctx.organizationId, ctx.projectId!, slug);
   }
 
   @Get(':envId')

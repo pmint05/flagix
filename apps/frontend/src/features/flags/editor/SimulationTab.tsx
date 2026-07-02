@@ -14,7 +14,7 @@ import { useContextStore, useThemeStore } from "@/stores";
 import { toast } from "sonner";
 import { SimulationLeftPanel } from "./components/simulation/SimulationLeftPanel";
 import { SimulationRightPanel } from "./components/simulation/SimulationRightPanel";
-import { CodeSnippetModal } from "./components/simulation/CodeSnippetModal";
+import { CodeSnippetModal } from "@/features/keys/components/CodeSnippetModal";
 import { PRESETS } from "./components/simulation/constants";
 import { useSimulationStore, DEFAULT_SIMULATION_STATE } from "./store/simulation-store";
 

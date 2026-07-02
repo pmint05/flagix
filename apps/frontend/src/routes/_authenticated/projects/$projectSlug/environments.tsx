@@ -1,6 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button, Select, ListBox, SearchField } from "@heroui/react";
-import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import {
+	Button,
+	Select,
+	ListBox,
+	SearchField,
+	Popover,
+	TagGroup,
+	Tag,
+} from "@heroui/react";
+import {
+	PlusIcon,
+	MagnifyingGlassIcon,
+	FadersIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import {
 	useEnvironments,
 	useToggleEnvironmentActive,
@@ -31,11 +44,7 @@ export const Route = createFileRoute(
 });
 
 function EnvironmentsIndex() {
-	const {
-		data: environments,
-		isLoading,
-		isError,
-	} = useEnvironments();
+	const { data: environments, isLoading, isError } = useEnvironments();
 	const toggleActive = useToggleEnvironmentActive();
 	const deleteEnvironment = useDeleteEnvironment();
 	const { selectedEnvironment, setEnvironment } = useContextStore();
@@ -114,6 +123,42 @@ function EnvironmentsIndex() {
 			}) as ColumnDef<Environment, unknown>[],
 		[],
 	);
+
+	const activeTags = useMemo(() => {
+		const tags: Array<{ key: string; label: string }> = [];
+		if (envFilters.type && envFilters.type !== "all") {
+			const opt = ENV_TYPE_FILTER_OPTIONS.find(
+				(o) => o.key === envFilters.type,
+			);
+			tags.push({
+				key: "type",
+				label: `Type: ${opt?.label ?? envFilters.type}`,
+			});
+		}
+		if (envFilters.active && envFilters.active !== "all") {
+			const opt = ENV_STATUS_OPTIONS.find((o) => o.key === envFilters.active);
+			tags.push({
+				key: "active",
+				label: `Status: ${opt?.label ?? envFilters.active}`,
+			});
+		}
+		return tags;
+	}, [envFilters]);
+
+	const handleRemoveTag = (key: string) => {
+		updateTableState({
+			filters: {
+				...tableState.filters,
+				[key]: undefined,
+			},
+		});
+	};
+
+	const handleClearAll = () => {
+		updateTableState({
+			filters: {},
+		});
+	};
 
 	const handleBatchDelete = async () => {
 		if (selectedIds.length === 0) return;
@@ -203,7 +248,7 @@ function EnvironmentsIndex() {
 				/>
 			) : (
 				<div className="space-y-4">
-					<div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+					<div className="flex flex-col sm:flex-row gap-2 items-center">
 						<SearchField
 							value={tableState.query}
 							onChange={(v) => updateTableState({ query: v })}
@@ -219,73 +264,137 @@ function EnvironmentsIndex() {
 							</SearchField.Group>
 						</SearchField>
 						<div className="flex items-center gap-3 w-full sm:w-auto">
-							<Select
-								value={typeFilter}
-								onChange={(key) =>
-									updateTableState({
-										filters: {
-											...tableState.filters,
-											type:
-												key?.toString() === "all" ? undefined : key?.toString(),
-										},
-									})
-								}
-								aria-label="Filter by type"
-								className="w-full sm:w-40"
-								variant="secondary">
-								<Select.Trigger>
-									<Select.Value />
-									<Select.Indicator />
-								</Select.Trigger>
-								<Select.Popover>
-									<ListBox>
-										{ENV_TYPE_FILTER_OPTIONS.map((option) => (
-											<ListBox.Item
-												id={option.key}
-												key={option.key}
-												textValue={option.label}>
-												{option.label}
-												<ListBox.ItemIndicator />
-											</ListBox.Item>
-										))}
-									</ListBox>
-								</Select.Popover>
-							</Select>
+							<Popover>
+								<Popover.Trigger>
+									<Button variant="secondary" className="gap-2">
+										<FadersIcon className="size-4" />
+										Filters
+									</Button>
+								</Popover.Trigger>
+								<Popover.Content className="w-64" placement="bottom end">
+									<Popover.Dialog className="p-3 space-y-4">
+										<div className="text-xs font-semibold text-foreground/80 border-b border-divider pb-1.5">
+											Filter Environments
+										</div>
+										<div className="flex flex-col gap-3">
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-medium text-muted-foreground">
+													Type
+												</span>
+												<Select
+													value={typeFilter}
+													onChange={(key) =>
+														updateTableState({
+															filters: {
+																...tableState.filters,
+																type:
+																	key?.toString() === "all"
+																		? undefined
+																		: key?.toString(),
+															},
+														})
+													}
+													aria-label="Filter by type"
+													className="w-full"
+													variant="secondary">
+													<Select.Trigger>
+														<Select.Value />
+														<Select.Indicator />
+													</Select.Trigger>
+													<Select.Popover>
+														<ListBox>
+															{ENV_TYPE_FILTER_OPTIONS.map((option) => (
+																<ListBox.Item
+																	id={option.key}
+																	key={option.key}
+																	textValue={option.label}>
+																	{option.label}
+																	<ListBox.ItemIndicator />
+																</ListBox.Item>
+															))}
+														</ListBox>
+													</Select.Popover>
+												</Select>
+											</div>
 
-							<Select
-								value={activeFilter}
-								onChange={(key) =>
-									updateTableState({
-										filters: {
-											...tableState.filters,
-											active:
-												key?.toString() === "all" ? undefined : key?.toString(),
-										},
-									})
-								}
-								aria-label="Filter by status"
-								className="w-full sm:w-40"
-								variant="secondary">
-								<Select.Trigger>
-									<Select.Value />
-									<Select.Indicator />
-								</Select.Trigger>
-								<Select.Popover>
-									<ListBox>
-										{ENV_STATUS_OPTIONS.map((option) => (
-											<ListBox.Item
-												id={option.key}
-												key={option.key}
-												textValue={option.label}>
-												{option.label}
-												<ListBox.ItemIndicator />
-											</ListBox.Item>
-										))}
-									</ListBox>
-								</Select.Popover>
-							</Select>
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-medium text-muted-foreground">
+													Status
+												</span>
+												<Select
+													value={activeFilter}
+													onChange={(key) =>
+														updateTableState({
+															filters: {
+																...tableState.filters,
+																active:
+																	key?.toString() === "all"
+																		? undefined
+																		: key?.toString(),
+															},
+														})
+													}
+													aria-label="Filter by status"
+													className="w-full"
+													variant="secondary">
+													<Select.Trigger>
+														<Select.Value />
+														<Select.Indicator />
+													</Select.Trigger>
+													<Select.Popover>
+														<ListBox>
+															{ENV_STATUS_OPTIONS.map((option) => (
+																<ListBox.Item
+																	id={option.key}
+																	key={option.key}
+																	textValue={option.label}>
+																	{option.label}
+																	<ListBox.ItemIndicator />
+																</ListBox.Item>
+															))}
+														</ListBox>
+													</Select.Popover>
+												</Select>
+											</div>
+										</div>
+									</Popover.Dialog>
+								</Popover.Content>
+							</Popover>
 						</div>
 					</div>
+
+					{activeTags.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2 mt-1">
+							<TagGroup
+								selectionMode="none"
+								onRemove={(keys) => {
+									const removed = Array.from(keys) as string[];
+									removed.forEach((k) => handleRemoveTag(k));
+								}}>
+								<TagGroup.List className="flex-wrap gap-2">
+									{activeTags.map((tag) => (
+										<Tag
+											key={tag.key}
+											id={tag.key}
+											textValue={tag.label}
+											className="gap-1">
+											{tag.label}
+											<Tag.RemoveButton>
+												<XIcon className="size-3" />
+											</Tag.RemoveButton>
+										</Tag>
+									))}
+								</TagGroup.List>
+							</TagGroup>
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={handleClearAll}
+								className="text-muted-foreground text-xs h-7 px-2">
+								Clear all
+							</Button>
+						</div>
+					)}
 
 					<DataTable
 						isLoading={isLoading}

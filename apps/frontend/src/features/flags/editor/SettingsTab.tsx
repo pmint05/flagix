@@ -17,6 +17,11 @@ import {
 	Chip,
 	Separator,
 	Tooltip,
+	RadioGroup,
+	Radio,
+	Description,
+	cn,
+	Checkbox,
 } from "@heroui/react";
 import {
 	TrashIcon,
@@ -25,6 +30,9 @@ import {
 	ArrowClockwiseIcon,
 	ShieldWarningIcon,
 	QuestionIcon,
+	BrowserIcon,
+	TerminalIcon,
+	GlobeSimpleIcon,
 } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { useUpdateFlag, useUpdateFlagState, useDeleteFlag } from "../api";
@@ -36,7 +44,30 @@ import { ActionButton } from "#/components/ui/action-button";
 const flagMetadataSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().optional(),
+	visibility: z.enum(["all", "client_only", "server_only"]),
+	isTemporary: z.boolean(),
 });
+
+const visibilityOptions = [
+	{
+		value: "all",
+		title: "All SDKs",
+		description: "Available for both client and server evaluations.",
+		icon: GlobeSimpleIcon,
+	},
+	{
+		value: "client_only",
+		title: "Client Only",
+		description: "Visible to client-side SDKs only. Restricted on backend.",
+		icon: BrowserIcon,
+	},
+	{
+		value: "server_only",
+		title: "Server Only",
+		description: "Secret flags, accessible by server/backend keys only.",
+		icon: TerminalIcon,
+	},
+] as const;
 
 type FlagMetadataValues = z.infer<typeof flagMetadataSchema>;
 
@@ -69,6 +100,8 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 		defaultValues: {
 			name: flag.name || "",
 			description: flag.description || "",
+			visibility: flag.visibility || "all",
+			isTemporary: flag.isTemporary || false,
 		},
 	});
 
@@ -77,6 +110,8 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 		reset({
 			name: flag.name || "",
 			description: flag.description || "",
+			visibility: flag.visibility || "all",
+			isTemporary: flag.isTemporary || false,
 		});
 	}, [flag, reset]);
 
@@ -86,6 +121,8 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 				flagId: flag.id,
 				name: data.name,
 				description: data.description,
+				visibility: data.visibility,
+				isTemporary: data.isTemporary,
 			},
 			{
 				onSuccess: () => {
@@ -219,6 +256,78 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 									<FieldError>{errors.description.message}</FieldError>
 								)}
 							</TextField>
+						)}
+					/>
+
+					<Controller
+						name="isTemporary"
+						control={control}
+						render={({ field }) => (
+							<Checkbox
+								isSelected={field.value}
+								onChange={field.onChange}
+								variant="secondary">
+								<Checkbox.Content>
+									<Checkbox.Control>
+										<Checkbox.Indicator />
+									</Checkbox.Control>
+									<div className="flex flex-col gap-0.5">
+										<span className="text-sm font-medium text-foreground">Temporary flag</span>
+										<span className="text-xs text-muted-foreground">
+											Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
+										</span>
+									</div>
+								</Checkbox.Content>
+							</Checkbox>
+						)}
+					/>
+
+					<Controller
+						name="visibility"
+						control={control}
+						render={({ field }) => (
+							<RadioGroup
+								value={field.value}
+								onChange={field.onChange}
+								variant="secondary"
+								className="w-full">
+								<div className="flex flex-wrap items-center justify-between gap-4">
+									<Label>Visibility Scope</Label>
+								</div>
+								<div className="grid gap-3 md:grid-cols-3">
+									{visibilityOptions.map((option) => {
+										const IconComponent = option.icon;
+										return (
+											<Radio
+												key={option.value}
+												value={option.value}
+												className="w-full">
+												<Radio.Content
+													className={cn(
+														"group relative flex w-full flex-col items-start justify-start gap-2.5 rounded-xl border border-transparent bg-default-soft p-4 transition-all hover:bg-default cursor-pointer text-left h-full",
+														"data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft/10",
+													)}>
+													<Radio.Control className="absolute top-3 right-4 size-4">
+														<Radio.Indicator />
+													</Radio.Control>
+													<IconComponent className="size-5 text-default-500 group-data-[selected=true]:text-accent" />
+													<div className="flex flex-col gap-1 pr-4">
+														<span className="text-sm font-semibold text-foreground">
+															{option.title}
+														</span>
+														<Description className="text-xs text-default-400 font-normal leading-relaxed">
+															{option.description}
+														</Description>
+													</div>
+												</Radio.Content>
+											</Radio>
+										);
+									})}
+								</div>
+								{errors.visibility && (
+									<FieldError>{errors.visibility.message}</FieldError>
+								)}
+							</RadioGroup>
 						)}
 					/>
 

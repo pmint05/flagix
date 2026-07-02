@@ -25,11 +25,11 @@ export const createEnvironmentsApi = (orgId: string, projectId: string) => {
 			api
 				.get(basePath, {
 					schema: z.object({
-						environments: z.array(environmentSchema),
+						data: z.array(environmentSchema),
 						total: z.number(),
 					}),
 				})
-				.then((res) => res.environments),
+				.then((res) => res.data),
 		get: (id: string): Promise<Environment> =>
 			api.get(`${basePath}/${id}`, { schema: environmentSchema }),
 		getBySlug: (slug: string): Promise<Environment> =>
@@ -53,6 +53,18 @@ export const ENVIRONMENTS_KEY = ["environments"] as const;
 export function useEnvironments() {
 	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const projectId = useCurrentProject()?.id;
+	const isHydrated = useIsHydrated();
+
+	return useQuery({
+		queryKey: [...ENVIRONMENTS_KEY, orgId, projectId],
+		queryFn: () => createEnvironmentsApi(orgId!, projectId!).list(),
+		enabled: isHydrated && !!orgId && !!projectId,
+		staleTime: 1000 * 60 * 5,
+	});
+}
+
+export function useProjectEnvironments(projectId?: string) {
+	const orgId = useContextStore((s) => s.selectedOrganization?.id);
 	const isHydrated = useIsHydrated();
 
 	return useQuery({

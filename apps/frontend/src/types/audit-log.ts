@@ -27,6 +27,14 @@ export const auditLogSchema = z.object({
 	description: z.string().nullable().optional(),
 	projectId: z.string().nullable().optional(),
 	environmentId: z.string().nullable().optional(),
+	projectName: z.string().nullable().optional(),
+	projectSlug: z.string().nullable().optional(),
+	environmentName: z.string().nullable().optional(),
+	environmentSlug: z.string().nullable().optional(),
+	actorName: z.string().nullable().optional(),
+	actorImage: z.string().nullable().optional(),
+	flagName: z.string().nullable().optional(),
+	flagKey: z.string().nullable().optional(),
 });
 
 export type AuditLog = z.infer<typeof auditLogSchema>;

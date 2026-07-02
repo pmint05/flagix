@@ -1,17 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button, Skeleton, SearchField } from "@heroui/react";
-import { PlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { Button } from "@heroui/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import {
 	useFlags,
 	useDeleteFlag,
 	useUpdateFlagState,
+	type FlagListParams,
 } from "@/features/flags/api";
 import { FlagModal } from "@/features/flags/FlagModal";
+import {
+	FlagFilters,
+	type FlagFiltersState,
+} from "@/features/flags/FlagFilters";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { createFlagColumns } from "@/features/flags/columns";
 import { DataTable } from "@/components/ui/data-table/DataTable";
-import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
+import {
+	useDataTableUrlSync,
+	type TableState,
+} from "@/hooks/useDataTableUrlSync";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 
@@ -21,21 +30,69 @@ export const Route = createFileRoute(
 	component: FlagsIndex,
 });
 
+function toFlagListParams(tableState: TableState): FlagListParams {
+	const filters = (tableState.filters ?? {}) as FlagFiltersState;
+	const sort =
+		tableState.sortBy && tableState.sortDir
+			? `${tableState.sortBy}-${tableState.sortDir}`
+			: undefined;
+
+	const isTemporaryParam =
+		filters.isTemporary && filters.isTemporary.length === 1
+			? filters.isTemporary[0] === "true"
+			: undefined;
+
+	return {
+		q: tableState.query || undefined,
+		status: filters.status,
+		flagType: filters.flagType,
+		visibility: filters.visibility,
+		isTemporary: isTemporaryParam,
+		creator: filters.creator,
+		createdAtFrom: filters.createdAtFrom,
+		createdAtTo: filters.createdAtTo,
+		sort,
+		page: tableState.page,
+		pageSize: tableState.pageSize,
+	};
+}
+
 function FlagsIndex() {
 	const match = Route.useMatch();
 	const { projectSlug } = match.params;
 
 	const { tableState, updateTableState } = useDataTableUrlSync({
 		defaultPageSize: 20,
-		whitelist: ["status"],
+		whitelist: [
+			"status",
+			"flagType",
+			"visibility",
+			"isTemporary",
+			"creator",
+			"createdAtFrom",
+			"createdAtTo",
+		],
 	});
 
-	const statusFilter = (tableState.filters as { status?: string }).status;
-	const { data: flags, isLoading, isError } = useFlags(statusFilter);
+	const params = useMemo(() => toFlagListParams(tableState), [tableState]);
+	const { data: flagsResponse, isLoading, isError } = useFlags(params);
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
 
 	const [modalOpen, setModalOpen] = useState(false);
+
+	const [searchQuery, setSearchQuery] = useState(tableState.query || "");
+	const debouncedSearch = useDebounce(searchQuery, 300);
+
+	useEffect(() => {
+		if (debouncedSearch !== (tableState.query || "")) {
+			updateTableState({ query: debouncedSearch, page: 1 });
+		}
+	}, [debouncedSearch, tableState.query, updateTableState]);
+
+	useEffect(() => {
+		setSearchQuery(tableState.query || "");
+	}, [tableState.query]);
 
 	const handleCreate = () => {
 		setModalOpen(true);
@@ -52,14 +109,9 @@ function FlagsIndex() {
 		[projectSlug, deleteFlag, updateFlagState],
 	);
 
-	const flagList = flags ?? [];
-
-	const statusButtons = [
-		{ label: "All", value: undefined },
-		{ label: "Draft", value: "draft" },
-		{ label: "Active", value: "active" },
-		{ label: "Archived", value: "archived" },
-	];
+	const flags = flagsResponse?.data ?? [];
+	const total = flagsResponse?.total ?? 0;
+	const pageCount = Math.ceil(total / tableState.pageSize);
 
 	return (
 		<div className="space-y-6">
@@ -76,29 +128,13 @@ function FlagsIndex() {
 				</Button>
 			</div>
 
-			<div className="flex items-center gap-2">
-				{statusButtons.map(({ label, value }) => (
-					<Button
-						key={label}
-						size="sm"
-						variant={statusFilter === value ? "primary" : "ghost"}
-						onPress={() => updateTableState({ filters: { status: value }, page: 1 })}>
-						{label}
-					</Button>
-				))}
-			</div>
-
-			{isLoading ? (
-				<div className="space-y-3">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<Skeleton key={i} className="h-14 w-full rounded-lg" />
-					))}
-				</div>
-			) : isError ? (
+			{isError ? (
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load flags. Please try again.
 				</div>
-			) : flagList.length === 0 ? (
+			) : flags.length === 0 &&
+			  !tableState.query &&
+			  !Object.keys(tableState.filters ?? {}).length ? (
 				<EmptyState
 					title="No feature flags yet"
 					description="Create your first feature flag to start controlling feature rollouts."
@@ -107,27 +143,21 @@ function FlagsIndex() {
 				/>
 			) : (
 				<div className="space-y-4">
-					<SearchField
-						value={tableState.query}
-						onChange={(v) => updateTableState({ query: v })}
-						variant="secondary"
-						aria-label="Search flags"
-						className="w-full sm:w-72">
-						<SearchField.Group>
-							<SearchField.SearchIcon>
-								<MagnifyingGlassIcon className="text-muted-foreground" />
-							</SearchField.SearchIcon>
-							<SearchField.Input placeholder="Search by key or name..." />
-							<SearchField.ClearButton />
-						</SearchField.Group>
-					</SearchField>
+					<FlagFilters
+						filters={(tableState.filters ?? {}) as FlagFiltersState}
+						onChange={(filters) => updateTableState({ filters, page: 1 })}
+						searchQuery={searchQuery}
+						onSearchChange={(v) => setSearchQuery(v)}
+					/>
 
 					<DataTable
-						data={flagList}
+						isLoading={isLoading}
+						data={flags}
 						columns={columns}
 						state={tableState}
 						onStateChange={updateTableState}
-						rowCount={flagList.length}
+						pageCount={pageCount}
+						rowCount={total}
 					/>
 				</div>
 			)}

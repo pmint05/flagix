@@ -1,27 +1,14 @@
 import { Button, cn } from "@heroui/react";
 import { useAuthStore, useSidebarStore } from "#/stores";
-import { generateAvatarColor } from "#/lib/color-from-string";
-import { getInitials } from "#/lib/string-utils";
 import { UserMenu } from "./UserMenu";
 import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
-import { maskEmail } from "@/lib/masking";
+import UserAvatar from "../user/user-avatar";
 
 export function SidebarFooter() {
 	const user = useAuthStore((s) => s.user);
 	const { isCollapsed } = useSidebarStore();
 
 	if (!user) return null;
-
-	const { bg, fg } = generateAvatarColor(user.name);
-	const initials = getInitials(user.name);
-
-	const avatar = (
-		<div
-			className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl text-xs font-semibold"
-			style={{ backgroundColor: bg, color: fg }}>
-			{initials}
-		</div>
-	);
 
 	const buttonContent = (
 		<Button
@@ -35,7 +22,8 @@ export function SidebarFooter() {
 				className={cn("flex items-center gap-3", {
 					"justify-center gap-0": isCollapsed,
 				})}>
-				{avatar}
+				{/* {avatar} */}
+				<UserAvatar user={user} size="sm" />
 				<div
 					className={cn(
 						"flex flex-col overflow-hidden text-left transition-all duration-200",
@@ -46,7 +34,7 @@ export function SidebarFooter() {
 					)}>
 					<span className="truncate text-sm font-medium">{user.name}</span>
 					<span className="truncate text-xs text-muted">
-						{maskEmail(user.email)}
+						{user.email}
 					</span>
 				</div>
 			</div>

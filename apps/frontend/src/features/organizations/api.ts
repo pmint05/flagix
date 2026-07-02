@@ -11,16 +11,26 @@ export interface UpdateOrganizationInput {
 	name?: string;
 }
 
+export const organizationUserSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	role: z.enum(["admin", "editor", "viewer"]),
+	name: z.string(),
+	email: z.string().nullable().optional(),
+});
+
+export type OrganizationUser = z.infer<typeof organizationUserSchema>;
+
 export const organizationsApi = {
 	list: (): Promise<Organization[]> =>
 		api
 			.get("organizations", {
 				schema: z.object({
-					organizations: z.array(organizationSchema),
+					data: z.array(organizationSchema),
 					total: z.number(),
 				}),
 			})
-			.then((res) => res.organizations),
+			.then((res) => res.data),
 	get: (id: string): Promise<Organization> =>
 		api.get(`organizations/${id}`, { schema: organizationSchema }),
 	create: (input: CreateOrganizationInput): Promise<Organization> =>
@@ -32,6 +42,15 @@ export const organizationsApi = {
 		}),
 	delete: (id: string): Promise<void> =>
 		api.delete(`organizations/${id}`).then(() => {}),
+	listUsers: (id: string): Promise<OrganizationUser[]> =>
+		api
+			.get(`organizations/${id}/users`, {
+				schema: z.object({
+					data: z.array(organizationUserSchema),
+					total: z.number(),
+				}),
+			})
+			.then((res) => res.data),
 };
 
 // --- Query Hooks ---
@@ -51,6 +70,15 @@ export function useOrganization(id: string) {
 		queryKey: [...ORGANIZATIONS_KEY, "detail", id],
 		queryFn: () => organizationsApi.get(id),
 		enabled: !!id,
+	});
+}
+
+export function useOrganizationUsers(orgId: string) {
+	return useQuery({
+		queryKey: [...ORGANIZATIONS_KEY, "users", orgId],
+		queryFn: () => organizationsApi.listUsers(orgId),
+		enabled: !!orgId,
+		staleTime: 1000 * 60 * 5,
 	});
 }
 

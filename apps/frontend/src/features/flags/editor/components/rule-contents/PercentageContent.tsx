@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Controller, useFormContext, useFieldArray } from "react-hook-form";
+import { Controller, useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { Chip, Slider, Button, ButtonGroup, Tooltip } from "@heroui/react";
 import {
 	PlusIcon,
@@ -29,6 +29,55 @@ interface SortableRolloutRowProps {
 	onRemove: () => void;
 	isRemoveDisabled: boolean;
 	onDragEnd: () => void;
+}
+
+interface RolloutSliderProps {
+	value: number;
+	onChange: (val: number) => void;
+	rolloutRange: { start: number; end: number };
+}
+
+function RolloutSlider({ value, onChange, rolloutRange }: RolloutSliderProps) {
+	const [localVal, setLocalVal] = useState(value);
+
+	useEffect(() => {
+		setLocalVal(value);
+	}, [value]);
+
+	return (
+		<div className="flex items-center gap-3">
+			<Slider
+				value={localVal}
+				onChange={(v) => setLocalVal(Array.isArray(v) ? v[0] : v)}
+				onChangeEnd={(v) => {
+					const finalVal = Array.isArray(v) ? v[0] : v;
+					onChange(finalVal);
+				}}
+				minValue={0}
+				maxValue={100}
+				step={1}
+				className="flex-1">
+				<Slider.Track>
+					<Slider.Fill />
+					<Slider.Thumb />
+				</Slider.Track>
+			</Slider>
+			<Tooltip delay={0}>
+				<Tooltip.Trigger>
+					<Chip
+						variant="secondary"
+						className="text-sm shrink-0 font-semibold">
+						{localVal}%
+					</Chip>
+				</Tooltip.Trigger>
+				<Tooltip.Content>
+					<div className="font-mono font-medium shrink-0 select-none">
+						[{rolloutRange?.start}% - {rolloutRange?.end}%)
+					</div>
+				</Tooltip.Content>
+			</Tooltip>
+		</div>
+	);
 }
 
 function SortableRolloutRow({
@@ -67,34 +116,11 @@ function SortableRolloutRow({
 					}
 					control={control}
 					render={({ field: pctField }) => (
-						<div className="flex items-center gap-3">
-							<Slider
-								value={pctField.value ?? 0}
-								onChange={(v) => pctField.onChange(v)}
-								minValue={0}
-								maxValue={100}
-								step={1}
-								className="flex-1">
-								<Slider.Track>
-									<Slider.Fill />
-									<Slider.Thumb />
-								</Slider.Track>
-							</Slider>
-							<Tooltip delay={0}>
-								<Tooltip.Trigger>
-									<Chip
-										variant="secondary"
-										className="text-sm shrink-0 font-semibold">
-										{pctField.value ?? 0}%
-									</Chip>
-								</Tooltip.Trigger>
-								<Tooltip.Content>
-									<div className="font-mono font-medium shrink-0 select-none">
-										[{rolloutRange?.start}% - {rolloutRange?.end}%)
-									</div>
-								</Tooltip.Content>
-							</Tooltip>
-						</div>
+						<RolloutSlider
+							value={pctField.value ?? 0}
+							onChange={pctField.onChange}
+							rolloutRange={rolloutRange}
+						/>
 					)}
 				/>
 			</div>
@@ -123,14 +149,18 @@ function SortableRolloutRow({
 }
 
 export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
-	const { control, watch, setValue } = useFormContext<FlagEditorFormValues>();
+	const { control, getValues, setValue } = useFormContext<FlagEditorFormValues>();
 
 	const { fields, append, remove, move } = useFieldArray({
 		control,
 		name: `rules.${ruleIndex}.conditions.rollouts` as any,
 	});
 
-	const rollouts = watch(`rules.${ruleIndex}.conditions.rollouts` as any) || [];
+	const rollouts = useWatch({
+		name: `rules.${ruleIndex}.conditions.rollouts` as any,
+		control,
+	}) || [];
+
 	const totalPercentage = rollouts.reduce(
 		(sum: number, r: any) => sum + (Number(r.percentage) || 0),
 		0,
@@ -171,7 +201,7 @@ export function PercentageContent({ flag, ruleIndex }: PercentageContentProps) {
 	}, [rollouts]);
 
 	const handleAddRollout = () => {
-		const variations = watch("variations") || flag.variations || [];
+		const variations = getValues("variations") || flag.variations || [];
 		const nextVar = variations[fields.length % variations.length]?.id || "";
 		append({ variationId: nextVar, percentage: 0 });
 	};

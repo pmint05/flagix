@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, and, isNull } from 'drizzle-orm';
-import { organizations, organizationMembers } from '@/db/schema';
+import { organizations, organizationMembers, authUser } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type {
@@ -117,5 +117,24 @@ export class OrganizationsRepository {
       )
       .limit(1);
     return membership ?? null;
+  }
+
+  async findUsers(orgId: string) {
+    return this.db
+      .select({
+        id: organizationMembers.id,
+        userId: organizationMembers.userId,
+        role: organizationMembers.role,
+        name: authUser.name,
+        email: authUser.email,
+      })
+      .from(organizationMembers)
+      .innerJoin(authUser, eq(organizationMembers.userId, authUser.id))
+      .where(
+        and(
+          eq(organizationMembers.organizationId, orgId),
+          isNull(organizationMembers.deletedAt),
+        ),
+      );
   }
 }

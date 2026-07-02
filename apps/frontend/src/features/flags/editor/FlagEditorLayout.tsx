@@ -171,9 +171,11 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 					key: v.key,
 					value: v.value,
 					description: v.description,
+					color: v.color,
 					isDefault: v.id === data.defaultVariationId,
 				}));
 			}
+
 			if (dirtyFields.rules) {
 				payload.rules = data.rules.map((rule) => {
 					const baseRule: any = {

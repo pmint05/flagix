@@ -13,7 +13,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CreateTargetingRuleDto } from '../../targeting-rules/dto/create-targeting-rule.dto';
 
-
 class VariationDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -38,6 +37,25 @@ class VariationDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @ApiPropertyOptional({ example: 'red' })
+  @IsOptional()
+  @IsString()
+  @IsEnum([
+    'red',
+    'blue',
+    'amber',
+    'green',
+    'purple',
+    'sky',
+    'pink',
+    'lime',
+    'indigo',
+    'yellow',
+    'teal',
+    'fuchsia',
+  ])
+  color?: string;
 }
 
 export class CreateFeatureFlagDto {
@@ -68,10 +86,20 @@ export class CreateFeatureFlagDto {
   @Type(() => VariationDto)
   variations?: VariationDto[];
 
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   defaultVariationKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }
 
 export class UpdateFeatureFlagDto {
@@ -95,9 +123,19 @@ export class UpdateFeatureFlagDto {
   @IsEnum(['draft', 'active', 'archived'])
   status?: 'draft' | 'active' | 'archived';
 
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
+
   @ApiPropertyOptional()
   @IsOptional()
   version?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }
 
 export class PatchFeatureFlagConfigDto {
@@ -136,6 +174,11 @@ export class PatchFeatureFlagConfigDto {
   @Type(() => CreateTargetingRuleDto)
   rules?: CreateTargetingRuleDto[];
 
+  @ApiPropertyOptional({ enum: ['all', 'client_only', 'server_only'] })
+  @IsOptional()
+  @IsEnum(['all', 'client_only', 'server_only'])
+  visibility?: 'all' | 'client_only' | 'server_only';
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -145,4 +188,9 @@ export class PatchFeatureFlagConfigDto {
   @IsOptional()
   @IsString()
   offVariationId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isTemporary?: boolean;
 }

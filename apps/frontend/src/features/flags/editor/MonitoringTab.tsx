@@ -3,9 +3,12 @@ import { Card } from "@heroui/react";
 import { ChartLineUpIcon, UsersIcon, CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { DataTable } from "@/components/ui/data-table/DataTable";
-import { auditLogColumns } from "@/features/audit/columns";
+import { createAuditLogColumns } from "@/features/audit/columns";
+import { AuditLogDetailModal } from "@/features/audit/AuditLogDetailModal";
 import { useAuditLogs } from "@/features/audit/api";
 import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
+import { useMemo, useState } from "react";
+import type { AuditLog } from "@/types/audit-log";
 
 interface MonitoringTabProps {
 	flag: FeatureFlag;
@@ -13,7 +16,17 @@ interface MonitoringTabProps {
 
 export function MonitoringTab({ flag }: MonitoringTabProps) {
 	const { tableState, updateTableState } = useDataTableUrlSync({});
-	
+	const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+	const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+	const columns = useMemo(
+		() => createAuditLogColumns((log) => {
+			setSelectedLog(log);
+			setIsDetailOpen(true);
+		}),
+		[],
+	);
+
 	// Pass default sorting in useEffect if needed or let data table handle without defaultSort prop
 	const { data, isLoading } = useAuditLogs({
 		entityType: "feature_flag", 
@@ -87,7 +100,7 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 				</div>
 				<div className="bg-content1 border border-divider rounded-xl shadow-sm overflow-hidden">
 					<DataTable
-						columns={auditLogColumns as any}
+						columns={columns as any}
 						data={data?.data ?? []}
 						pageCount={Math.ceil((data?.total ?? 0) / tableState.pageSize)}
 						state={tableState}
@@ -96,6 +109,12 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 					/>
 				</div>
 			</div>
+
+			<AuditLogDetailModal
+				isOpen={isDetailOpen}
+				onClose={() => setIsDetailOpen(false)}
+				log={selectedLog}
+			/>
 		</div>
 	);
 }

@@ -53,7 +53,9 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: { userIds: ['user-1', 'user-2', 'user-3'] },
       };
-      expect(matchesUserRule(rule, 'flag', { userId: 'user-2' }).isMatched).toBe(true);
+      expect(
+        matchesUserRule(rule, 'flag', { userId: 'user-2' }).isMatched,
+      ).toBe(true);
     });
 
     it('should return false when userId is not in the list', () => {
@@ -62,7 +64,9 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: { userIds: ['user-1', 'user-2'] },
       };
-      expect(matchesUserRule(rule, 'flag', { userId: 'user-999' }).isMatched).toBe(false);
+      expect(
+        matchesUserRule(rule, 'flag', { userId: 'user-999' }).isMatched,
+      ).toBe(false);
     });
 
     it('should return false when context has no userId (anonymous)', () => {
@@ -80,7 +84,9 @@ describe('rule-matcher', () => {
         ruleType: 'user',
         conditions: {},
       };
-      expect(matchesUserRule(rule, 'flag', { userId: 'user-1' }).isMatched).toBe(false);
+      expect(
+        matchesUserRule(rule, 'flag', { userId: 'user-1' }).isMatched,
+      ).toBe(false);
     });
   });
 
@@ -91,7 +97,9 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin', 'editor'] },
       };
-      expect(matchesRoleRule(rule, 'flag', { role: 'admin' }).isMatched).toBe(true);
+      expect(matchesRoleRule(rule, 'flag', { role: 'admin' }).isMatched).toBe(
+        true,
+      );
     });
 
     it('should return false when role is not in the list', () => {
@@ -100,7 +108,9 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin'] },
       };
-      expect(matchesRoleRule(rule, 'flag', { role: 'viewer' }).isMatched).toBe(false);
+      expect(matchesRoleRule(rule, 'flag', { role: 'viewer' }).isMatched).toBe(
+        false,
+      );
     });
 
     it('should return false when context has no role', () => {
@@ -109,7 +119,9 @@ describe('rule-matcher', () => {
         ruleType: 'role',
         conditions: { roles: ['admin'] },
       };
-      expect(matchesRoleRule(rule, 'flag', { userId: 'user-1' }).isMatched).toBe(false);
+      expect(
+        matchesRoleRule(rule, 'flag', { userId: 'user-1' }).isMatched,
+      ).toBe(false);
     });
   });
 
@@ -120,9 +132,9 @@ describe('rule-matcher', () => {
         ruleType: 'percentage',
         conditions: { percentage: 100 },
       };
-      expect(matchesPercentageRule(rule, 'flag', { userId: 'user-1' }).isMatched).toBe(
-        true,
-      );
+      expect(
+        matchesPercentageRule(rule, 'flag', { userId: 'user-1' }).isMatched,
+      ).toBe(true);
     });
 
     it('should support multi-variation rollouts', () => {
@@ -146,9 +158,7 @@ describe('rule-matcher', () => {
         ...baseRule,
         ruleType: 'percentage',
         conditions: {
-          rollouts: [
-            { variationId: 'var-a', percentage: 0 },
-          ],
+          rollouts: [{ variationId: 'var-a', percentage: 0 }],
         },
       };
       const res = matchesPercentageRule(rule, 'flag', { userId: 'user-1' });
@@ -161,9 +171,9 @@ describe('rule-matcher', () => {
         ruleType: 'percentage',
         conditions: { percentage: 0 },
       };
-      expect(matchesPercentageRule(rule, 'flag', { userId: 'user-1' }).isMatched).toBe(
-        false,
-      );
+      expect(
+        matchesPercentageRule(rule, 'flag', { userId: 'user-1' }).isMatched,
+      ).toBe(false);
     });
 
     it('should return false when context has no userId (anonymous)', () => {
@@ -195,7 +205,12 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'country', type: 'string', operator: 'equals', value: 'VN' },
+            {
+              contextKey: 'country',
+              type: 'string',
+              operator: 'equals',
+              value: 'VN',
+            },
           ],
         },
       };
@@ -213,7 +228,12 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'country', type: 'string', operator: 'equals', value: 'US' },
+            {
+              contextKey: 'country',
+              type: 'string',
+              operator: 'equals',
+              value: 'US',
+            },
           ],
         },
       };
@@ -231,12 +251,22 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'country', type: 'string', operator: 'equals', value: 'VN' },
-            { contextKey: 'age', type: 'number', operator: 'greater_than', value: 18 },
+            {
+              contextKey: 'country',
+              type: 'string',
+              operator: 'equals',
+              value: 'VN',
+            },
+            {
+              contextKey: 'age',
+              type: 'number',
+              operator: 'greater_than',
+              value: 18,
+            },
           ],
         },
       };
-      
+
       expect(
         matchesCustomRule(rule, 'flag', {
           userId: 'user-1',
@@ -258,7 +288,12 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'user.email', type: 'string', operator: 'equals', value: 'test@gmail.com' },
+            {
+              contextKey: 'user.email',
+              type: 'string',
+              operator: 'equals',
+              value: 'test@gmail.com',
+            },
           ],
         },
       };
@@ -284,7 +319,12 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'region\\.code', type: 'string', operator: 'equals', value: 'us-east' },
+            {
+              contextKey: 'region\\.code',
+              type: 'string',
+              operator: 'equals',
+              value: 'us-east',
+            },
           ],
         },
       };
@@ -310,7 +350,12 @@ describe('rule-matcher', () => {
         ruleType: 'custom',
         conditions: {
           conditions: [
-            { contextKey: 'user.address.street', type: 'string', operator: 'equals', value: 'Main St' },
+            {
+              contextKey: 'user.address.street',
+              type: 'string',
+              operator: 'equals',
+              value: 'Main St',
+            },
           ],
         },
       };
@@ -329,15 +374,37 @@ describe('rule-matcher', () => {
           ...baseRule,
           ruleType: 'custom',
           conditions: {
-            conditions: [{ contextKey: 'str', type: 'string', operator: op, value: val }]
-          }
+            conditions: [
+              { contextKey: 'str', type: 'string', operator: op, value: val },
+            ],
+          },
         });
 
-        expect(matchesCustomRule(rule('starts_with', 'hello'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('starts_with', 'world'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(false);
-        expect(matchesCustomRule(rule('ends_with', 'world'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('matches_regex', '^hello.*'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('matches_regex', '^world.*'), 'flag', { attributes: { str: 'hello world' } }).isMatched).toBe(false);
+        expect(
+          matchesCustomRule(rule('starts_with', 'hello'), 'flag', {
+            attributes: { str: 'hello world' },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('starts_with', 'world'), 'flag', {
+            attributes: { str: 'hello world' },
+          }).isMatched,
+        ).toBe(false);
+        expect(
+          matchesCustomRule(rule('ends_with', 'world'), 'flag', {
+            attributes: { str: 'hello world' },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('matches_regex', '^hello.*'), 'flag', {
+            attributes: { str: 'hello world' },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('matches_regex', '^world.*'), 'flag', {
+            attributes: { str: 'hello world' },
+          }).isMatched,
+        ).toBe(false);
       });
 
       it('should evaluate number operators equals, gt, gte, lt, lte', () => {
@@ -345,15 +412,35 @@ describe('rule-matcher', () => {
           ...baseRule,
           ruleType: 'custom',
           conditions: {
-            conditions: [{ contextKey: 'num', type: 'number', operator: op, value: val }]
-          }
+            conditions: [
+              { contextKey: 'num', type: 'number', operator: op, value: val },
+            ],
+          },
         });
 
-        expect(matchesCustomRule(rule('equals', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('gt', 5), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('gte', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('lt', 20), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('lte', 10), 'flag', { attributes: { num: 10 } }).isMatched).toBe(true);
+        expect(
+          matchesCustomRule(rule('equals', 10), 'flag', {
+            attributes: { num: 10 },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('gt', 5), 'flag', { attributes: { num: 10 } })
+            .isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('gte', 10), 'flag', {
+            attributes: { num: 10 },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('lt', 20), 'flag', { attributes: { num: 10 } })
+            .isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('lte', 10), 'flag', {
+            attributes: { num: 10 },
+          }).isMatched,
+        ).toBe(true);
       });
 
       it('should evaluate boolean operators equals, not_equals', () => {
@@ -361,13 +448,27 @@ describe('rule-matcher', () => {
           ...baseRule,
           ruleType: 'custom',
           conditions: {
-            conditions: [{ contextKey: 'bool', type: 'boolean', operator: op, value: val }]
-          }
+            conditions: [
+              { contextKey: 'bool', type: 'boolean', operator: op, value: val },
+            ],
+          },
         });
 
-        expect(matchesCustomRule(rule('equals', true), 'flag', { attributes: { bool: true } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('not_equals', false), 'flag', { attributes: { bool: true } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('equals', false), 'flag', { attributes: { bool: true } }).isMatched).toBe(false);
+        expect(
+          matchesCustomRule(rule('equals', true), 'flag', {
+            attributes: { bool: true },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('not_equals', false), 'flag', {
+            attributes: { bool: true },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('equals', false), 'flag', {
+            attributes: { bool: true },
+          }).isMatched,
+        ).toBe(false);
       });
 
       it('should evaluate object operators has_key, not_has_key, equals_json', () => {
@@ -375,15 +476,30 @@ describe('rule-matcher', () => {
           ...baseRule,
           ruleType: 'custom',
           conditions: {
-            conditions: [{ contextKey: 'obj', type: 'object', operator: op, value: val }]
-          }
+            conditions: [
+              { contextKey: 'obj', type: 'object', operator: op, value: val },
+            ],
+          },
         });
 
         const ctx = { attributes: { obj: { k1: 'v1', k2: 123 } } };
-        expect(matchesCustomRule(rule('has_key', 'k1'), 'flag', ctx).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('not_has_key', 'k3'), 'flag', ctx).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('equals_json', { k1: 'v1', k2: 123 }), 'flag', ctx).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('equals_json', { k1: 'v1' }), 'flag', ctx).isMatched).toBe(false);
+        expect(
+          matchesCustomRule(rule('has_key', 'k1'), 'flag', ctx).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('not_has_key', 'k3'), 'flag', ctx).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(
+            rule('equals_json', { k1: 'v1', k2: 123 }),
+            'flag',
+            ctx,
+          ).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('equals_json', { k1: 'v1' }), 'flag', ctx)
+            .isMatched,
+        ).toBe(false);
       });
 
       it('should evaluate array operators contains, not_contains, is_empty, is_not_empty', () => {
@@ -391,14 +507,32 @@ describe('rule-matcher', () => {
           ...baseRule,
           ruleType: 'custom',
           conditions: {
-            conditions: [{ contextKey: 'arr', type: 'array', operator: op, value: val }]
-          }
+            conditions: [
+              { contextKey: 'arr', type: 'array', operator: op, value: val },
+            ],
+          },
         });
 
-        expect(matchesCustomRule(rule('contains', 'a'), 'flag', { attributes: { arr: ['a', 'b'] } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('not_contains', 'c'), 'flag', { attributes: { arr: ['a', 'b'] } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('is_empty'), 'flag', { attributes: { arr: [] } }).isMatched).toBe(true);
-        expect(matchesCustomRule(rule('is_not_empty'), 'flag', { attributes: { arr: ['a'] } }).isMatched).toBe(true);
+        expect(
+          matchesCustomRule(rule('contains', 'a'), 'flag', {
+            attributes: { arr: ['a', 'b'] },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('not_contains', 'c'), 'flag', {
+            attributes: { arr: ['a', 'b'] },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('is_empty'), 'flag', {
+            attributes: { arr: [] },
+          }).isMatched,
+        ).toBe(true);
+        expect(
+          matchesCustomRule(rule('is_not_empty'), 'flag', {
+            attributes: { arr: ['a'] },
+          }).isMatched,
+        ).toBe(true);
       });
     });
   });

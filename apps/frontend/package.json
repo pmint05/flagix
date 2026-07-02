@@ -39,6 +39,7 @@
     "developer-icons": "^7.0.1",
     "ky": "^2.0.2",
     "lucide-react": "^0.545.0",
+    "microdiff": "^1.5.0",
     "motion": "^12.40.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

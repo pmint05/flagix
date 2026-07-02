@@ -1,11 +1,15 @@
 "use client";
 import { cn, Tooltip } from "@heroui/react";
-import { getVariationBgColor } from "@/lib/variation-colors";
-
+import { getVariationBgColorClass } from "@/lib/variation-colors";
 
 interface RolloutBarProps {
 	rollouts: Array<{ variationId: string; percentage: number }>;
-	variations: Array<{ id: string; key: string; value?: any }>;
+	variations: Array<{
+		id: string;
+		key: string;
+		value?: any;
+		color?: string | null;
+	}>;
 	className?: string;
 }
 
@@ -18,9 +22,19 @@ export function RolloutBar({
 
 	const segments = rollouts
 		.map((rollout, rIdx) => {
-			const vIndex = variations.findIndex(
-				(varItem) => varItem.id === rollout.variationId,
-			);
+			const targetId = (
+				rollout.variationId ||
+				(rollout as any).variation_id ||
+				""
+			)
+				.toString()
+				.trim()
+				.toLowerCase();
+			const vIndex = variations.findIndex((varItem) => {
+				const varId = (varItem.id || "").toString().trim().toLowerCase();
+				const varKey = (varItem.key || "").toString().trim().toLowerCase();
+				return varId === targetId || varKey === targetId;
+			});
 			const v = variations[vIndex];
 			const pct = Number(rollout.percentage) || 0;
 
@@ -32,10 +46,13 @@ export function RolloutBar({
 
 			const label =
 				v?.key || (v?.value !== undefined ? String(v.value) : "unknown");
-			const bgColor = getVariationBgColor(vIndex);
+			const bgColor = getVariationBgColorClass(
+				v?.color,
+				vIndex !== -1 ? vIndex : rIdx,
+			);
 
 			return {
-				id: `${rollout.variationId}-${rIdx}`,
+				id: `${rollout.variationId || (rollout as any).variation_id}-${rIdx}`,
 				pct,
 				start,
 				end,
@@ -52,6 +69,8 @@ export function RolloutBar({
 		bgColor: string;
 	}>;
 
+	console.log(segments);
+
 	const total = rollouts.reduce(
 		(sum, r) => sum + (Number(r.percentage) || 0),
 		0,
@@ -67,11 +86,11 @@ export function RolloutBar({
 			{segments.map((seg) => (
 				<Tooltip key={seg.id} delay={0}>
 					<Tooltip.Trigger
-						style={{ maxWidth: `${seg.pct}%` }}
-						className="w-full">
+						className="w-full"
+						style={{ maxWidth: `${seg.pct}%` }}>
 						<div
 							className={cn(
-								"h-full w-full transition-all border-r border-divider/20 last:border-r-0 cursor-pointer",
+								"h-full transition-all border-r border-divider/20 last:border-r-0 cursor-pointer",
 								seg.bgColor,
 							)}
 						/>
@@ -88,8 +107,8 @@ export function RolloutBar({
 				<Tooltip>
 					<Tooltip.Trigger
 						className="w-full"
-						style={{ width: `${remaining}%` }}>
-						<div className="h-full w-full bg-default cursor-pointer" />
+						style={{ maxWidth: `${remaining}%` }}>
+						<div className="h-full bg-default cursor-pointer" />
 					</Tooltip.Trigger>
 					<Tooltip.Content>
 						<div className="text-xs font-semibold select-none">

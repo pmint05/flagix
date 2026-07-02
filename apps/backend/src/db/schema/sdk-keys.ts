@@ -29,6 +29,7 @@ export const sdkKeys = pgTable(
     type: text('type', { enum: ['client', 'server'] })
       .notNull()
       .default('client'),
+    rawKey: text('raw_key'),
     isActive: boolean('is_active').notNull().default(true),
     createdBy: text('created_by').references(() => user.id),
     updatedBy: text('updated_by').references(() => user.id),
@@ -39,6 +40,7 @@ export const sdkKeys = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     deletedAt: timestamp('deleted_at'),
+    lastUsedAt: timestamp('last_used_at'),
   },
   (table) => [
     index('idx_sdk_keys_environment').on(table.environmentId),

@@ -13,7 +13,7 @@ import {
 	HexagonIcon,
 	PowerIcon,
 } from "@phosphor-icons/react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../schema";
 import { RULE_TYPE_LABELS, RULE_TYPE_COLORS } from "../schema";
@@ -22,7 +22,7 @@ import { UserTargetingContent } from "./rule-contents/UserTargetingContent";
 import { RoleTargetingContent } from "./rule-contents/RoleTargetingContent";
 import { PercentageContent } from "./rule-contents/PercentageContent";
 import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
-import { getVariationColor } from "#/lib/variation-colors";
+import { getVariationColorClass } from "#/lib/variation-colors";
 import { RolloutBar } from "./RolloutBar";
 
 interface RuleCardProps {
@@ -48,13 +48,15 @@ function RuleCardComponent({
 	totalRules,
 	dragHandleProps,
 }: RuleCardProps) {
-	const { watch, setValue } = useFormContext<FlagEditorFormValues>();
+	const { control, setValue } = useFormContext<FlagEditorFormValues>();
 
-	const isEnabled = watch(`rules.${index}.isEnabled`);
-	const ruleType = watch(`rules.${index}.ruleType`);
-	const variationId = watch(`rules.${index}.variationId`);
-	const variations = watch("variations") || [];
-	const rollouts = watch(`rules.${index}.conditions.rollouts` as any) || [];
+	const isEnabled = useWatch({ name: `rules.${index}.isEnabled`, control });
+	const ruleType = useWatch({ name: `rules.${index}.ruleType`, control });
+	const variationId = useWatch({ name: `rules.${index}.variationId`, control });
+	const variations = useWatch({ name: "variations", control }) || [];
+	const rollouts =
+		useWatch({ name: `rules.${index}.conditions.rollouts` as any, control }) ||
+		[];
 
 	const selectedVariation = variations.find((v) => v.id === variationId);
 	const variationName =
@@ -66,7 +68,7 @@ function RuleCardComponent({
 		variations.findIndex((v) => v.id === variationId) ?? -1;
 	const variationColor =
 		variationIndex !== -1
-			? getVariationColor(variationIndex)
+			? getVariationColorClass(selectedVariation?.color, variationIndex)
 			: "text-default-400";
 
 	const toggleEnabled = () => {
@@ -108,7 +110,7 @@ function RuleCardComponent({
 					)}
 				/>
 				<Accordion.Item
-					defaultExpanded={true}
+					defaultExpanded={index === 0}
 					key="1"
 					aria-label="Rule Settings"
 					className="group/accordion">
@@ -118,15 +120,19 @@ function RuleCardComponent({
 								"flex items-center min-h-14 w-full justify-start px-0 bg-surface group-data-expanded/accordion:rounded-b-none rounded-3xl border border-divider transition-all p-0",
 							)}>
 							{ruleType === "kill_switch" && (
-								<div
+								<Button
+									isIconOnly
+									variant="ghost"
+									size="sm"
+									onPress={toggleEnabled}
 									className={cn(
-										"w-10 flex items-center justify-end text-danger",
+										"text-danger ml-2 hover:bg-danger-soft/80 hover:text-danger",
 										{
 											"text-default-foreground": !isEnabled,
 										},
 									)}>
 									<PowerIcon className="size-5" weight="bold" />
-								</div>
+								</Button>
 							)}
 							{ruleType !== "kill_switch" &&
 								dragHandleProps &&
@@ -247,7 +253,9 @@ function RuleCardComponent({
 						</Accordion.Trigger>
 					</Accordion.Heading>
 					<Accordion.Panel className="mt-0 border border-t-0 bg-surface rounded-b-3xl overflow-hidden">
-						<Accordion.Body className="p-4 ">{renderContent()}</Accordion.Body>
+						<Accordion.Body className="p-4 ">
+							{renderContent()}
+						</Accordion.Body>
 					</Accordion.Panel>
 				</Accordion.Item>
 			</Accordion>

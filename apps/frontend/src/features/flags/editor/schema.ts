@@ -190,11 +190,26 @@ export const flagEditorFormSchema = z
 						"Value is required",
 					),
 				isDefault: z.boolean().optional(),
+				color: z.string().nullable().optional(),
 			}),
-		),
+		).min(2, "At least 2 variations are required"),
 	})
 	.superRefine((data, ctx) => {
 		const validVariationIds = new Set(data.variations.map((v) => v.id));
+
+		// Validate unique variation keys
+		const seenKeys = new Set<string>();
+		data.variations.forEach((v, idx) => {
+			if (seenKeys.has(v.key)) {
+				ctx.addIssue({
+					code: "custom",
+					message: `Duplicate variation key: "${v.key}"`,
+					path: ["variations", idx, "key"],
+				});
+			} else {
+				seenKeys.add(v.key);
+			}
+		});
 
 		if (
 			data.defaultVariationId &&

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, and, isNull } from 'drizzle-orm';
-import { sdkKeys } from '@/db/schema';
+import { sdkKeys, user } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 
@@ -27,10 +27,31 @@ export class SdkKeysRepository {
   }
 
   async findAllForEnv(envId: string) {
-    return this.db
-      .select()
+    const results = await this.db
+      .select({
+        id: sdkKeys.id,
+        organizationId: sdkKeys.organizationId,
+        environmentId: sdkKeys.environmentId,
+        name: sdkKeys.name,
+        keyHint: sdkKeys.keyHint,
+        type: sdkKeys.type,
+        rawKey: sdkKeys.rawKey,
+        isActive: sdkKeys.isActive,
+        createdAt: sdkKeys.createdAt,
+        updatedAt: sdkKeys.updatedAt,
+        lastUsedAt: sdkKeys.lastUsedAt,
+        creator: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        },
+      })
       .from(sdkKeys)
+      .leftJoin(user, eq(sdkKeys.createdBy, user.id))
       .where(and(eq(sdkKeys.environmentId, envId), isNull(sdkKeys.deletedAt)));
+
+    return results;
   }
 
   async create(
@@ -41,6 +62,7 @@ export class SdkKeysRepository {
       keyHash: string;
       keyHint: string;
       type: string;
+      rawKey?: string | null;
     },
     actorId?: string,
   ) {
@@ -53,10 +75,27 @@ export class SdkKeysRepository {
         keyHash: input.keyHash,
         keyHint: input.keyHint,
         type: input.type as 'client' | 'server',
+        rawKey: input.rawKey ?? null,
         createdBy: actorId ?? null,
       })
       .returning();
     return key;
+  }
+
+  async updateStatus(id: string, isActive: boolean, actorId?: string) {
+    const [key] = await this.db
+      .update(sdkKeys)
+      .set({ isActive, updatedBy: actorId ?? null, updatedAt: new Date() })
+      .where(eq(sdkKeys.id, id))
+      .returning();
+    return key ?? null;
+  }
+
+  async updateLastUsed(id: string) {
+    await this.db
+      .update(sdkKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(sdkKeys.id, id));
   }
 
   async revoke(id: string, actorId?: string) {

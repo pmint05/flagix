@@ -1,10 +1,11 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
   varchar,
   text,
   integer,
+  boolean,
   timestamp,
   index,
   uniqueIndex,
@@ -42,9 +43,17 @@ export const featureFlags = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     deletedAt: timestamp('deleted_at'),
+    visibility: text('visibility', {
+      enum: ['all', 'client_only', 'server_only'],
+    })
+      .notNull()
+      .default('all'),
+    isTemporary: boolean('is_temporary').notNull().default(false),
   },
   (table) => [
-    uniqueIndex('idx_flags_project_key').on(table.projectId, table.key),
+    uniqueIndex('idx_flags_project_key')
+      .on(table.projectId, table.key)
+      .where(sql`${table.deletedAt} IS NULL`),
     index('idx_flags_org').on(table.organizationId),
     index('idx_flags_project').on(table.projectId),
   ],

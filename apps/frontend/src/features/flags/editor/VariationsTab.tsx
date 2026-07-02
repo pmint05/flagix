@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
 	Button,
 	Table,
@@ -8,10 +9,17 @@ import {
 	FieldError,
 	cn,
 	TextArea,
+	Popover,
 } from "@heroui/react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { COLOR_KEYS, TAILWIND_COLORS_500 } from "@/lib/variation-colors";
 import type { FeatureFlag } from "@/types/feature-flag";
-import { useFormContext, useFieldArray, Controller } from "react-hook-form";
+import {
+	useFormContext,
+	useFieldArray,
+	useWatch,
+	Controller,
+} from "react-hook-form";
 import type { FlagEditorFormValues } from "./schema";
 
 import { VariationDot } from "@/components/ui/VariationDot";
@@ -20,27 +28,176 @@ interface VariationsTabProps {
 	flag: FeatureFlag;
 }
 
+interface VariationInputProps {
+	value: string;
+	onChange: (val: string) => void;
+	readOnly?: boolean;
+	error?: any;
+	placeholder?: string;
+	className?: string;
+	prefix?: React.ReactNode;
+}
+
+function VariationInput({
+	value,
+	onChange,
+	readOnly,
+	error,
+	placeholder,
+	className,
+	prefix,
+}: VariationInputProps) {
+	const [localVal, setLocalVal] = useState(value || "");
+
+	useEffect(() => {
+		setLocalVal(value || "");
+	}, [value]);
+
+	return (
+		<TextField isInvalid={!!error} variant="secondary">
+			<InputGroup>
+				{prefix && <InputGroup.Prefix>{prefix}</InputGroup.Prefix>}
+				<InputGroup.Input
+					value={localVal}
+					readOnly={readOnly}
+					onChange={(e) => setLocalVal(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							e.currentTarget.blur();
+						}
+					}}
+					onBlur={() => {
+						if (localVal !== value) {
+							onChange(localVal);
+						}
+					}}
+					placeholder={placeholder}
+					className={className}
+				/>
+			</InputGroup>
+			{error && (
+				<FieldError className="text-xs text-danger">{error.message}</FieldError>
+			)}
+		</TextField>
+	);
+}
+
+interface VariationValueInputProps {
+	value: string;
+	onChange: (val: string) => void;
+	error?: any;
+	placeholder?: string;
+}
+
+function VariationValueInput({
+	value,
+	onChange,
+	error,
+	placeholder,
+}: VariationValueInputProps) {
+	const [localVal, setLocalVal] = useState(value || "");
+
+	useEffect(() => {
+		setLocalVal(value || "");
+	}, [value]);
+
+	return (
+		<TextField isInvalid={!!error} variant="secondary">
+			<InputGroup>
+				<InputGroup.Input
+					value={localVal}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							e.currentTarget.blur();
+						}
+					}}
+					onChange={(e) => setLocalVal(e.target.value)}
+					onBlur={() => {
+						if (localVal !== value) {
+							onChange(localVal);
+						}
+					}}
+					placeholder={placeholder}
+					className="w-full"
+				/>
+			</InputGroup>
+			{error && <FieldError>{error.message}</FieldError>}
+		</TextField>
+	);
+}
+
+interface VariationTextAreaProps {
+	value: string;
+	onChange: (val: string) => void;
+	placeholder?: string;
+}
+
+function VariationTextArea({
+	value,
+	onChange,
+	placeholder,
+}: VariationTextAreaProps) {
+	const [localVal, setLocalVal] = useState(value || "");
+
+	useEffect(() => {
+		setLocalVal(value || "");
+	}, [value]);
+
+	return (
+		<TextField variant="secondary">
+			<TextArea
+				placeholder={placeholder}
+				value={localVal}
+				onChange={(e) => setLocalVal(e.target.value)}
+				onBlur={() => {
+					if (localVal !== value) {
+						onChange(localVal);
+					}
+				}}
+				className="w-full min-h-9!"
+				rows={1}
+			/>
+		</TextField>
+	);
+}
+
 export function VariationsTab({ flag }: VariationsTabProps) {
 	const { control } = useFormContext<FlagEditorFormValues>();
 	const { fields, append, remove } = useFieldArray({
 		control,
 		name: "variations",
+		keyName: "fieldId",
 	});
 
 	const isBoolean = flag.flagType === "boolean";
+	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
+	const offVariationId = useWatch({ name: "offVariationId", control });
 
 	const handleAdd = () => {
 		if (isBoolean) return;
+
+		const getUniqueVariationKey = () => {
+			const keys = new Set(fields.map((f) => f.key));
+			let i = fields.length + 1;
+			while (keys.has(`variation-${i}`)) {
+				i++;
+			}
+			return `variation-${i}`;
+		};
+
 		append({
 			id: crypto.randomUUID(),
-			key: `variation-${fields.length + 1}`,
+			key: getUniqueVariationKey(),
 			value: "new-value",
 			description: "",
+			color: COLOR_KEYS[fields.length % COLOR_KEYS.length],
 		});
 	};
 
 	const handleRemove = (index: number) => {
-		if (isBoolean) return;
+		if (isBoolean || fields.length <= 2) return;
 		remove(index);
 	};
 
@@ -75,34 +232,95 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 								{fields.map((field, index) => {
 									return (
 										<Table.Row
-											key={field.id}
+											key={field.fieldId}
 											className="border-b border-divider last:border-b-0">
 											<Table.Cell>
 												<Controller
 													name={`variations.${index}.key` as const}
 													control={control}
-													render={({ field: keyField }) => (
-														<TextField variant="secondary">
-															<InputGroup>
-																<InputGroup.Prefix>
+													render={({ field: keyField, fieldState }) => (
+														<VariationInput
+															value={keyField.value || ""}
+															onChange={keyField.onChange}
+															readOnly={isBoolean}
+															error={fieldState.error}
+															placeholder="Key (Optional)"
+															className={
+																isBoolean
+																	? "bg-default-100 border-none w-full"
+																	: "w-full"
+															}
+															prefix={
+																isBoolean ? (
 																	<VariationDot
+																		color={field.color}
 																		index={index}
 																		className="size-4"
 																	/>
-																</InputGroup.Prefix>
-																<InputGroup.Input
-																	value={keyField.value || ""}
-																	readOnly={isBoolean}
-																	onChange={keyField.onChange}
-																	placeholder="Key (Optional)"
-																	className={
-																		isBoolean
-																			? "bg-default-100 border-none w-full"
-																			: "w-full"
-																	}
-																/>
-															</InputGroup>
-														</TextField>
+																) : (
+																	<Controller
+																		name={`variations.${index}.color` as const}
+																		control={control}
+																		render={({ field: colorField }) => (
+																			<Popover>
+																				<Popover.Trigger>
+																					<button
+																						type="button"
+																						className="p-1 -ml-1.5 rounded-full hover:bg-default-100 flex items-center justify-center focus:outline-hidden"
+																						aria-label="Change color">
+																						<VariationDot
+																							color={colorField.value}
+																							index={index}
+																							className="size-4 cursor-pointer hover:scale-110 transition-transform shrink-0"
+																						/>
+																					</button>
+																				</Popover.Trigger>
+																				<Popover.Content className="p-3 w-48">
+																					<div className="text-xs font-semibold mb-2">
+																						Choose Color
+																					</div>
+																					<div className="grid grid-cols-6 gap-2">
+																						{COLOR_KEYS.map((colorName) => {
+																							const colorDetails =
+																								TAILWIND_COLORS_500[colorName];
+																							return (
+																								<Tooltip key={colorName}>
+																									<Tooltip.Trigger>
+																										<button
+																											type="button"
+																											onClick={() => {
+																												colorField.onChange(
+																													colorName,
+																												);
+																											}}
+																											className={cn(
+																												"size-6 rounded-full border-2 transition-all hover:scale-110 focus:outline-hidden",
+																												colorField.value ===
+																													colorName
+																													? "border-foreground scale-105"
+																													: "border-transparent",
+																											)}
+																											style={{
+																												backgroundColor:
+																													colorDetails.hex,
+																											}}
+																											aria-label={colorName}
+																										/>
+																									</Tooltip.Trigger>
+																									<Tooltip.Content className="capitalize">
+																										{colorName}
+																									</Tooltip.Content>
+																								</Tooltip>
+																							);
+																						})}
+																					</div>
+																				</Popover.Content>
+																			</Popover>
+																		)}
+																	/>
+																)
+															}
+														/>
 													)}
 												/>
 											</Table.Cell>
@@ -127,29 +345,16 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 														name={`variations.${index}.value` as const}
 														control={control}
 														render={({ field: valField, fieldState }) => (
-															<TextField
-																isInvalid={!!fieldState.error}
-																variant="secondary">
-																<InputGroup>
-																	<InputGroup.Input
-																		value={
-																			valField.value !== undefined
-																				? String(valField.value)
-																				: ""
-																		}
-																		onChange={(e) =>
-																			valField.onChange(e.target.value)
-																		}
-																		placeholder="Value"
-																		className="w-full"
-																	/>
-																</InputGroup>
-																{fieldState.error && (
-																	<FieldError>
-																		{fieldState.error.message}
-																	</FieldError>
-																)}
-															</TextField>
+															<VariationValueInput
+																value={
+																	valField.value !== undefined
+																		? String(valField.value)
+																		: ""
+																}
+																onChange={valField.onChange}
+																error={fieldState.error}
+																placeholder="Value"
+															/>
 														)}
 													/>
 												)}
@@ -159,34 +364,43 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 													name={`variations.${index}.description` as const}
 													control={control}
 													render={({ field: descField }) => (
-														<TextField variant="secondary">
-															<TextArea
-																placeholder="Description"
-																value={descField.value || ""}
-																onChange={descField.onChange}
-																className="w-full min-h-9!"
-																rows={1}
-															/>
-														</TextField>
+														<VariationTextArea
+															value={descField.value || ""}
+															onChange={descField.onChange}
+															placeholder="Description"
+														/>
 													)}
 												/>
 											</Table.Cell>
 											<Table.Cell>
 												<div className="flex justify-end">
-													{!isBoolean && (
+													{!isBoolean && fields.length > 2 && (
 														<Tooltip>
 															<Tooltip.Trigger>
 																<Button
 																	isIconOnly
 																	variant="ghost"
 																	size="sm"
-																	className="hover:bg-danger/10 text-danger hover:text-danger"
+																	isDisabled={
+																		field.id === defaultVariationId ||
+																		field.id === offVariationId
+																	}
+																	className={
+																		field.id === defaultVariationId ||
+																		field.id === offVariationId
+																			? "opacity-30 cursor-not-allowed"
+																			: "hover:bg-danger/10 text-danger hover:text-danger"
+																	}
 																	onPress={() => handleRemove(index)}>
 																	<TrashIcon className="h-4 w-4" />
 																</Button>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
-																Remove variation
+																{field.id === defaultVariationId
+																	? "Cannot delete - this is the default variation"
+																	: field.id === offVariationId
+																		? "Cannot delete - this is the off variation (clear it first)"
+																		: "Remove variation"}
 															</Tooltip.Content>
 														</Tooltip>
 													)}
@@ -195,10 +409,21 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 										</Table.Row>
 									);
 								})}
+								{/* {errors?.variations?.root && (
+									<Table.Row>
+										<Table.Cell colSpan={4} className="p-0">
+											<div className="px-3 flex justify-center">
+												<FieldError className="text-xs text-danger mt-1">
+													{errors.variations.root.message}
+												</FieldError>
+											</div>
+										</Table.Cell>
+									</Table.Row>
+								)} */}
 								{!isBoolean && (
 									<Table.Row>
 										<Table.Cell colSpan={4} className="p-0">
-											<div className="p-3 bg-default-50/50 flex justify-center border-t border-divider">
+											<div className="px-3 flex justify-center">
 												<Button
 													variant="ghost"
 													size="sm"

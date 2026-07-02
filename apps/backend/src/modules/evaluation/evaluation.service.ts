@@ -15,10 +15,17 @@ export class EvaluationService {
     environmentId: string,
     flagKey: string,
     context: EvaluationContext,
+    keyType?: 'client' | 'server',
   ): Promise<EvaluationResult> {
     try {
       const flag = await this.flagLoader.loadFlag(environmentId, flagKey);
       if (!flag) {
+        return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
+      }
+      if (keyType === 'client' && flag.visibility === 'server_only') {
+        return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
+      }
+      if (keyType === 'server' && flag.visibility === 'client_only') {
         return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
       }
       return evaluate(flag, context);
@@ -34,9 +41,15 @@ export class EvaluationService {
   async evaluateAllFlags(
     environmentId: string,
     context: EvaluationContext,
+    keyType?: 'client' | 'server',
   ): Promise<EvaluationResult[]> {
     try {
-      const flags = await this.flagLoader.loadAllActiveFlags(environmentId);
+      let flags = await this.flagLoader.loadAllActiveFlags(environmentId);
+      if (keyType === 'client') {
+        flags = flags.filter((f) => f.visibility !== 'server_only');
+      } else if (keyType === 'server') {
+        flags = flags.filter((f) => f.visibility !== 'client_only');
+      }
       return flags.map((flag) => {
         try {
           return evaluate(flag, context);
