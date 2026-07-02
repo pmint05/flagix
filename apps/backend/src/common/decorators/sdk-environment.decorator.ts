@@ -5,6 +5,7 @@ export interface SdkEnvironmentInfo {
   organizationId: string;
   projectId: string;
   keyType: 'client' | 'server';
+  sdkKeyId: string;
 }
 
 interface RequestWithSdkEnv {

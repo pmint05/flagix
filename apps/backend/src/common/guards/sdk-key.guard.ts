@@ -18,6 +18,7 @@ interface RequestWithSdkEnv {
     organizationId: string;
     projectId: string;
     keyType?: 'client' | 'server';
+    sdkKeyId?: string;
   };
 }
 
@@ -82,6 +83,7 @@ export class SdkKeyGuard implements CanActivate {
       organizationId: sdkKey.organizationId,
       projectId: env.projectId,
       keyType: sdkKey.type,
+      sdkKeyId: sdkKey.id,
     };
 
     // Asynchronously update lastUsedAt in the background

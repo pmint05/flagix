@@ -17,6 +17,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { HealthModule } from './modules/health/health.module';
 import { FlagChangesModule } from './modules/flag-changes/flag-changes.module';
+import { BullMQModule } from './modules/bullmq/bullmq.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -92,6 +93,7 @@ const isProduction = process.env.NODE_ENV === 'production';
     EvaluationModule,
     HealthModule,
     FlagChangesModule,
+    BullMQModule,
   ],
   controllers: [AppController],
   providers: [
