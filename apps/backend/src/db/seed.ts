@@ -12,6 +12,9 @@ import {
   flagStates,
   targetingRules,
   sdkKeys,
+  evaluationEvents,
+  evaluationStatsHourly,
+  evaluationStatsDaily,
 } from './schema';
 import { hashSdkKey } from '@/common/utils/crypto';
 import * as crypto from 'crypto';
@@ -23,6 +26,9 @@ async function main() {
   try {
     // 1. Clean old data in order
     console.log('Cleaning old tables...');
+    await db.delete(evaluationEvents);
+    await db.delete(evaluationStatsHourly);
+    await db.delete(evaluationStatsDaily);
     await db.delete(targetingRules);
     await db.delete(flagStates);
     await db.delete(variations);
@@ -51,7 +57,7 @@ async function main() {
       userId,
       accountId: userId,
       providerId: 'credential',
-      password: '$2a$10$wO8lKq1a7Vp7/k.2f7j.yOmP94cZ4m7w6C5R64m.9q3f93F0O6d0C',
+      password: '2bb324d95333366914ca6c60ed38ac80:50610328363adb96d92f4f036eb9140086a371bb645817d39a5dc9a6b8429bd9ea57dd22cd80ea01ea30083eb3c61d9df710c3b21aa4bd2a8595529e85ae4237',
     });
 
     // 3. Create Organization
