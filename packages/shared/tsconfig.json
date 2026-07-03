@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "module": "commonjs"
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src"]
 }
