@@ -16,7 +16,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
     this.logger.log('EvaluationAggregatorService initialized');
   }
 
-  @Cron('0 * * * *')
+  @Cron('0 0 * * *')
   async aggregateHourly() {
     this.logger.log('Starting hourly aggregation');
     const bucket = new Date();
@@ -41,7 +41,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
         `Hourly aggregation complete — grouped ${totalRows} events`,
       );
     } catch (err) {
-      this.logger.error('Hourly aggregation failed', err);
+      this.logger.error({ err }, 'Hourly aggregation failed');
     }
   }
 
@@ -77,14 +77,16 @@ export class EvaluationAggregatorService implements OnModuleInit {
         evt.feature_flag_id,
         evt.variation_id,
         evt.evaluation_reason
+      ORDER BY evt.organization_id, evt.feature_flag_id, evt.environment_id,
+        evt.variation_id, evt.evaluation_reason
+      LIMIT ${limit}
+      OFFSET ${offset}
       ON CONFLICT (
         organization_id, feature_flag_id, environment_id,
         variation_id, evaluation_reason, bucket
       ) DO UPDATE SET
         total_count = evaluation_stats_hourly.total_count + EXCLUDED.total_count,
         unique_users = GREATEST(evaluation_stats_hourly.unique_users, EXCLUDED.unique_users)
-      LIMIT ${limit}
-      OFFSET ${offset}
     `);
 
     return result.rowCount ?? 0;
@@ -134,7 +136,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
         `Daily rollup complete — ${result.rowCount ?? 0} rows upserted`,
       );
     } catch (err) {
-      this.logger.error('Daily rollup failed', err);
+      this.logger.error({ err }, 'Daily rollup failed');
     }
   }
 
@@ -172,7 +174,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
 
       this.logger.log('Purge complete');
     } catch (err) {
-      this.logger.error('Purge failed', err);
+      this.logger.error({ err }, 'Purge failed');
     }
   }
 
@@ -194,7 +196,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
         );
       }
     } catch (err) {
-      this.logger.error('Failed to drop orphaned partitions', err);
+      this.logger.error({ err }, 'Failed to drop orphaned partitions');
     }
   }
 
@@ -231,7 +233,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
 
       this.logger.log(`Created partition: ${partitionName}`);
     } catch (err) {
-      this.logger.error('Failed to create next-month partition', err);
+      this.logger.error({ err }, 'Failed to create next-month partition');
     }
   }
 }
