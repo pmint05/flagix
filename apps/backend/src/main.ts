@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { VersioningType } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { apiReference } from '@scalar/nestjs-api-reference';
@@ -29,7 +30,7 @@ async function bootstrap() {
   app.useLogger(logger);
   app.useGlobalInterceptors(
     new LoggerErrorInterceptor(),
-    new TransformInterceptor(), // Wrap success responses
+    new TransformInterceptor(app.get(Reflector)), // Wrap success responses
   );
 
   // Global Setup

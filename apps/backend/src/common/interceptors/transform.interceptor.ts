@@ -4,8 +4,10 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { RAW_RESPONSE_KEY } from '../decorators/raw-response.decorator';
 
 export interface Response<T> {
   success: true;
@@ -41,12 +43,25 @@ function stripSensitiveFields(obj: any): any {
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
-  Response<T>
+  Response<T> | T
 > {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<Response<T>> {
+  ): Observable<Response<T> | T> {
+    const isRaw = this.reflector.getAllAndOverride<boolean>(RAW_RESPONSE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isRaw) {
+      return next.handle().pipe(
+        map((data) => stripSensitiveFields(data)),
+      );
+    }
+
     return next.handle().pipe(
       map((data) => ({
         success: true,

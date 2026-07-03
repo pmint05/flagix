@@ -495,6 +495,7 @@ export class FeatureFlagsRepository {
               value: pv.value,
               description: pv.description ?? null,
               isDefault: pv.isDefault ?? false,
+              color: pv.color ?? null,
             } as any;
           });
         }

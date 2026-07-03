@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { Throttle } from '@nestjs/throttler';
 import { SdkKeyGuard } from '@/common/guards/sdk-key.guard';
+import { RawResponse } from '@/common/decorators/raw-response.decorator';
 import {
   SdkEnvironment,
   type SdkEnvironmentInfo,
@@ -12,6 +13,7 @@ import { EvaluationCollectorService } from '@/modules/evaluation-collector/evalu
 import { EvaluateFlagDto } from './dto/evaluate-flag.dto';
 import { EvaluateAllDto } from './dto/evaluate-all.dto';
 
+@RawResponse()
 @AllowAnonymous()
 @ApiTags('Evaluation')
 @Controller('evaluate')
