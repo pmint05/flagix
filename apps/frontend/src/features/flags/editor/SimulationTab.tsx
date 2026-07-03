@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { SimulationLeftPanel } from "./components/simulation/SimulationLeftPanel";
 import { SimulationRightPanel } from "./components/simulation/SimulationRightPanel";
 import { CodeSnippetModal } from "@/features/keys/components/CodeSnippetModal";
-import { PRESETS } from "./components/simulation/constants";
+import { getPresets } from "./components/simulation/constants";
 import { useSimulationStore, DEFAULT_SIMULATION_STATE } from "./store/simulation-store";
 
 interface SimulationTabProps {
@@ -28,7 +28,7 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 
 	const [isSnippetOpen, setIsSnippetOpen] = useState(false);
 	
-	const cachedState = useSimulationStore((s) => s.statesByFlagId[flag.id]) || DEFAULT_SIMULATION_STATE();
+	const cachedState = useSimulationStore((s) => s.statesByFlagId[flag.id]) || DEFAULT_SIMULATION_STATE(flag.key);
 	const setSimulationState = useSimulationStore((s) => s.setSimulationState);
 
 	const jsonValue = cachedState.jsonValue;
@@ -115,7 +115,7 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 
 	const handleSimulate = () => {
 		try {
-			const context = JSON.parse(jsonValue);
+			const parsed = JSON.parse(jsonValue);
 			setSimulationState(flag.id, { jsonError: null });
 			if (!currentEnv) {
 				toast.error("Simulation Failed", {
@@ -123,6 +123,8 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 				});
 				return;
 			}
+
+			const context = parsed.context ?? parsed;
 
 			const formData = getValues();
 			const flagConfig = {
@@ -164,6 +166,15 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 	const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
 	const editorTheme = resolvedTheme === "dark" ? "vs-dark" : "light";
 
+	const getContextJson = (): string => {
+		try {
+			const parsed = JSON.parse(jsonValue);
+			return JSON.stringify(parsed.context ?? parsed, null, 2);
+		} catch {
+			return jsonValue;
+		}
+	};
+
 	return (
 		<div className="py-6 h-[calc(100vh-280px)] min-h-125">
 			<PanelGroup
@@ -180,7 +191,7 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 						jsonError={jsonError}
 						onOpenSnippet={() => setIsSnippetOpen(true)}
 						editorTheme={editorTheme}
-						presets={PRESETS}
+						presets={getPresets(flag.key)}
 						options={simulationOptions}
 						onOptionsChange={handleOptionsChange}
 					/>
@@ -206,7 +217,7 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 				isOpen={isSnippetOpen}
 				onClose={() => setIsSnippetOpen(false)}
 				flagKey={flag.key}
-				contextJson={jsonValue}
+				contextJson={getContextJson()}
 			/>
 		</div>
 	);

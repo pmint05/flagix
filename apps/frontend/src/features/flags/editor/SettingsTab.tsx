@@ -344,7 +344,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 			</Card>
 
 			{/* Lifecycle and Danger Zone Card */}
-			<Card className="border border-danger/30 bg-danger-soft/5 shadow-sm rounded-3xl p-6">
+			<Card className="border border-danger/30 bg-danger-soft/10 shadow-sm rounded-3xl p-6">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
 						<h2 className="text-base font-semibold text-danger flex items-center gap-2">

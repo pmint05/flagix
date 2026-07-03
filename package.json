@@ -14,9 +14,13 @@
 		"lint": "turbo run lint",
 		"typecheck": "turbo run typecheck",
 		"clean": "turbo run clean && rm -rf node_modules",
-		"db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
-		"db:down": "docker compose -f infra/docker/docker-compose.yml down",
-		"db:logs": "docker logs flagix_postgres -f"
+		"db:up": "docker compose -f infra/docker/docker-compose.infra.yml up -d",
+		"db:down": "docker compose -f infra/docker/docker-compose.infra.yml down",
+		"db:logs": "docker logs flagix-postgres -f",
+		"docker:build": "docker compose -f infra/docker/docker-compose.yml build",
+		"docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+		"docker:down": "docker compose -f infra/docker/docker-compose.yml down",
+		"docker:logs": "docker compose -f infra/docker/docker-compose.yml logs -f"
 	},
 	"keywords": [],
 	"author": "",

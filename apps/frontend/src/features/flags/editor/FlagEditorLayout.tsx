@@ -10,8 +10,9 @@ import type { FeatureFlag } from "@/types/feature-flag";
 import { TargetingTab } from "./TargetingTab";
 import { VariationsTab } from "./VariationsTab";
 import { SimulationTab } from "./SimulationTab";
-import { MonitoringTab } from "./MonitoringTab";
+import { MonitoringTab } from "./ChangesHistoryTab";
 import { SettingsTab } from "./SettingsTab";
+import { FlagAnalytics } from "@/features/analytics/components/FlagAnalytics";
 import { FlagEditorProvider } from "./FlagEditorContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useForm, FormProvider } from "react-hook-form";
@@ -22,6 +23,7 @@ import { useContextStore } from "#/stores";
 import { useRules } from "@/features/rules/api";
 import { usePatchFlagConfig } from "../api";
 import { ActionButton } from "#/components/ui/action-button";
+import { useHasPermission } from "@/hooks/usePermission";
 
 const routeApi = getRouteApi(
 	"/_authenticated/projects/$projectSlug/flags/$flagSlug",
@@ -34,7 +36,9 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 	const isMobile = useIsMobile();
 	const { data: rulesData } = useRules(flag.id, currentEnv?.id);
 
-	const activeTab = search.tab ?? "targeting";
+	const canEditFlags = useHasPermission("flag:edit");
+
+	const activeTab = (!canEditFlags && (search.tab === "changes-history" || search.tab === "settings")) ? "targeting" : (search.tab ?? "targeting");
 
 	const setActiveTab = (key: string) => {
 		navigate({
@@ -283,18 +287,20 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 							</div>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" onPress={handleDiscard}>
-							Discard
-						</Button>
-						<ActionButton
-							variant="primary"
-							onPress={handleSave as any}
-							isDisabled={!isFormDirty || isSaving}
-							isPending={isSaving}>
-							Save Changes
-						</ActionButton>
-					</div>
+					{canEditFlags && (
+						<div className="flex items-center gap-2">
+							<Button variant="ghost" onPress={handleDiscard}>
+								Discard
+							</Button>
+							<ActionButton
+								variant="primary"
+								onPress={handleSave as any}
+								isDisabled={!isFormDirty || isSaving}
+								isPending={isSaving}>
+								Save Changes
+							</ActionButton>
+						</div>
+					)}
 				</div>
 
 				<Separator className="my-2" />
@@ -307,9 +313,10 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 								title: isMobile ? "Targeting" : "Targeting & Variations",
 							},
 							...(isMobile ? [{ id: "variations", title: "Variations" }] : []),
+							{ id: "analytics", title: "Analytics" },
+							...(canEditFlags ? [{ id: "changes-history", title: "Changes History" }] : []),
 							{ id: "simulation", title: "Simulation" },
-							{ id: "monitoring", title: "Monitoring" },
-							{ id: "settings", title: "Settings" },
+							...(canEditFlags ? [{ id: "settings", title: "Settings" }] : []),
 						];
 
 						return (
@@ -364,15 +371,22 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 									className={!isMobile ? "hidden" : ""}>
 									<VariationsTab flag={flag} />
 								</Tabs.Panel>
+								<Tabs.Panel id="analytics">
+									<FlagAnalytics flag={flag} />
+								</Tabs.Panel>
 								<Tabs.Panel id="simulation">
 									<SimulationTab flag={flag} />
 								</Tabs.Panel>
-								<Tabs.Panel id="monitoring">
-									<MonitoringTab flag={flag} />
-								</Tabs.Panel>
-								<Tabs.Panel id="settings">
-									<SettingsTab flag={flag} projectSlug={projectSlug} />
-								</Tabs.Panel>
+								{canEditFlags && (
+									<Tabs.Panel id="changes-history">
+										<MonitoringTab flag={flag} />
+									</Tabs.Panel>
+								)}
+								{canEditFlags && (
+									<Tabs.Panel id="settings">
+										<SettingsTab flag={flag} projectSlug={projectSlug} />
+									</Tabs.Panel>
+								)}
 							</Tabs>
 						);
 					})()}

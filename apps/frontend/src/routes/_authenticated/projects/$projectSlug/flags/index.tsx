@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@heroui/react";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, TrayIcon } from "@phosphor-icons/react";
 import {
 	useFlags,
 	useDeleteFlag,
@@ -23,6 +23,10 @@ import {
 } from "@/hooks/useDataTableUrlSync";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
+import { useEnvironments } from "@/features/environments/api";
+
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useHasPermission } from "@/hooks/usePermission";
 
 export const Route = createFileRoute(
 	"/_authenticated/projects/$projectSlug/flags/",
@@ -60,6 +64,7 @@ function toFlagListParams(tableState: TableState): FlagListParams {
 function FlagsIndex() {
 	const match = Route.useMatch();
 	const { projectSlug } = match.params;
+	const navigate = useNavigate();
 
 	const { tableState, updateTableState } = useDataTableUrlSync({
 		defaultPageSize: 20,
@@ -74,10 +79,15 @@ function FlagsIndex() {
 		],
 	});
 
+	const { data: environments, isPending: isEnvironmentsPending } =
+		useEnvironments();
 	const params = useMemo(() => toFlagListParams(tableState), [tableState]);
 	const { data: flagsResponse, isLoading, isError } = useFlags(params);
 	const deleteFlag = useDeleteFlag();
 	const updateFlagState = useUpdateFlagState();
+
+	const canEditFlag = useHasPermission("flag:edit");
+	const canDeleteFlag = useHasPermission("flag:delete");
 
 	const [modalOpen, setModalOpen] = useState(false);
 
@@ -105,9 +115,15 @@ function FlagsIndex() {
 				onDelete: (flag) => deleteFlag.mutate(flag.id),
 				onStatusChange: (flag, status) =>
 					updateFlagState.mutate({ flagId: flag.id, status }),
+				canEdit: canEditFlag,
+				canDelete: canDeleteFlag,
 			}) as ColumnDef<FeatureFlagListItem, unknown>[],
-		[projectSlug, deleteFlag, updateFlagState],
+		[projectSlug, deleteFlag, updateFlagState, canEditFlag, canDeleteFlag],
 	);
+
+	const hasEnvironments = !!environments && environments.length > 0;
+	const isFlagsLoading =
+		isEnvironmentsPending || (isLoading && hasEnvironments);
 
 	const flags = flagsResponse?.data ?? [];
 	const total = flagsResponse?.total ?? 0;
@@ -122,24 +138,35 @@ function FlagsIndex() {
 						Manage feature flags for this environment
 					</p>
 				</div>
-				<Button variant="primary" className="gap-2" onPress={handleCreate}>
-					<PlusIcon className="h-4 w-4" />
-					New Flag
-				</Button>
+				<PermissionGuard permission="flag:create">
+					<Button
+						variant="primary"
+						className="gap-2"
+						isDisabled={!hasEnvironments}
+						onPress={handleCreate}>
+						<PlusIcon className="h-4 w-4" />
+						New Flag
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			{isError ? (
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load flags. Please try again.
 				</div>
-			) : flags.length === 0 &&
-			  !tableState.query &&
-			  !Object.keys(tableState.filters ?? {}).length ? (
+			) : !hasEnvironments ? (
 				<EmptyState
-					title="No feature flags yet"
-					description="Create your first feature flag to start controlling feature rollouts."
-					actionLabel="New Flag"
-					onAction={handleCreate}
+					icon={<TrayIcon className="size-8 text-muted" weight="duotone" />}
+					title="No Environments Found"
+					description="You need to create at least one environment before you can create or manage feature flags."
+					actionLabel="Go to Environments"
+					onAction={() =>
+						navigate({
+							to: "/projects/$projectSlug/environments",
+							params: { projectSlug },
+						})
+					}
+					actionVariant="primary"
 				/>
 			) : (
 				<div className="space-y-4">
@@ -151,7 +178,7 @@ function FlagsIndex() {
 					/>
 
 					<DataTable
-						isLoading={isLoading}
+						isLoading={isFlagsLoading}
 						data={flags}
 						columns={columns}
 						state={tableState}

@@ -26,3 +26,6 @@ export type { SdkKey } from "./sdk-key";
 
 export { auditLogSchema } from "./audit-log";
 export type { AuditLog } from "./audit-log";
+
+export { invitationSchema, userInvitationSchema } from "./invitation";
+export type { Invitation, UserInvitation, InviteMemberInput } from "./invitation";

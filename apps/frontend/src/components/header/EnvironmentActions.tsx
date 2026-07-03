@@ -9,6 +9,7 @@ import {
 import { useContextStore } from "#/stores";
 import { toast } from "sonner";
 import type { Environment } from "#/types/environment";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface EnvironmentActionsProps {
 	onOpenCreate: () => void;
@@ -20,6 +21,8 @@ export function EnvironmentActions({
 	onOpenEdit,
 }: EnvironmentActionsProps) {
 	const { selectedEnvironment } = useContextStore();
+	const canCreateEnv = useHasPermission("environment:create");
+	const canEditEnv = useHasPermission("environment:edit");
 
 	const handleCopyId = () => {
 		if (selectedEnvironment) {
@@ -76,20 +79,26 @@ export function EnvironmentActions({
 							<Label>Environment Slug</Label>
 						</Dropdown.Item>
 					</Dropdown.Section>
-					<Dropdown.Section>
-						<Header>Manage</Header>
-						<Dropdown.Item
-							id="edit"
-							onPress={handleEdit}
-							isDisabled={!selectedEnvironment}>
-							<PencilSimpleIcon size={16} />
-							<Label>Edit Environment</Label>
-						</Dropdown.Item>
-						<Dropdown.Item id="create" onPress={onOpenCreate}>
-							<PlusIcon size={16} />
-							<Label>Create Environment</Label>
-						</Dropdown.Item>
-					</Dropdown.Section>
+					{(canEditEnv || canCreateEnv) && (
+						<Dropdown.Section>
+							<Header>Manage</Header>
+							{canEditEnv && (
+								<Dropdown.Item
+									id="edit"
+									onPress={handleEdit}
+									isDisabled={!selectedEnvironment}>
+									<PencilSimpleIcon size={16} />
+									<Label>Edit Environment</Label>
+								</Dropdown.Item>
+							)}
+							{canCreateEnv && (
+								<Dropdown.Item id="create" onPress={onOpenCreate}>
+									<PlusIcon size={16} />
+									<Label>Create Environment</Label>
+								</Dropdown.Item>
+							)}
+						</Dropdown.Section>
+					)}
 				</Dropdown.Menu>
 			</Dropdown.Popover>
 		</Dropdown>

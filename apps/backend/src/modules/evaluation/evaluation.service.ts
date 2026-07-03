@@ -16,9 +16,10 @@ export class EvaluationService {
     flagKey: string,
     context: EvaluationContext,
     keyType?: 'client' | 'server',
+    projectId?: string,
   ): Promise<EvaluationResult> {
     try {
-      const flag = await this.flagLoader.loadFlag(environmentId, flagKey);
+      const flag = await this.flagLoader.loadFlag(environmentId, flagKey, projectId);
       if (!flag) {
         return buildSafeDefault(null, flagKey, 'FLAG_NOT_FOUND');
       }
@@ -83,9 +84,10 @@ export class EvaluationService {
       rules?: any[];
       bypassDraft?: boolean;
     },
+    projectId?: string,
   ): Promise<SimulationResult> {
     try {
-      const flag = await this.flagLoader.loadFlag(environmentId, flagKey);
+      const flag = await this.flagLoader.loadFlag(environmentId, flagKey, projectId);
       if (!flag) {
         throw new Error(`Flag ${flagKey} not found`);
       }

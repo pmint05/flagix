@@ -56,6 +56,22 @@ export function SimulationLeftPanel({
 			provideCompletionItems: (_model: any, _position: any) => {
 				const suggestions = [
 					{
+						label: '"flagKey"',
+						kind: monaco.languages.CompletionItemKind.Property,
+						insertText: '"flagKey": "$1"',
+						insertTextRules:
+							monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+						detail: "Feature flag key (required)",
+					},
+					{
+						label: '"context"',
+						kind: monaco.languages.CompletionItemKind.Property,
+						insertText: '"context": {\n\t"userId": "$1"\n}',
+						insertTextRules:
+							monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+						detail: "Evaluation context object",
+					},
+					{
 						label: '"userId"',
 						kind: monaco.languages.CompletionItemKind.Property,
 						insertText: '"userId": "$1"',
@@ -115,7 +131,7 @@ export function SimulationLeftPanel({
 			<div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-4">
 					<span className="font-semibold text-foreground text-sm">
-						Target Context
+						Evaluate Request Body
 					</span>
 				</div>
 				<div className="flex items-center gap-1">

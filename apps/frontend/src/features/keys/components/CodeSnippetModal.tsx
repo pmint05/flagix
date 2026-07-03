@@ -136,7 +136,7 @@ async function main() {
 }`;
 
 		case "curl":
-			return `curl -X POST "https://api.flagix.com/api/v1/evaluate" \\
+			return `curl -X POST "http://localhost:9000/api/v1/evaluate" \\
   -H "Content-Type: application/json" \\
   -H "X-SDK-Key: ${sdkKeyVal}" \\
   -d '{

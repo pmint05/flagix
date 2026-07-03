@@ -20,6 +20,7 @@ import { EnvironmentModal } from "#/features/environments/EnvironmentModal";
 import { useState, useEffect } from "react";
 import type { Environment } from "#/types/environment";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useHasPermission } from "@/hooks/usePermission";
 
 export function EnvironmentSwitcher() {
 	const { selectedProject, selectedEnvironment, setEnvironment } =
@@ -29,6 +30,7 @@ export function EnvironmentSwitcher() {
 	const [editingEnvironment, setEditingEnvironment] = useState<
 		Environment | undefined
 	>();
+	const canCreateEnv = useHasPermission("environment:create");
 
 	const search: any = useSearch({ strict: false });
 	const navigate = useNavigate();
@@ -102,7 +104,7 @@ export function EnvironmentSwitcher() {
 	if (!environments || environments.length === 0) {
 		return (
 			<>
-				<Button variant="secondary" size="sm" onPress={handleOpenCreate}>
+				<Button variant="secondary" size="sm" onPress={handleOpenCreate} isDisabled={!canCreateEnv}>
 					Create Environment
 					<PlusIcon size={16} />
 				</Button>

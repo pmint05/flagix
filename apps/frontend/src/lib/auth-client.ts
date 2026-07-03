@@ -1,7 +1,16 @@
 import { createAuthClient } from "better-auth/react";
-// import type {} from "better-auth/react"
+
+const IS_SERVER = typeof window === "undefined";
+
+const getAuthBaseUrl = () => {
+	if (IS_SERVER) {
+		return process.env.INTERNAL_AUTH_BASE_URL || import.meta.env.VITE_AUTH_BASE_URL || "http://localhost:9000/api/auth";
+	}
+	return import.meta.env.VITE_AUTH_BASE_URL || "http://localhost:9000/api/auth";
+};
+
 export const authClient = createAuthClient({
-	baseURL: import.meta.env.VITE_AUTH_BASE_URL ?? "http://localhost:9000/api/auth",
+	baseURL: getAuthBaseUrl(),
 });
 
 export type User = typeof authClient.$Infer.Session.user;

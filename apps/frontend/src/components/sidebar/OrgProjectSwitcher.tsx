@@ -11,10 +11,12 @@ import {
 	UserPlusIcon,
 	PlusIcon,
 	FolderOpenIcon,
+	EnvelopeSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "#/stores";
 import { useUIStore } from "#/stores/ui";
-import { useOrganizations } from "#/features/organizations/api";
+import { useHasPermission } from "#/hooks/usePermission";
+import { useOrganizations, useUserInvitations } from "#/features/organizations/api";
 import { useProjects, createProjectsApi, PROJECTS_KEY } from "#/features/projects/api";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,6 +24,8 @@ import { EntityList } from "./EntityList";
 import { useIsMobile } from "#/hooks/useIsMobile";
 import { OrganizationModal } from "#/features/organizations/OrganizationModal";
 import { ProjectModal } from "#/features/projects/ProjectModal";
+import { InviteMemberModal } from "#/features/organizations/InviteMemberModal";
+import { InvitationAlertModal } from "#/features/organizations/InvitationAlertModal";
 
 interface OrgProjectSwitcherProps {
 	children: React.ReactNode;
@@ -42,6 +46,10 @@ function EntitiesGroup({
 	setMainOpen,
 	setIsOrgModalOpen,
 	setIsProjectModalOpen,
+	setIsInviteModalOpen,
+	setIsInvitationModalOpen,
+	invitations,
+	hasInvitations,
 }: any) {
 	// Search states
 	const [orgSearch, setOrgSearch] = useState("");
@@ -67,6 +75,11 @@ function EntitiesGroup({
 	const isMobile = useIsMobile();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
+	const canManageOrg = useHasPermission("organization:edit");
+	const canInvite = useHasPermission("member:create");
+	const canCreateProject = useHasPermission("project:create");
+	const canManageProject = useHasPermission("project:edit");
 
 	// Cleanup timers on unmount
 	useEffect(() => {
@@ -96,6 +109,20 @@ function EntitiesGroup({
 			return () => clearTimeout(timer);
 		}
 	}, [prjMenuOpen]);
+
+	// Sync selectedOrganization (e.g. role/name changes) with latest data from backend
+	useEffect(() => {
+		if (orgs && selectedOrganization) {
+			const currentOrg = orgs.find((o: any) => o.id === selectedOrganization.id);
+			if (
+				currentOrg &&
+				(currentOrg.role !== selectedOrganization.role ||
+					currentOrg.name !== selectedOrganization.name)
+			) {
+				setOrganization(currentOrg);
+			}
+		}
+	}, [orgs, selectedOrganization, setOrganization]);
 
 	const handleOrgSelect = async (org: any) => {
 		if (selectedOrganization?.id !== org.id) {
@@ -260,6 +287,21 @@ function EntitiesGroup({
 	return (
 		<>
 			{/* ═══════════════════ ORGANIZATION GROUP ═══════════════════ */}
+			{hasInvitations && (
+				<Button
+					fullWidth
+					variant="secondary"
+					size="sm"
+					className="justify-start h-8 mb-1 bg-orange-500/10! border border-orange-500/20 text-orange-600! dark:text-orange-400! hover:bg-orange-500/20"
+					onPress={() => {
+						setIsInvitationModalOpen(true);
+						setMainOpen(false);
+					}}>
+					<EnvelopeSimpleIcon size={16} className="text-orange-500" />
+					New Invitations ({invitations.length})
+				</Button>
+			)}
+
 			<EntityList
 				label="Organization"
 				items={orgs}
@@ -293,24 +335,39 @@ function EntitiesGroup({
 			/>
 
 			{/* Org actions */}
-			<div className="flex flex-col gap-0.5 px-1 pb-1">
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8">
-					<GearIcon size={16} />
-					Settings
-				</Button>
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8">
-					<UserPlusIcon size={16} />
-					Invite members
-				</Button>
-			</div>
+			{(canManageOrg || canInvite) && (
+				<div className="flex flex-col gap-0.5 px-1 pb-1">
+					{canManageOrg && (
+						<Button
+							fullWidth
+							variant="ghost"
+							size="sm"
+							className="justify-start h-8"
+							isDisabled={!selectedOrganization}
+							onPress={() => {
+								useUIStore.getState().openOrgSettings();
+								setMainOpen(false);
+							}}>
+							<GearIcon size={16} />
+							Settings
+						</Button>
+					)}
+					{canInvite && (
+						<Button
+							fullWidth
+							variant="ghost"
+							size="sm"
+							className="justify-start h-8"
+							onPress={() => {
+								setIsInviteModalOpen(true);
+								setMainOpen(false);
+							}}>
+							<UserPlusIcon size={16} />
+							Invite members
+						</Button>
+					)}
+				</div>
+			)}
 
 			<Separator className="my-1" />
 
@@ -330,36 +387,44 @@ function EntitiesGroup({
 				onMenuLeave={handlePrjMenuLeave}
 				onTriggerClick={handlePrjTriggerClick}
 				searchRef={prjSearchRef}
-				showDescription
 				subMenuMargin="-ml-1"
 				subMenuBorder="border"
 				bottomContent={
-					<div className="flex flex-col gap-0.5">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="w-full justify-start"
-							onPress={() => {
-								setIsProjectModalOpen(true);
-								setMainOpen(false);
-							}}>
-							<PlusIcon size={14} />
-							Create new project
-						</Button>
-					</div>
+					canCreateProject ? (
+						<div className="flex flex-col gap-0.5">
+							<Button
+								variant="ghost"
+								size="sm"
+								className="w-full justify-start"
+								onPress={() => {
+									setIsProjectModalOpen(true);
+									setMainOpen(false);
+								}}>
+								<PlusIcon size={14} />
+								Create new project
+							</Button>
+						</div>
+					) : undefined
 				}
 			/>
 
 			{/* Project actions */}
 			<div className="flex flex-col gap-0.5 px-1 pb-1">
-				<Button
-					fullWidth
-					variant="ghost"
-					size="sm"
-					className="justify-start h-8">
-					<GearIcon size={16} />
-					Settings
-				</Button>
+				{canManageProject && (
+					<Button
+						fullWidth
+						variant="ghost"
+						size="sm"
+						className="justify-start h-8"
+						isDisabled={!selectedProject}
+						onPress={() => {
+							useUIStore.getState().openProjectSettings();
+							setMainOpen(false);
+						}}>
+						<GearIcon size={16} />
+						Settings
+					</Button>
+				)}
 				<Button
 					variant="ghost"
 					size="sm"
@@ -389,10 +454,14 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 
 	const { data: orgs, isLoading: orgsLoading } = useOrganizations();
 	const { data: projects, isLoading: projectsLoading } = useProjects();
+	const { data: invitations } = useUserInvitations();
+	const hasInvitations = invitations && invitations.length > 0;
 
 	const [mainOpen, setMainOpen] = useState(false);
 	const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
 	const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+	const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
 
 	const isMobile = useIsMobile();
 
@@ -421,6 +490,10 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 								setMainOpen={setMainOpen}
 								setIsOrgModalOpen={setIsOrgModalOpen}
 								setIsProjectModalOpen={setIsProjectModalOpen}
+								setIsInviteModalOpen={setIsInviteModalOpen}
+								setIsInvitationModalOpen={setIsInvitationModalOpen}
+								invitations={invitations}
+								hasInvitations={hasInvitations}
 							/>
 						</div>
 					</Popover.Dialog>
@@ -434,6 +507,15 @@ export function OrgProjectSwitcher({ children }: OrgProjectSwitcherProps) {
 			<ProjectModal
 				isOpen={isProjectModalOpen}
 				onClose={() => setIsProjectModalOpen(false)}
+			/>
+			<InviteMemberModal
+				isOpen={isInviteModalOpen}
+				onClose={() => setIsInviteModalOpen(false)}
+				orgId={selectedOrganization?.id ?? ""}
+			/>
+			<InvitationAlertModal
+				isOpen={isInvitationModalOpen}
+				onClose={() => setIsInvitationModalOpen(false)}
 			/>
 		</>
 	);

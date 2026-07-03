@@ -10,7 +10,20 @@ export const Route = createFileRoute(
 )({
 	validateSearch: z.object({
 		tab: z
-			.enum(["targeting", "variations", "simulation", "monitoring", "settings"])
+			.enum(
+				[
+					"targeting",
+					"variations",
+					"simulation",
+					"changes-history",
+					"settings",
+					"analytics",
+				],
+				{
+					error:
+						"Invalid tab value. Must be one of 'targeting', 'variations', 'simulation', 'changes-history', 'settings', or 'analytics'.",
+				},
+			)
 			.optional(),
 	}),
 	component: FlagEditorPage,

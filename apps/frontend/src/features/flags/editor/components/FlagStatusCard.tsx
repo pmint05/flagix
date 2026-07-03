@@ -14,6 +14,7 @@ import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues, Variation } from "../schema";
 import { getVariationColorClass } from "@/lib/variation-colors";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface FlagStatusCardProps {
 	flag: FeatureFlag;
@@ -25,6 +26,7 @@ export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 	const offVariationId = useWatch({ name: "offVariationId", control });
 	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
 	const variations = useWatch({ name: "variations", control }) || [];
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const defaultVariationName =
 		variations.find((v) => v.id === defaultVariationId)?.key ?? "None";
@@ -40,6 +42,7 @@ export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 						<Switch
 							isSelected={field.value}
 							onChange={field.onChange}
+							isDisabled={!canEditFlags}
 							className="ml-1">
 							<Switch.Content>
 								<Switch.Control>
@@ -78,6 +81,7 @@ interface OffVariationSelectProps {
 function OffVariationSelect({ variations }: OffVariationSelectProps) {
 	const { control } = useFormContext<FlagEditorFormValues>();
 	const { contains } = useFilter({ sensitivity: "base" });
+	const canEditFlags = useHasPermission("flag:edit");
 
 	return (
 		<Controller
@@ -90,6 +94,7 @@ function OffVariationSelect({ variations }: OffVariationSelectProps) {
 					value={field.value}
 					onChange={(v) => field.onChange(v as string)}
 					aria-label="Select off variation"
+					isDisabled={!canEditFlags}
 					className="w-fit">
 					<Autocomplete.Trigger className="min-h-4 py-1 px-1.5">
 						<Autocomplete.Value className="truncate max-w-30" />

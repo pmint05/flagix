@@ -7,6 +7,7 @@ import { VariationDots } from "@/components/ui/filters/VariationDots";
 import type { FeatureFlagListItem } from "@/types/feature-flag";
 import { formatDate } from "#/lib/date";
 import UserAvatar from "#/components/user/user-avatar";
+import CopyButton from "#/components/ui/copy-button";
 
 const STATUS_CHIP_COLOR: Record<
 	string,
@@ -26,6 +27,8 @@ interface ColumnActions {
 		flag: FeatureFlagListItem,
 		status: "draft" | "active" | "archived",
 	) => void;
+	canEdit: boolean;
+	canDelete: boolean;
 }
 
 export function createFlagColumns(actions: ColumnActions) {
@@ -34,15 +37,24 @@ export function createFlagColumns(actions: ColumnActions) {
 			enableSorting: true,
 			header: "Key",
 			cell: (info) => (
-				<Link
-					to="/projects/$projectSlug/flags/$flagSlug"
-					params={{
-						projectSlug: actions.projectSlug,
-						flagSlug: info.getValue(),
-					}}
-					className="text-primary hover:underline">
-					<code className="text-sm">{info.getValue()}</code>
-				</Link>
+				<div className="flex items-center gap-1 group w-full h-full">
+					<Link
+						to="/projects/$projectSlug/flags/$flagSlug"
+						params={{
+							projectSlug: actions.projectSlug,
+							flagSlug: info.getValue(),
+						}}
+						className="text-primary hover:underline">
+						<code className="text-sm">{info.getValue()}</code>
+					</Link>
+					<CopyButton
+						text={info.getValue()}
+						buttonProps={{
+							isIconOnly: true,
+							className: "group-hover:opacity-100 opacity-0 transition size-6 rounded-xl",
+						}}
+					/>
+				</div>
 			),
 		}),
 		columnHelper.accessor("name", {
@@ -143,7 +155,7 @@ export function createFlagColumns(actions: ColumnActions) {
 				const flag = info.row.original;
 				return (
 					<div className="flex items-center gap-1">
-						{flag.status === "draft" && (
+						{flag.status === "draft" && actions.canEdit && (
 							<Tooltip>
 								<Tooltip.Trigger>
 									<Button
@@ -158,19 +170,21 @@ export function createFlagColumns(actions: ColumnActions) {
 								<Tooltip.Content>Activate</Tooltip.Content>
 							</Tooltip>
 						)}
-						<Tooltip>
-							<Tooltip.Trigger>
-								<Button
-									isIconOnly
-									variant="ghost"
-									size="sm"
-									className="text-danger"
-									onPress={() => actions.onDelete(flag)}>
-									<TrashIcon className="h-4 w-4" />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Delete</Tooltip.Content>
-						</Tooltip>
+						{actions.canDelete && (
+							<Tooltip>
+								<Tooltip.Trigger>
+									<Button
+										isIconOnly
+										variant="ghost"
+										size="sm"
+										className="text-danger"
+										onPress={() => actions.onDelete(flag)}>
+										<TrashIcon className="h-4 w-4" />
+									</Button>
+								</Tooltip.Trigger>
+								<Tooltip.Content>Delete</Tooltip.Content>
+							</Tooltip>
+						)}
 					</div>
 				);
 			},

@@ -7,9 +7,16 @@ const DEFAULT_TIMEOUT = 30_000;
 const MAX_RETRY = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
-export const API_BASE_URL =
-	(import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-	"http://localhost:9000/api";
+const IS_SERVER = typeof window === "undefined";
+
+const getApiBaseUrl = () => {
+	if (IS_SERVER) {
+		return process.env.INTERNAL_API_BASE_URL || (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:9000/api";
+	}
+	return (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:9000/api";
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 let tokenAccessor: () => string | null | undefined = () => undefined;
 

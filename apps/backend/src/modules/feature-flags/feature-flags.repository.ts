@@ -495,6 +495,7 @@ export class FeatureFlagsRepository {
               value: pv.value,
               description: pv.description ?? null,
               isDefault: pv.isDefault ?? false,
+              color: pv.color ?? null,
             } as any;
           });
         }
@@ -664,16 +665,17 @@ export class FeatureFlagsRepository {
         }
       }
 
-      // D. Ensure off variation is set when activating flag
       const nextStatus =
-        payload.status !== undefined
-          ? payload.status
-          : (currentFlagState?.status ?? 'draft');
-      if (nextStatus === 'active' && !finalOffId) {
-        throw new BadRequestException(
-          'Active flags must have an off variation',
-        );
-      }
+      payload.status !== undefined
+      ? payload.status
+      : (currentFlagState?.status ?? 'draft');
+      
+      // D. Ensure off variation is set when activating flag
+      // if (nextStatus === 'active' && !finalOffId) {
+      //   throw new BadRequestException(
+      //     'Active flags must have an off variation',
+      //   );
+      // }
 
       // E. Update flag states (isEnabled, status, defaultVariationId, offVariationId)
       if (currentFlagState) {

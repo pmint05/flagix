@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { type Organization, organizationSchema } from "@/types";
+import {
+	type Organization,
+	organizationSchema,
+	type Invitation,
+	type UserInvitation,
+	invitationSchema,
+	userInvitationSchema,
+} from "@/types";
 import { z } from "zod";
 
 export interface CreateOrganizationInput {
@@ -17,6 +24,7 @@ export const organizationUserSchema = z.object({
 	role: z.enum(["admin", "editor", "viewer"]),
 	name: z.string(),
 	email: z.string().nullable().optional(),
+	createdAt: z.string().optional(),
 });
 
 export type OrganizationUser = z.infer<typeof organizationUserSchema>;
@@ -51,6 +59,42 @@ export const organizationsApi = {
 				}),
 			})
 			.then((res) => res.data),
+	listInvitations: (orgId: string): Promise<Invitation[]> =>
+		api.get(`organizations/${orgId}/invitations`, {
+			schema: z.array(invitationSchema),
+		}),
+	invite: (
+		orgId: string,
+		email: string,
+		role: "admin" | "editor" | "viewer",
+	): Promise<{ success: boolean; message: string }> =>
+		api.post(`organizations/${orgId}/invitations`, {
+			json: { email, role },
+			schema: z.object({
+				success: z.boolean(),
+				message: z.string(),
+			}),
+		}),
+	cancelInvitation: (orgId: string, invitationId: string): Promise<void> =>
+		api.delete(`organizations/${orgId}/invitations/${invitationId}`).then(() => {}),
+	listUserInvitations: (): Promise<UserInvitation[]> =>
+		api.get("organizations/invitations/pending", {
+			schema: z.array(userInvitationSchema),
+		}),
+	acceptInvitation: (invitationId: string): Promise<void> =>
+		api.post(`organizations/invitations/${invitationId}/accept`, {}).then(() => {}),
+	rejectInvitation: (invitationId: string): Promise<void> =>
+		api.post(`organizations/invitations/${invitationId}/reject`, {}).then(() => {}),
+	updateMemberRole: (
+		orgId: string,
+		memberId: string,
+		role: "admin" | "editor" | "viewer",
+	): Promise<void> =>
+		api.patch(`organizations/${orgId}/members/${memberId}`, {
+			json: { role },
+		}).then(() => {}),
+	removeMember: (orgId: string, memberId: string): Promise<void> =>
+		api.delete(`organizations/${orgId}/members/${memberId}`).then(() => {}),
 };
 
 // --- Query Hooks ---
@@ -118,6 +162,97 @@ export function useDeleteOrganization() {
 			queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_KEY });
 			queryClient.invalidateQueries({
 				queryKey: [...ORGANIZATIONS_KEY, "detail", id],
+			});
+		},
+	});
+}
+
+export function useOrgInvitations(orgId: string) {
+	return useQuery({
+		queryKey: [...ORGANIZATIONS_KEY, "invitations", orgId],
+		queryFn: () => organizationsApi.listInvitations(orgId),
+		enabled: !!orgId,
+	});
+}
+
+export function useCreateInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ orgId, email, role }: { orgId: string; email: string; role: "admin" | "editor" | "viewer" }) =>
+			organizationsApi.invite(orgId, email, role),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: [...ORGANIZATIONS_KEY, "invitations", variables.orgId],
+			});
+		},
+	});
+}
+
+export function useCancelInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ orgId, invitationId }: { orgId: string; invitationId: string }) =>
+			organizationsApi.cancelInvitation(orgId, invitationId),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: [...ORGANIZATIONS_KEY, "invitations", variables.orgId],
+			});
+		},
+	});
+}
+
+export function useUserInvitations() {
+	return useQuery({
+		queryKey: [...ORGANIZATIONS_KEY, "user-invitations"],
+		queryFn: () => organizationsApi.listUserInvitations(),
+		staleTime: 1000 * 30, // 30 seconds
+	});
+}
+
+export function useAcceptInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (invitationId: string) => organizationsApi.acceptInvitation(invitationId),
+		onSuccess: () => {
+			// Invalidate all org queries so switcher and layout lists reload
+			queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_KEY });
+		},
+	});
+}
+
+export function useRejectInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (invitationId: string) => organizationsApi.rejectInvitation(invitationId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: [...ORGANIZATIONS_KEY, "user-invitations"],
+			});
+		},
+	});
+}
+
+export function useUpdateMemberRole() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ orgId, memberId, role }: { orgId: string; memberId: string; role: "admin" | "editor" | "viewer" }) =>
+			organizationsApi.updateMemberRole(orgId, memberId, role),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: [...ORGANIZATIONS_KEY, "users", variables.orgId],
+			});
+		},
+	});
+}
+
+export function useRemoveMember() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ orgId, memberId }: { orgId: string; memberId: string }) =>
+			organizationsApi.removeMember(orgId, memberId),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: [...ORGANIZATIONS_KEY, "users", variables.orgId],
 			});
 		},
 	});

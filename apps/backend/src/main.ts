@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { VersioningType } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { apiReference } from '@scalar/nestjs-api-reference';
@@ -29,7 +30,7 @@ async function bootstrap() {
   app.useLogger(logger);
   app.useGlobalInterceptors(
     new LoggerErrorInterceptor(),
-    new TransformInterceptor(), // Wrap success responses
+    new TransformInterceptor(app.get(Reflector)), // Wrap success responses
   );
 
   // Global Setup
@@ -44,7 +45,7 @@ async function bootstrap() {
       ? process.env.WHITE_LISTED_ORIGINS.split(',').map((origin) =>
           origin.trim(),
         )
-      : ['http://localhost:3000', 'http://localhost:5173'],
+      : true, // true reflects the request origin in the Access-Control-Allow-Origin header, allowing all origins while supporting credentials
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });

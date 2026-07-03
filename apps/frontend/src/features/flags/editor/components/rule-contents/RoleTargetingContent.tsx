@@ -16,6 +16,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../../schema";
 import { VariationSelector } from "../VariationSelector";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface RoleTargetingContentProps {
 	flag: FeatureFlag;
@@ -37,6 +38,7 @@ export function RoleTargetingContent({
 	ruleIndex,
 }: RoleTargetingContentProps) {
 	const { control, setValue, formState: { errors } } = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 	const roles = useWatch({ name: `rules.${ruleIndex}.conditions.roles`, control }) ?? [];
 	const rolesError = (errors?.rules as any)?.[ruleIndex]?.conditions?.roles;
 
@@ -64,10 +66,10 @@ export function RoleTargetingContent({
 			</div>
 			<div className="flex flex-col gap-1 pl-6">
 				<div className="flex items-center gap-2 flex-wrap">
-					<TagGroup selectionMode="none" onRemove={onRemoveRoles}>
+					<TagGroup selectionMode="none" onRemove={canEditFlags ? onRemoveRoles : undefined}>
 						<TagGroup.List
 							items={roles.map((role, idx) => ({ id: idx, name: role }))}
-							renderEmptyState={() => <span>No roles added</span>}>
+							renderEmptyState={() => <span className="text-xs text-default-400">No roles added</span>}>
 							{(item) => (
 								<Tag key={item.id} id={item.id} textValue={item.name}>
 									{item.name}
@@ -75,7 +77,7 @@ export function RoleTargetingContent({
 							)}
 						</TagGroup.List>
 					</TagGroup>
-					<AddRoleInput onAdd={addRole} existingRoles={roles} />
+					{canEditFlags && <AddRoleInput onAdd={addRole} existingRoles={roles} />}
 				</div>
 				{rolesError && (
 					<FieldError className="text-xs text-danger">

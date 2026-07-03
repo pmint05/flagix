@@ -1,17 +1,12 @@
 import { type Key, useMemo, useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { RangeValue } from "@react-types/shared";
-import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
+import { CalendarDate } from "@internationalized/date";
 
 import {
-	DateField,
-	DateRangePicker,
+	Button,
 	Label,
 	ListBox,
-	ComboBox,
-	Button,
-	RangeCalendar,
-	Input,
 	SearchField,
 	Popover,
 	Autocomplete,
@@ -23,13 +18,13 @@ import {
 	MagnifyingGlassIcon,
 	FadersIcon,
 	XIcon,
-	CalendarBlankIcon,
 } from "@phosphor-icons/react";
 import { useContextStore } from "@/stores";
 import { useOrganizationUsers } from "@/features/organizations/api";
 import { useProjects } from "@/features/projects/api";
 import { useProjectEnvironments } from "@/features/environments/api";
 import UserAvatar from "#/components/user/user-avatar";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 
 export interface AuditFilters {
 	entityType?: string;
@@ -95,13 +90,6 @@ const ACTION_TYPES = [
 	"MBR_INVITE",
 	"MBR_REMOVE",
 	"MBR_ROLE_CHANGE",
-];
-
-const DATE_RANGE_PRESETS = [
-	{ label: "Today", days: 0 },
-	{ label: "Last 24 Hours", days: 1 },
-	{ label: "Last 7 Days", days: 7 },
-	{ label: "Last 30 Days", days: 30 },
 ];
 
 export function AuditFilter({ filters, onChange }: AuditFilterProps) {
@@ -216,14 +204,6 @@ export function AuditFilter({ filters, onChange }: AuditFilterProps) {
 	const selectedProject = projects.find((p) => p.id === filters.projectId);
 	const selectedEnv = envs.find((e) => e.id === filters.environmentId);
 	const selectedActor = members.find((m) => m.userId === filters.actorId);
-
-	const tz = getLocalTimeZone();
-
-	const handlePreset = (days: number) => {
-		const end = today(tz);
-		const start = end.subtract({ days });
-		onChange({ ...filters, dateRange: { start, end } });
-	};
 
 	const { contains } = useFilter({ sensitivity: "base" });
 
@@ -553,83 +533,12 @@ export function AuditFilter({ filters, onChange }: AuditFilterProps) {
 					</Popover.Content>
 				</Popover>
 
-				{/* Date Range Picker */}
+				{/* Date Range Filter */}
 				<div className="w-full sm:w-80 max-w-xs">
-					<DateRangePicker
-						aria-label="Date Range Picker"
+					<DateRangeFilter
 						value={filters.dateRange ?? null}
-						onChange={(range) => onChange({ ...filters, dateRange: range })}>
-						<DateField.Group variant="secondary" fullWidth>
-							<DateField.Input slot="start">
-								{(segment) => <DateField.Segment segment={segment} />}
-							</DateField.Input>
-							<DateRangePicker.RangeSeparator />
-							<DateField.Input slot="end">
-								{(segment) => <DateField.Segment segment={segment} />}
-							</DateField.Input>
-							<DateField.Suffix>
-								<DateRangePicker.Trigger>
-									<CalendarBlankIcon className="size-4 text-muted-foreground" />
-								</DateRangePicker.Trigger>
-							</DateField.Suffix>
-						</DateField.Group>
-						<DateRangePicker.Popover>
-							<div className="flex flex-col sm:flex-row">
-								<div className="flex flex-col gap-2 pr-2 sm:border-r border-default-200">
-									<span className="text-sm font-medium text-foreground mb-1">
-										Presets
-									</span>
-									{DATE_RANGE_PRESETS.map((preset) => (
-										<Button
-											key={preset.label}
-											size="sm"
-											variant="outline"
-											className="justify-start"
-											onPress={() => handlePreset(preset.days)}>
-											{preset.label}
-										</Button>
-									))}
-									<Button
-										size="sm"
-										variant="ghost"
-										className="justify-center mt-auto hover:text-danger hover:bg-danger-soft transition"
-										fullWidth
-										onPress={() => onChange({ ...filters, dateRange: null })}>
-										Clear Range
-									</Button>
-								</div>
-								<RangeCalendar aria-label="Date Range" className="p-2">
-									<RangeCalendar.Header>
-										<RangeCalendar.YearPickerTrigger>
-											<RangeCalendar.YearPickerTriggerHeading />
-											<RangeCalendar.YearPickerTriggerIndicator />
-										</RangeCalendar.YearPickerTrigger>
-										<RangeCalendar.NavButton slot="previous" />
-										<RangeCalendar.NavButton slot="next" />
-									</RangeCalendar.Header>
-									<RangeCalendar.Grid>
-										<RangeCalendar.GridHeader>
-											{(day) => (
-												<RangeCalendar.HeaderCell>
-													{day}
-												</RangeCalendar.HeaderCell>
-											)}
-										</RangeCalendar.GridHeader>
-										<RangeCalendar.GridBody>
-											{(date) => <RangeCalendar.Cell date={date} />}
-										</RangeCalendar.GridBody>
-									</RangeCalendar.Grid>
-									<RangeCalendar.YearPickerGrid>
-										<RangeCalendar.YearPickerGridBody>
-											{({ year }) => (
-												<RangeCalendar.YearPickerCell year={year} />
-											)}
-										</RangeCalendar.YearPickerGridBody>
-									</RangeCalendar.YearPickerGrid>
-								</RangeCalendar>
-							</div>
-						</DateRangePicker.Popover>
-					</DateRangePicker>
+						onChange={(range) => onChange({ ...filters, dateRange: range })}
+					/>
 				</div>
 			</div>
 

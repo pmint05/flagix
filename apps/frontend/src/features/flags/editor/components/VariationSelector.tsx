@@ -10,6 +10,7 @@ import {
 } from "@heroui/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import { VariationDot } from "@/components/ui/VariationDot";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface VariationSelectorProps {
 	flag: FeatureFlag;
@@ -33,6 +34,7 @@ export function VariationSelector({
 		control: formContext?.control,
 	});
 	const variations = watchedVariations || flag.variations || [];
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const getFieldError = () => {
 		if (!name || !formContext) return null;
@@ -54,6 +56,7 @@ export function VariationSelector({
 				selectedKey={val}
 				onSelectionChange={(v) => onValChange(v as string)}
 				className={cn("w-fit", className)}
+				isDisabled={!canEditFlags}
 				isInvalid={!!fieldError}>
 				<Autocomplete.Trigger className="min-h-4 py-1 px-1.5">
 					<Autocomplete.Value />

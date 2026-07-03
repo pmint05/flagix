@@ -12,6 +12,7 @@ import { FlagChangeEventType } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { EvaluationService } from '../evaluation/evaluation.service';
+import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
 import type { EvaluationContext, FeatureFlagListQuery } from '@flagix/shared';
 import {
   resolveFlagAction,
@@ -58,6 +59,7 @@ export class FeatureFlagsService {
     private readonly evaluationService: EvaluationService,
     @Optional() private readonly flagChangePublisher?: FlagChangePublisher,
     @Optional() private readonly auditLogsService?: AuditLogsService,
+    @Optional() private readonly cache?: FlagConfigCacheService,
   ) {}
 
   async create(orgId: string, projectId: string, dto: CreateFeatureFlagDto) {
@@ -140,7 +142,7 @@ export class FeatureFlagsService {
         this.flagChangePublisher.publish(env.id, {
           type: 'flag.created',
           flagKey: flag.key,
-          environmentId: env.id,
+          // environmentId: env.id,
           timestamp: new Date().toISOString(),
           metadata: {
             version: flag.version,
@@ -301,7 +303,7 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type,
         flagKey: flag.key,
-        environmentId: envId,
+        // environmentId: envId,
         timestamp: new Date().toISOString(),
         metadata: {
           version: updated.version,
@@ -323,6 +325,8 @@ export class FeatureFlagsService {
         sanitize: sanitizeState,
       });
     }
+
+    this.cache?.invalidateFlag(envId, flag.key);
 
     return updated;
   }
@@ -550,7 +554,7 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type: 'flag.updated',
         flagKey: updated.key,
-        environmentId: envId,
+        // environmentId: envId,
         timestamp: new Date().toISOString(),
         metadata: {
           version: updated.version,
@@ -558,6 +562,8 @@ export class FeatureFlagsService {
         },
       });
     }
+
+    this.cache?.invalidateFlag(envId, updated.key);
 
     return this.findOne(orgId, flagId, envId);
   }
@@ -579,6 +585,7 @@ export class FeatureFlagsService {
       flag.key,
       context,
       flagConfig,
+      flag.projectId,
     );
   }
 
@@ -603,6 +610,13 @@ export class FeatureFlagsService {
         resolveAction: resolveFlagAction,
         sanitize: sanitizeFlag,
       });
+    }
+
+    if (this.cache) {
+      const states = await this.flagRepo.findFlagStatesForFlag(flagId);
+      for (const state of states) {
+        this.cache.invalidateFlag(state.environmentId, flag.key);
+      }
     }
 
     return { success: true };

@@ -17,7 +17,6 @@ export const VIEWER_PERMISSIONS: Permission[] = [
 	"project:view",
 	"flag:view",
 	"environment:view",
-	"audit-log:view",
 	"organization:view",
 	"member:view",
 ];

@@ -13,6 +13,7 @@ import {
 } from "@heroui/react";
 import { useCreateOrganization, useUpdateOrganization } from "./api";
 import type { Organization } from "@/types";
+import { ActionButton } from "#/components/ui/action-button";
 
 const organizationFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
@@ -26,7 +27,11 @@ interface OrganizationModalProps {
 	organization?: Organization;
 }
 
-export function OrganizationModal({ isOpen, onClose, organization }: OrganizationModalProps) {
+export function OrganizationModal({
+	isOpen,
+	onClose,
+	organization,
+}: OrganizationModalProps) {
 	const isEditing = !!organization;
 	const createOrganization = useCreateOrganization();
 	const updateOrganization = useUpdateOrganization();
@@ -57,7 +62,9 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 			onClose();
 		} catch {
 			toast.danger(
-				isEditing ? "Failed to update organization" : "Failed to create organization",
+				isEditing
+					? "Failed to update organization"
+					: "Failed to create organization",
 			);
 		}
 	};
@@ -79,6 +86,7 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 									control={control}
 									render={({ field }) => (
 										<TextField
+											autoFocus
 											isInvalid={!!errors.name}
 											variant="secondary"
 											value={field.value}
@@ -97,14 +105,19 @@ export function OrganizationModal({ isOpen, onClose, organization }: Organizatio
 									<Button variant="ghost" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button
+									<ActionButton
+										isPending={
+											createOrganization.isPending ||
+											updateOrganization.isPending
+										}
 										type="submit"
 										variant="primary"
 										isDisabled={
-											createOrganization.isPending || updateOrganization.isPending
+											createOrganization.isPending ||
+											updateOrganization.isPending
 										}>
 										{isEditing ? "Update" : "Create"}
-									</Button>
+									</ActionButton>
 								</Drawer.Footer>
 							</Form>
 						</Drawer.Body>

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, and, isNull, inArray } from 'drizzle-orm';
-import { projects, environments, featureFlags, variations, targetingRules, sdkKeys, flagStates } from '@/db/schema';
+import { projects, environments, featureFlags, variations, targetingRules, sdkKeys, flagStates, user } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import type { CreateProjectDto } from './dto/create-project.dto';
 import type { UpdateProjectDto } from './dto/update-project.dto';
+import { alias } from 'drizzle-orm/pg-core';
 
 @Injectable()
 export class ProjectsRepository {
@@ -20,12 +21,37 @@ export class ProjectsRepository {
   }
 
   async findAllForOrg(orgId: string) {
-    return this.db
-      .select()
+    const creator = alias(user, 'creator');
+    const updater = alias(user, 'updater');
+
+    const rows = await this.db
+      .select({
+        project: projects,
+        creator: {
+          id: creator.id,
+          name: creator.name,
+          email: creator.email,
+          image: creator.image,
+        },
+        updater: {
+          id: updater.id,
+          name: updater.name,
+          email: updater.email,
+          image: updater.image,
+        },
+      })
       .from(projects)
+      .leftJoin(creator, eq(projects.createdBy, creator.id))
+      .leftJoin(updater, eq(projects.updatedBy, updater.id))
       .where(
         and(eq(projects.organizationId, orgId), isNull(projects.deletedAt)),
       );
+
+    return rows.map((r) => ({
+      ...r.project,
+      creator: r.creator?.id ? r.creator : null,
+      updater: r.updater?.id ? r.updater : null,
+    }));
   }
 
   async findByOrgAndSlug(orgId: string, slug: string) {

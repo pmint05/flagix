@@ -12,12 +12,14 @@ import {
 	Drawer,
 	toast,
 } from "@heroui/react";
-import { useCreateProject, useUpdateProject, useProjects } from "./api";
+import { useCreateProject, useUpdateProject } from "./api";
 import { useContextStore } from "@/stores";
 import type { Project } from "@/types/project";
 import { slugify } from "#/lib/utils";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { ActionButton } from "#/components/ui/action-button";
 
 const projectFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
@@ -41,8 +43,8 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	const isEditing = !!project;
 	const createProject = useCreateProject();
 	const updateProject = useUpdateProject();
-	const { data: projects } = useProjects();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const organizationId = useContextStore((s) => s.selectedOrganization?.id);
 
 	const {
@@ -62,11 +64,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
 			if (isEditing) {
-				await updateProject.mutateAsync({
+				const updated = await updateProject.mutateAsync({
 					id: project.id,
 					...data,
 				});
 				toast.success("Project updated successfully");
+				
+				const currentSelected = useContextStore.getState().selectedProject;
+				if (currentSelected && currentSelected.id === project.id) {
+					useContextStore.getState().setProject(updated);
+				}
 			} else {
 				if (!organizationId) {
 					toast.danger("No organization selected");
@@ -75,13 +82,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 				const newProject = await createProject.mutateAsync(data);
 				toast.success("Project created successfully");
 
-				if (!projects || projects.length === 0) {
-					useContextStore.getState().setProject(newProject);
-					void navigate({
-						to: "/projects/$projectSlug/flags",
-						params: { projectSlug: newProject.slug },
-					});
-				}
+				// Invalidate all child queries for safety
+				queryClient.invalidateQueries({ queryKey: ["environments"] });
+				queryClient.invalidateQueries({ queryKey: ["flags"] });
+				queryClient.invalidateQueries({ queryKey: ["sdk-keys"] });
+
+				useContextStore.getState().setProject(newProject);
+				void navigate({
+					to: "/projects/$projectSlug/flags",
+					params: { projectSlug: newProject.slug },
+				});
 			}
 			onClose();
 		} catch {
@@ -108,6 +118,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 									control={control}
 									render={({ field }) => (
 										<TextField
+											autoFocus
 											isInvalid={!!errors.name}
 											variant="secondary"
 											value={field.value}
@@ -171,17 +182,19 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 										Cancel
 									</Button>
 									<PermissionGuard
-										permission={isEditing ? ("project:edit") : ("project:create")}
+										permission={isEditing ? "project:edit" : "project:create"}
 										mode="disable">
-										<Button
+										<ActionButton
 											type="submit"
 											variant="primary"
 											isDisabled={
-												createProject.isPending ||
-												updateProject.isPending
+												createProject.isPending || updateProject.isPending
+											}
+											isPending={
+												createProject.isPending || updateProject.isPending
 											}>
 											{isEditing ? "Update" : "Create"}
-										</Button>
+										</ActionButton>
 									</PermissionGuard>
 								</Drawer.Footer>
 							</Form>

@@ -1,5 +1,6 @@
 import { EvaluationResult, EvaluationContext } from '@flagix/shared';
 
+export type { EvaluationContext, EvaluationResult } from '@flagix/shared';
 export * from '@flagix/shared';
 
 export interface FlagixConfig {

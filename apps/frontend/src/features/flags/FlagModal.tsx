@@ -38,6 +38,7 @@ import {
 import { useCreateFlag } from "./api";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { VariationDot } from "@/components/ui/VariationDot";
+import { ActionButton } from "#/components/ui/action-button";
 
 const flagFormSchema = z
 	.object({
@@ -314,6 +315,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 						<Modal.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 								<TextField
+									autoFocus
 									variant="secondary"
 									isRequired
 									isInvalid={!!errors.key}>
@@ -656,12 +658,13 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 										Cancel
 									</Button>
 									<PermissionGuard permission="flag:create" mode="disable">
-										<Button
+										<ActionButton
+											isPending={createFlag.isPending}
 											type="submit"
 											variant="primary"
 											isDisabled={createFlag.isPending}>
 											Create Flag
-										</Button>
+										</ActionButton>
 									</PermissionGuard>
 								</Modal.Footer>
 							</Form>

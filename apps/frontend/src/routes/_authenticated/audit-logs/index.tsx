@@ -13,12 +13,32 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { ColumnsIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useThemeStore } from "#/stores";
 
-export const Route = createFileRoute("/_authenticated/audit-logs")({
-	component: AuditLogsIndex,
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+
+export const Route = createFileRoute("/_authenticated/audit-logs/")({
+	component: AuditLogsRoute,
 	staticData: {
 		hideEnvironmentSwitcher: true,
 	},
 });
+
+function AuditLogsRoute() {
+	return (
+		<PermissionGuard
+			permission="audit-log:view"
+			mode="hide"
+			fallback={
+				<div className="flex flex-col items-center justify-center h-[50vh] text-center p-6">
+					<h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+					<p className="text-default-500 max-w-sm">
+						You do not have permission to view audit logs. Please contact your organization administrator.
+					</p>
+				</div>
+			}>
+			<AuditLogsIndex />
+		</PermissionGuard>
+	);
+}
 
 const ALL_COLUMNS = [
 	{ id: "timestamp", label: "Timestamp" },
@@ -195,20 +215,6 @@ function AuditLogsIndex() {
 		};
 	}, [filters]);
 
-	const hasAnyFilter =
-		Object.values(filters).some((v) => v !== undefined && v !== "") ||
-		searchQuery !== "";
-
-	const handleClearAll = () => {
-		setSearchQuery("");
-		updateTableState({
-			query: "",
-			filters: {
-				visibleColumns: filters.visibleColumns,
-			},
-		});
-	};
-
 	const columns = useMemo(
 		() =>
 			createAuditLogColumns((log) => {
@@ -261,8 +267,7 @@ function AuditLogsIndex() {
 														},
 													});
 												}}
-												variant="secondary"
-												>
+												variant="secondary">
 												<Checkbox.Content>
 													<Checkbox.Control>
 														<Checkbox.Indicator />

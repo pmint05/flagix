@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	PlusIcon,
 	TrashIcon,
@@ -14,6 +14,7 @@ import {
 	EyeSlashIcon,
 	FadersIcon,
 	XIcon,
+	TrayIcon,
 } from "@phosphor-icons/react";
 import {
 	Chip,
@@ -23,7 +24,6 @@ import {
 	TableCell,
 	Tooltip,
 	SearchField,
-	EmptyState,
 	Input,
 	Select,
 	ListBox,
@@ -51,6 +51,9 @@ import { formatDistanceToNow } from "date-fns";
 import { formatDate } from "#/lib/date";
 import UserAvatar from "#/components/user/user-avatar";
 import CopyButton from "#/components/ui/copy-button";
+import { useEnvironments } from "@/features/environments/api";
+import { useHasPermission } from "@/hooks/usePermission";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 function KeyInputCell({ sdkKey }: { sdkKey: SdkKey }) {
 	const [revealed, setRevealed] = useState(false);
@@ -113,6 +116,8 @@ export const Route = createFileRoute(
 });
 
 function SdkKeysPage() {
+	const { projectSlug } = Route.useParams();
+	const navigate = useNavigate();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isDisplayOpen, setIsDisplayOpen] = useState(false);
 	const [displayedKey, setDisplayedKey] = useState<CreateSdkKeyResponse | null>(
@@ -130,10 +135,15 @@ function SdkKeysPage() {
 	>("all");
 	const [isSnippetOpen, setIsSnippetOpen] = useState(false);
 
+	const { data: environments, isPending: isEnvironmentsPending } = useEnvironments();
 	const { data: keys, isPending } = useSdkKeys();
 	const createMutation = useCreateSdkKey();
 	const toggleMutation = useToggleActiveSdkKey();
 	const revokeMutation = useRevokeSdkKey();
+	const canCreateKey = useHasPermission("sdk-key:create");
+
+	const hasEnvironments = !!environments && environments.length > 0;
+	const isTableLoading = isEnvironmentsPending || (isPending && hasEnvironments);
 
 	const handleCreate = (data: CreateSdkKeyInput) => {
 		createMutation.mutate(data, {
@@ -229,6 +239,7 @@ function SdkKeysPage() {
 					<Button
 						variant="primary"
 						className="gap-2"
+						isDisabled={!hasEnvironments}
 						onPress={() => setIsCreateOpen(true)}>
 						<PlusIcon className="h-4 w-4" />
 						Generate Key
@@ -423,7 +434,7 @@ function SdkKeysPage() {
 				</div>
 			)}
 
-			{isPending ? (
+			{isTableLoading ? (
 				<div className="space-y-3">
 					{Array.from({ length: 3 }).map((_, i) => (
 						<Skeleton key={i} className="h-14 w-full rounded-lg" />
@@ -445,46 +456,46 @@ function SdkKeysPage() {
 							</Table.Header>
 							<Table.Body
 								items={filteredKeys}
-								renderEmptyState={() => (
-									<EmptyState title="No SDK Keys Found" className="min-h-32">
-										{!keyList.length && (
-											<div className="text-center flex flex-col items-center gap-2">
-												<h3 className="font-semibold text-foreground">
-													No SDK Keys Found
-												</h3>
-												<p>Generate a new SDK key to get started.</p>
-												<PermissionGuard
-													permission="sdk-key:create"
-													mode="disable"
-													fallback={
-														<Button variant="primary" isDisabled>
-															<PlusIcon className="h-4 w-4" />
-															Generate Key
-														</Button>
-													}>
-													<Button
-														variant="primary"
-														onPress={() => setIsCreateOpen(true)}
-														className="gap-2">
-														<PlusIcon className="h-4 w-4" />
-														Generate Key
-													</Button>
-												</PermissionGuard>
-											</div>
-										)}
-										{filteredKeys.length === 0 && keyList.length > 0 && (
-											<div className="text-center flex flex-col items-center gap-2">
-												<h3 className="font-semibold text-foreground">
-													No SDK Keys Match Your Filters
-												</h3>
-												<p>
-													Try adjusting your search or filter settings to find
-													what you're looking for.
-												</p>
-											</div>
-										)}
-									</EmptyState>
-								)}>
+								renderEmptyState={() => {
+									if (!hasEnvironments) {
+										return (
+											<EmptyState
+												icon={<TrayIcon className="size-8 text-muted" weight="duotone" />}
+												title="No Environments Found"
+												description="You need to create at least one environment before you can manage or generate SDK keys."
+												actionLabel="Go to Environments"
+												onAction={() =>
+													navigate({
+														to: "/projects/$projectSlug/environments",
+														params: { projectSlug },
+													})
+												}
+												actionVariant="primary"
+											/>
+										);
+									}
+
+									if (!keyList.length) {
+										return (
+											<EmptyState
+												icon={<TrayIcon className="size-8" weight="duotone" />}
+												title="No SDK Keys Found"
+												description="Generate a new SDK key to get started."
+												actionLabel={canCreateKey ? "Generate Key" : undefined}
+												onAction={canCreateKey ? () => setIsCreateOpen(true) : undefined}
+												actionVariant="primary"
+											/>
+										);
+									}
+
+									return (
+										<EmptyState
+											icon={<TrayIcon className="size-8" weight="duotone" />}
+											title="No SDK Keys Match Your Filters"
+											description="Try adjusting your search or filter settings to find what you're looking for."
+										/>
+									);
+								}}>
 								{(key) => (
 									<Table.Row key={key.id}>
 										<Table.Cell>

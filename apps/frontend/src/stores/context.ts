@@ -16,8 +16,25 @@ export const useContextStore = createPersistedStore<ContextState>(
 		selectedOrganization: null,
 		selectedProject: null,
 		selectedEnvironment: null,
-		setOrganization: (org) => set({ selectedOrganization: org }),
-		setProject: (project) => set({ selectedProject: project }),
+		setOrganization: (org) => set((state) => {
+			if (state.selectedOrganization?.id !== org?.id) {
+				return {
+					selectedOrganization: org,
+					selectedProject: null,
+					selectedEnvironment: null,
+				};
+			}
+			return { selectedOrganization: org };
+		}),
+		setProject: (project) => set((state) => {
+			if (state.selectedProject?.id !== project?.id) {
+				return {
+					selectedProject: project,
+					selectedEnvironment: null,
+				};
+			}
+			return { selectedProject: project };
+		}),
 		setEnvironment: (env) => set({ selectedEnvironment: env }),
 		clearContext: () => set({
 			selectedOrganization: null,

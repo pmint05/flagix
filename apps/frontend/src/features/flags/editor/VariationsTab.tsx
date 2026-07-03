@@ -23,6 +23,7 @@ import {
 import type { FlagEditorFormValues } from "./schema";
 
 import { VariationDot } from "@/components/ui/VariationDot";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface VariationsTabProps {
 	flag: FeatureFlag;
@@ -86,6 +87,7 @@ function VariationInput({
 interface VariationValueInputProps {
 	value: string;
 	onChange: (val: string) => void;
+	readOnly?: boolean;
 	error?: any;
 	placeholder?: string;
 }
@@ -93,6 +95,7 @@ interface VariationValueInputProps {
 function VariationValueInput({
 	value,
 	onChange,
+	readOnly,
 	error,
 	placeholder,
 }: VariationValueInputProps) {
@@ -107,6 +110,7 @@ function VariationValueInput({
 			<InputGroup>
 				<InputGroup.Input
 					value={localVal}
+					readOnly={readOnly}
 					onKeyDown={(e) => {
 						if (e.key === "Enter") {
 							e.preventDefault();
@@ -131,12 +135,14 @@ function VariationValueInput({
 interface VariationTextAreaProps {
 	value: string;
 	onChange: (val: string) => void;
+	readOnly?: boolean;
 	placeholder?: string;
 }
 
 function VariationTextArea({
 	value,
 	onChange,
+	readOnly,
 	placeholder,
 }: VariationTextAreaProps) {
 	const [localVal, setLocalVal] = useState(value || "");
@@ -150,6 +156,7 @@ function VariationTextArea({
 			<TextArea
 				placeholder={placeholder}
 				value={localVal}
+				readOnly={readOnly}
 				onChange={(e) => setLocalVal(e.target.value)}
 				onBlur={() => {
 					if (localVal !== value) {
@@ -165,6 +172,7 @@ function VariationTextArea({
 
 export function VariationsTab({ flag }: VariationsTabProps) {
 	const { control } = useFormContext<FlagEditorFormValues>();
+	const canEditFlags = useHasPermission("flag:edit");
 	const { fields, append, remove } = useFieldArray({
 		control,
 		name: "variations",
@@ -242,7 +250,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 														<VariationInput
 															value={keyField.value || ""}
 															onChange={keyField.onChange}
-															readOnly={isBoolean}
+															readOnly={isBoolean || !canEditFlags}
 															error={fieldState.error}
 															placeholder="Key (Optional)"
 															className={
@@ -266,7 +274,8 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																				<Popover.Trigger>
 																					<button
 																						type="button"
-																						className="p-1 -ml-1.5 rounded-full hover:bg-default-100 flex items-center justify-center focus:outline-hidden"
+																						disabled={!canEditFlags}
+																						className="p-1 -ml-1.5 rounded-full hover:bg-default-100 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center focus:outline-hidden"
 																						aria-label="Change color">
 																						<VariationDot
 																							color={colorField.value}
@@ -352,6 +361,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																		: ""
 																}
 																onChange={valField.onChange}
+																readOnly={!canEditFlags}
 																error={fieldState.error}
 																placeholder="Value"
 															/>
@@ -367,6 +377,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 														<VariationTextArea
 															value={descField.value || ""}
 															onChange={descField.onChange}
+															readOnly={!canEditFlags}
 															placeholder="Description"
 														/>
 													)}
@@ -383,11 +394,13 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																	size="sm"
 																	isDisabled={
 																		field.id === defaultVariationId ||
-																		field.id === offVariationId
+																		field.id === offVariationId ||
+																		!canEditFlags
 																	}
 																	className={
 																		field.id === defaultVariationId ||
-																		field.id === offVariationId
+																		field.id === offVariationId ||
+																		!canEditFlags
 																			? "opacity-30 cursor-not-allowed"
 																			: "hover:bg-danger/10 text-danger hover:text-danger"
 																	}
@@ -396,7 +409,9 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 																</Button>
 															</Tooltip.Trigger>
 															<Tooltip.Content>
-																{field.id === defaultVariationId
+																{!canEditFlags
+																	? "Cannot delete in read-only mode"
+																	: field.id === defaultVariationId
 																	? "Cannot delete - this is the default variation"
 																	: field.id === offVariationId
 																		? "Cannot delete - this is the off variation (clear it first)"
@@ -420,7 +435,7 @@ export function VariationsTab({ flag }: VariationsTabProps) {
 										</Table.Cell>
 									</Table.Row>
 								)} */}
-								{!isBoolean && (
+								{!isBoolean && canEditFlags && (
 									<Table.Row>
 										<Table.Cell colSpan={4} className="p-0">
 											<div className="px-3 flex justify-center">

@@ -17,6 +17,9 @@ export class FlagixClient {
   private readinessSubscribers = new Set<ReadinessCallback>();
   private isReady = false;
   private isInitialized = false;
+  private pendingFetch: Promise<void> | null = null;
+  private snapshot: Record<string, EvaluationResult> = {};
+  private static readonly EMPTY_FLAGS: Record<string, EvaluationResult> = {};
 
   constructor(config: FlagixConfig) {
     this.config = config;
@@ -111,23 +114,33 @@ export class FlagixClient {
    */
   private async fetchFlags(flagKey?: string): Promise<void> {
     if (!this.context) return;
-    
-    try {
-      if (flagKey) {
-        const result = await this.evaluationClient.evaluateFlag(flagKey, this.context);
-        const currentFlags = this.cacheManager.getFlags(this.contextHash) || {};
-        currentFlags[flagKey] = result;
-        await this.cacheManager.save(currentFlags, this.contextHash);
-        this.notifySubscribers(currentFlags);
-      } else {
-        const flags = await this.evaluationClient.evaluateAll(this.context);
-        await this.cacheManager.save(flags, this.contextHash);
-        this.notifySubscribers(flags);
-      }
-    } catch (e) {
-      // Principle VI: Fail-Safe Principle. Log but don't propagate.
-      console.error('Flagix: Failed to fetch flags', e);
+
+    if (this.pendingFetch) {
+      await this.pendingFetch;
+      return;
     }
+
+    this.pendingFetch = (async () => {
+      try {
+        if (flagKey) {
+          const result = await this.evaluationClient.evaluateFlag(flagKey, this.context!);
+          const currentFlags = this.cacheManager.getFlags(this.contextHash) || {};
+          currentFlags[flagKey] = result;
+          await this.cacheManager.save(currentFlags, this.contextHash);
+          this.notifySubscribers(currentFlags);
+        } else {
+          const flags = await this.evaluationClient.evaluateAll(this.context!);
+          await this.cacheManager.save(flags, this.contextHash);
+          this.notifySubscribers(flags);
+        }
+      } catch (e) {
+        console.error('Flagix: Failed to fetch flags', e);
+      } finally {
+        this.pendingFetch = null;
+      }
+    })();
+
+    await this.pendingFetch;
   }
 
   /**
@@ -169,8 +182,8 @@ export class FlagixClient {
    * Retrieves all currently evaluated flags.
    */
   getAllFlags(): Record<string, EvaluationResult> {
-    if (!this.isInitialized) return {};
-    return this.cacheManager.getFlags(this.contextHash) || {};
+    if (!this.isInitialized) return FlagixClient.EMPTY_FLAGS;
+    return this.snapshot;
   }
 
   /**
@@ -215,6 +228,7 @@ export class FlagixClient {
   }
 
   private notifySubscribers(flags: Record<string, EvaluationResult>): void {
+    this.snapshot = { ...flags };
     this.subscribers.forEach((cb) => {
       try {
         cb(flags);

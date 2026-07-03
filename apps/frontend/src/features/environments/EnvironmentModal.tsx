@@ -19,6 +19,7 @@ import { useContextStore } from "@/stores";
 import type { Environment } from "@/types/environment";
 import { ApiError } from "#/lib/errors";
 import { ENV_TYPES } from "./constants";
+import { ActionButton } from "#/components/ui/action-button";
 
 const envFormSchema = z.object({
 	name: z.string().trim().min(1, "Name is required").max(255),
@@ -110,6 +111,7 @@ export function EnvironmentModal({
 									control={control}
 									render={({ field }) => (
 										<TextField
+											autoFocus
 											isInvalid={!!errors.name}
 											variant="secondary"
 											value={field.value}
@@ -178,14 +180,17 @@ export function EnvironmentModal({
 									<Button variant="outline" onPress={onClose}>
 										Cancel
 									</Button>
-									<Button
+									<ActionButton
 										type="submit"
 										variant="primary"
 										isDisabled={
 											createEnvironment.isPending || updateEnvironment.isPending
+										}
+										isPending={
+											createEnvironment.isPending || updateEnvironment.isPending
 										}>
 										{isEditing ? "Update" : "Create"}
-									</Button>
+									</ActionButton>
 								</Drawer.Footer>
 							</Form>
 						</Drawer.Body>

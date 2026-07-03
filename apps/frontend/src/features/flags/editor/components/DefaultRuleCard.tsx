@@ -12,6 +12,7 @@ import { HexagonIcon } from "@phosphor-icons/react";
 import type { FeatureFlag } from "@/types/feature-flag";
 import type { FlagEditorFormValues } from "../schema";
 import { getVariationColorClass } from "@/lib/variation-colors";
+import { useHasPermission } from "@/hooks/usePermission";
 
 interface DefaultRuleCardProps {
 	flag: FeatureFlag;
@@ -24,8 +25,7 @@ export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
 	} = useFormContext<FlagEditorFormValues>();
 	const isFlagOn = useWatch({ name: "isFlagOn", control });
 	const offVariationId = useWatch({ name: "offVariationId", control });
-	const variations = useWatch({ name: "variations", control }) || [];
-	const defaultVariationId = useWatch({ name: "defaultVariationId", control });
+	const canEditFlags = useHasPermission("flag:edit");
 
 	const isResolvingToOff = !isFlagOn && !!offVariationId;
 
@@ -47,7 +47,7 @@ export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
 								flag={flag}
 								value={field.value}
 								onChange={field.onChange}
-								isDisabled={isResolvingToOff}
+								isDisabled={isResolvingToOff || !canEditFlags}
 								isInvalid={!!errors.defaultVariationId}
 							/>
 							{errors.defaultVariationId && (
