@@ -4,11 +4,11 @@ import {
 	XAxis,
 	YAxis,
 	CartesianGrid,
-	Tooltip,
 	ResponsiveContainer,
 	Legend,
 } from "recharts";
 import { ChartTooltip } from "./ChartTooltip";
+import { getVariationChartColor, resolveVariationColor } from "./chart-colors";
 
 interface TrendDataPoint {
 	timestamp: string;
@@ -18,20 +18,17 @@ interface TrendDataPoint {
 
 interface EvaluationTrendChartProps {
 	data: TrendDataPoint[];
+	variationColors?: Record<string, string | null>;
 }
 
-const COLORS = [
-	"#22c55e",
-	"#ef4444",
-	"#3b82f6",
-	"#f59e0b",
-	"#8b5cf6",
-	"#ec4899",
-	"#06b6d4",
-	"#84cc16",
-];
+function getColor(key: string, colors?: Record<string, string | null>): string {
+	return resolveVariationColor(colors?.[key]) ?? getVariationChartColor(key);
+}
 
-export function EvaluationTrendChart({ data }: EvaluationTrendChartProps) {
+export function EvaluationTrendChart({
+	data,
+	variationColors,
+}: EvaluationTrendChartProps) {
 	if (data.length === 0) {
 		return (
 			<div className="flex items-center justify-center h-64 text-default-400 text-sm">
@@ -96,17 +93,20 @@ export function EvaluationTrendChart({ data }: EvaluationTrendChartProps) {
 					<YAxis tick={{ fontSize: 11 }} />
 					<ChartTooltip />
 					<Legend />
-					{variationKeys.map((vk, i) => (
-						<Area
-							key={vk}
-							type="monotone"
-							dataKey={vk}
-							stackId="1"
-							stroke={COLORS[i % COLORS.length]}
-							fill={COLORS[i % COLORS.length]}
-							fillOpacity={0.3}
-						/>
-					))}
+					{variationKeys.map((vk) => {
+						const color = getColor(vk, variationColors);
+						return (
+							<Area
+								key={vk}
+								type="monotone"
+								dataKey={vk}
+								stackId="1"
+								stroke={color}
+								fill={color}
+								fillOpacity={0.3}
+							/>
+						);
+					})}
 				</AreaChart>
 			</ResponsiveContainer>
 		</div>

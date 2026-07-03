@@ -34,15 +34,24 @@ export function FlagAnalytics({ flag }: FlagAnalyticsProps) {
 			const todayDate = today(tz);
 			return { start: todayDate.subtract({ days: 7 }), end: todayDate };
 		},
-  );
+	);
 
-  const range = useMemo(() => calendarRangeToIso(dateRange), [dateRange]);
+	const range = useMemo(() => calendarRangeToIso(dateRange), [dateRange]);
 
-  const { data, isPending, isError, refetch } = useFlagAnalytics(
-    flag.id,
-    range,
-    currentEnv?.id,
-  );
+	const { data, isPending, isError, refetch } = useFlagAnalytics(
+		flag.id,
+		range,
+		currentEnv?.id,
+	);
+
+	const variationColors = useMemo(() => {
+		if (!data) return {} as Record<string, string | null>;
+		const map: Record<string, string | null> = {};
+		for (const d of data.variationDistribution) {
+			map[d.variationKey] = d.color;
+		}
+		return map;
+	}, [data?.variationDistribution]);
 
 	if (isPending) {
 		return (
@@ -154,7 +163,10 @@ export function FlagAnalytics({ flag }: FlagAnalyticsProps) {
 							<h4 className="text-sm font-medium text-foreground mb-4">
 								Evaluation Trend
 							</h4>
-							<EvaluationTrendChart data={data.evaluationTrend} />
+							<EvaluationTrendChart
+								data={data.evaluationTrend}
+								variationColors={variationColors}
+							/>
 						</Card>
 						<Card className="p-4">
 							<h4 className="text-sm font-medium text-foreground mb-4">

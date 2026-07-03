@@ -5,6 +5,7 @@ import {
   evaluationStatsHourly,
   featureFlags,
   environments,
+  variations,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -31,6 +32,7 @@ export interface FlagAnalyticsResult {
     variationKey: string;
     count: number;
     percentage: number;
+    color: string | null;
   }[];
   byEnvironment: {
     environmentId: string;
@@ -74,6 +76,16 @@ export class EvaluationAnalyticsService {
     });
 
     if (!flag) throw new Error('Flag not found');
+
+    const flagVariations = await this.db
+      .select({ key: variations.key, color: variations.color })
+      .from(variations)
+      .where(eq(variations.featureFlagId, flag.id));
+
+    const colorMap = new Map<string, string | null>();
+    for (const v of flagVariations) {
+      colorMap.set(v.key, v.color);
+    }
 
     const conditions = [
       eq(evaluationEvents.organizationId, orgId),
@@ -156,6 +168,7 @@ export class EvaluationAnalyticsService {
         variationKey,
         count,
         percentage: totalEvaluations > 0 ? (count / totalEvaluations) * 100 : 0,
+        color: colorMap.get(variationKey) ?? null,
       }));
 
     let byEnv: { environmentId: string; environmentName: string; totalCount: number }[] = [];
@@ -330,7 +343,7 @@ export class EvaluationAnalyticsService {
   ): Promise<{
     environmentName: string;
     totalEvaluations: number;
-    flags: { flagId: string | null; flagKey: string; totalCount: number; variationDistribution: { variationKey: string; count: number; percentage: number }[] }[];
+    flags: { flagId: string | null; flagKey: string; totalCount: number; variationDistribution: { variationKey: string; count: number; percentage: number; color: string | null }[] }[];
     timeRange: { from: string; to: string };
   }> {
     const conditions = [
@@ -351,6 +364,21 @@ export class EvaluationAnalyticsService {
       })
       .from(evaluationEvents)
       .where(and(...conditions));
+
+    const flagIds = [...new Set(rows.map((r) => r.flagId).filter(Boolean))] as string[];
+    const allVariations = flagIds.length > 0
+      ? await this.db
+          .select({ flagId: variations.featureFlagId, key: variations.key, color: variations.color })
+          .from(variations)
+          .where(inArray(variations.featureFlagId, flagIds))
+      : [];
+    const variationColorMap = new Map<string, Map<string, string | null>>();
+    for (const v of allVariations) {
+      if (!variationColorMap.has(v.flagId)) {
+        variationColorMap.set(v.flagId, new Map());
+      }
+      variationColorMap.get(v.flagId)!.set(v.key, v.color);
+    }
 
     const flagMap = new Map<string, {
       flagId: string | null;
@@ -377,11 +405,15 @@ export class EvaluationAnalyticsService {
     const flags = Array.from(flagMap.entries())
       .map(([flagKey, data]) => {
         totalEvaluations += data.total;
-        const distribution = Array.from(data.variations.entries()).map(([vk, count]) => ({
-          variationKey: vk,
-          count,
-          percentage: data.total > 0 ? (count / data.total) * 100 : 0,
-        }));
+        const distribution = Array.from(data.variations.entries()).map(([vk, count]) => {
+          const flagColors = data.flagId ? variationColorMap.get(data.flagId) : undefined;
+          return {
+            variationKey: vk,
+            count,
+            percentage: data.total > 0 ? (count / data.total) * 100 : 0,
+            color: flagColors?.get(vk) ?? null,
+          };
+        });
         return {
           flagId: data.flagId,
           flagKey,

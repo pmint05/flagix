@@ -14,6 +14,7 @@ export interface FlagAnalyticsResponse {
     variationKey: string;
     count: number;
     percentage: number;
+    color: string | null;
   }[];
   byEnvironment: {
     environmentId: string;
@@ -45,7 +46,7 @@ export interface OverviewResponse {
 export interface EnvironmentAnalyticsResponse {
   environmentName: string;
   totalEvaluations: number;
-  flags: { flagId: string | null; flagKey: string; totalCount: number; variationDistribution: { variationKey: string; count: number; percentage: number }[] }[];
+  flags: { flagId: string | null; flagKey: string; totalCount: number; variationDistribution: { variationKey: string; count: number; percentage: number; color: string | null }[] }[];
   timeRange: { from: string; to: string };
 }
 
