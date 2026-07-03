@@ -1,4 +1,4 @@
-import { IsString, Length, IsOptional } from 'class-validator';
+import { IsString, Length, IsOptional, IsBoolean, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateEnvironmentDto {
@@ -7,6 +7,19 @@ export class UpdateEnvironmentDto {
   @IsString()
   @Length(1, 100)
   name?: string;
+
+  @ApiPropertyOptional({
+    enum: ['development', 'staging', 'production', 'custom'],
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['development', 'staging', 'production', 'custom'])
+  type?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()

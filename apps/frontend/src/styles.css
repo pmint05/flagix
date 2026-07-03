@@ -1,18 +1,223 @@
-
 @import "tailwindcss";
-@import "@heroui/styles"; 
+@import "@heroui/styles";
+@import "@fontsource-variable/geist/wght.css";
 
-* {
-  box-sizing: border-box;
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * HeroUI Theme Customization
+ * Add this to your global.css after importing @heroui/styles
+ * Only includes variables users need to customize
+ * @see https://heroui.com/docs/react/getting-started/theming
+ */
+
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+	/* Theme Colors (Light Mode) */
+	--accent: oklch(65.5% 0.1614 249.79);
+	--accent-foreground: oklch(99.11% 0 0);
+	--background: oklch(97.02% 0.0013 249.79);
+	--border: oklch(90% 0.0013 249.79);
+	--danger: oklch(65.32% 0.2334 25.25);
+	--danger-foreground: oklch(99.11% 0 0);
+	--default: oklch(94% 0.0013 249.79);
+	--default-foreground: oklch(21.03% 0.0059 249.79);
+	--field-background: oklch(100% 0.0006 249.79);
+	--field-border: transparent;
+	--field-foreground: oklch(21.03% 0.0013 249.79);
+	--field-placeholder: oklch(55.17% 0.0026 249.79);
+	--focus: oklch(65.5% 0.1614 249.79);
+	--foreground: oklch(21.03% 0.0013 249.79);
+	--muted: oklch(55.17% 0.0026 249.79);
+	--overlay: oklch(100% 0.0004 249.79);
+	--overlay-foreground: oklch(21.03% 0.0013 249.79);
+	--scrollbar: oklch(87.1% 0.0013 249.79);
+	--segment: oklch(100% 0.0013 249.79);
+	--segment-foreground: oklch(21.03% 0.0013 249.79);
+	--separator: oklch(92% 0.0013 249.79);
+	--success: oklch(73.29% 0.194 150.32);
+	--success-foreground: oklch(21.03% 0.0059 150.32);
+	--surface: oklch(100% 0.0006 249.79);
+	--surface-foreground: oklch(21.03% 0.0013 249.79);
+	--surface-secondary: oklch(95.24% 0.001 249.79);
+	--surface-secondary-foreground: oklch(21.03% 0.0013 249.79);
+	--surface-tertiary: oklch(93.73% 0.001 249.79);
+	--surface-tertiary-foreground: oklch(21.03% 0.0013 249.79);
+	--warning: oklch(78.19% 0.1589 71.84);
+	--warning-foreground: oklch(21.03% 0.0059 71.84);
+
+	/* Border Radius */
+	--radius: 0.25rem;
+	--field-radius: 0.5rem;
+
+	/* Font Family */
+	/* Make sure to load Geist font in your app */
+	--font-sans: "Geist", sans-serif;
+}
+
+.dark,
+[data-theme="dark"] {
+	color-scheme: dark;
+	/* Theme Colors (Dark Mode) */
+	--accent: oklch(65.5% 0.1614 249.79);
+	--accent-foreground: oklch(15% 0.03 249.79);
+	--background: oklch(12% 0.0013 249.79);
+	--border: oklch(28% 0.0013 249.79);
+	--danger: oklch(59.4% 0.1972 24.14);
+	--danger-foreground: oklch(99.11% 0 0);
+	--default: oklch(27.4% 0.0013 249.79);
+	--default-foreground: oklch(99.11% 0 0);
+	--field-background: oklch(21.03% 0.0026 249.79);
+	--field-border: transparent;
+	--field-foreground: oklch(99.11% 0.0013 249.79);
+	--field-placeholder: oklch(70.5% 0.0026 249.79);
+	--focus: oklch(65.5% 0.1614 249.79);
+	--foreground: oklch(99.11% 0.0013 249.79);
+	--muted: oklch(70.5% 0.0026 249.79);
+	--overlay: oklch(21.03% 0.0026 249.79);
+	--overlay-foreground: oklch(99.11% 0.0013 249.79);
+	--scrollbar: oklch(70.5% 0.0013 249.79);
+	--segment: oklch(39.64% 0.0013 249.79);
+	--segment-foreground: oklch(99.11% 0.0013 249.79);
+	--separator: oklch(25% 0.0013 249.79);
+	--success: oklch(73.29% 0.194 150.32);
+	--success-foreground: oklch(21.03% 0.0059 150.32);
+	--surface: oklch(21.03% 0.0026 249.79);
+	--surface-foreground: oklch(99.11% 0.0013 249.79);
+	--surface-secondary: oklch(25.7% 0.0019 249.79);
+	--surface-secondary-foreground: oklch(99.11% 0.0013 249.79);
+	--surface-tertiary: oklch(27.21% 0.0019 249.79);
+	--surface-tertiary-foreground: oklch(99.11% 0.0013 249.79);
+	--warning: oklch(82.03% 0.1392 75.85);
+	--warning-foreground: oklch(21.03% 0.0059 75.85);
+}
+
+@theme {
+	--radius-4xl: var(--radius) * 4;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
 }
 
 html,
 body,
 #app {
-  min-height: 100%;
+	min-height: 100%;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
 }
 
 body {
-  margin: 0;
+	margin: 0;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: "Geist Variable", sans-serif;
+	font-feature-settings: "cv11", "ss01";
+	font-variation-settings: "opsz" 32;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 
+svg[class*="ph-"],
+svg[class*="phosphor"] {
+	width: 1em;
+	height: 1em;
+	flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* Sidebar transition and resize handle */
+.sidebar-resize-handle {
+	width: 3px;
+	background-color: transparent;
+	cursor: col-resize;
+	transition: background-color 0.2s ease;
+	position: relative;
+	z-index: 10;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle[data-resize-handle-state="drag"] {
+	background-color: var(--focus, oklch(65.5% 0.1614 249.79));
+}
+
+.skeleton {
+	border-radius: calc(var(--radius) * 3);
+}
+
+.switch,
+.switch__content,
+.switch__control,
+.switch__thumb,
+.slider__track,
+.slider__thumb::after,
+.slider__thumb,
+.radio__control,
+.radio__indicator, .radio__indicator::before {
+	border-radius: calc(var(--radius) * 100);
+}
+
+.checkbox,
+.checkbox__content,
+.checkbox__control {
+	border-radius: calc(var(--radius) * 1.5);
+}
+
+.modal__backdrop {
+	@apply data-[entering]:duration-500 data-[entering]:ease-[cubic-bezier(0.25,1,0.5,1)] data-[exiting]:duration-200 data-[exiting]:ease-[cubic-bezier(0.5,0,0.75,0)];
+}
+
+.modal__container {
+	@apply data-[entering]:animate-in data-[entering]:fade-in-0 data-[entering]:slide-in-from-bottom-4 data-[entering]:duration-500 data-[entering]:ease-[cubic-bezier(0.25,1,0.5,1)] data-[exiting]:animate-out data-[exiting]:fade-out-0 data-[exiting]:slide-out-to-bottom-2 data-[exiting]:duration-200 data-[exiting]:ease-[cubic-bezier(0.5,0,0.75,0)];
+}
+
+.table__column-resizer {
+	@apply w-0.5 p-0 bg-border cursor-col-resize transition-colors duration-200 ease-in-out;
+}
+
+.table__column-resizer:hover {
+	@apply bg-accent
+}
+
+.recharts-responsive-container svg:focus, .recharts-responsive-container svg *:focus {
+	outline: none;
+}

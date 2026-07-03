@@ -1,0 +1,1 @@
+ALTER TABLE "targeting_rules" ALTER COLUMN "variation_id" DROP NOT NULL;

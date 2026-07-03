@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  UnauthorizedException,
   Inject,
   Injectable,
 } from '@nestjs/common';
@@ -26,7 +27,10 @@ export class OrgRolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    if (!user) throw new ForbiddenException('Not authenticated');
+    if (!user)
+      throw new UnauthorizedException(
+        'Missing or invalid session. Provide a session cookie or Authorization: Bearer <token>.',
+      );
 
     // orgId is always available in params with new URL structure
     const orgId = request.params?.organizationId ?? request.params?.orgId;
@@ -55,6 +59,8 @@ export class OrgRolesGuard implements CanActivate {
 
     if (!membership)
       throw new ForbiddenException('Not a member of this organization');
+
+    request.orgRole = membership.role;
 
     // If no metadata, just check membership
     if (!metadata) return true;

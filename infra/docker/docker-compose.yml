@@ -1,24 +1,77 @@
-version: "3.8"
+include:
+  - docker-compose.infra.yml
 
 services:
-  postgres:
-    image: postgres:18-alpine
-    container_name: flagix_postgres
+  flagix-db-init:
+    image: flagix-db-init:latest
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
+      target: db-init
+    container_name: flagix-db-init
+    depends_on:
+      flagix-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    restart: "no"
+
+  flagix-backend:
+    image: flagix-backend:latest
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
+      target: production
+    container_name: flagix-backend
     restart: always
     ports:
-      - "5432:5432"
+      - "9000:9000"
+    depends_on:
+      flagix-postgres:
+        condition: service_healthy
+      flagix-redis:
+        condition: service_healthy
+      flagix-db-init:
+        condition: service_completed_successfully
     environment:
-      POSTGRES_USER: flagix
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: flagix_dev
-    volumes:
-      - flagix_pg_data:/var/lib/postgresql
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      PORT: ${PORT}
+      WHITE_LISTED_ORIGINS: ${WHITE_LISTED_ORIGINS}
+      EVALUATION_USER_HASH_SALT: ${EVALUATION_USER_HASH_SALT}
+      EVALUATION_EVENT_RETENTION_DAYS: ${EVALUATION_EVENT_RETENTION_DAYS}
+      FLAG_CONFIG_CACHE_TTL: ${FLAG_CONFIG_CACHE_TTL}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flagix -d flagix_dev"]
-      interval: 5s
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:'+(process.env.PORT||9000)+'/',(r)=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
-volumes:
-  flagix_pg_data:
-    name: flagix_pg_data
+  flagix-frontend:
+    image: flagix-frontend:latest
+    build:
+      context: ../../
+      dockerfile: apps/frontend/Dockerfile
+      target: production
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL}
+    container_name: flagix-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      flagix-backend:
+        condition: service_healthy
+    environment:
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL}
+      INTERNAL_AUTH_BASE_URL: ${INTERNAL_AUTH_BASE_URL}

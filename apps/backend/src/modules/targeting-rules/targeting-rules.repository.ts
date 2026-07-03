@@ -34,6 +34,20 @@ export class TargetingRulesRepository {
       .orderBy(asc(targetingRules.priority));
   }
 
+  async findAllForFlagAndEnv(flagId: string, envId: string) {
+    return this.db
+      .select()
+      .from(targetingRules)
+      .where(
+        and(
+          eq(targetingRules.featureFlagId, flagId),
+          eq(targetingRules.environmentId, envId),
+          isNull(targetingRules.deletedAt),
+        ),
+      )
+      .orderBy(asc(targetingRules.priority));
+  }
+
   async findKillSwitchForFlag(flagId: string) {
     const [rule] = await this.db
       .select()
@@ -84,6 +98,7 @@ export class TargetingRulesRepository {
     input: CreateTargetingRuleDto & {
       organizationId: string;
       featureFlagId: string;
+      environmentId: string;
       priority: string;
     },
     actorId?: string,
@@ -93,6 +108,7 @@ export class TargetingRulesRepository {
       .values({
         organizationId: input.organizationId,
         featureFlagId: input.featureFlagId,
+        environmentId: input.environmentId,
         ruleType: input.ruleType,
         priority: input.priority,
         variationId: input.variationId,

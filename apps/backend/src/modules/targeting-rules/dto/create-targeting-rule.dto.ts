@@ -4,17 +4,33 @@ import {
   IsBoolean,
   IsObject,
   IsEnum,
+  ValidateIf,
+  IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTargetingRuleDto {
-  @ApiProperty({ enum: ['kill_switch', 'user', 'role', 'percentage'] })
-  @IsEnum(['kill_switch', 'user', 'role', 'percentage'])
-  ruleType!: 'kill_switch' | 'user' | 'role' | 'percentage';
-
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  variationId!: string;
+  id?: string;
+
+  @ApiProperty({
+    enum: ['kill_switch', 'user', 'role', 'percentage', 'custom'],
+  })
+  @IsEnum(['kill_switch', 'user', 'role', 'percentage', 'custom'])
+  ruleType!: 'kill_switch' | 'user' | 'role' | 'percentage' | 'custom';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  environmentId?: string;
+
+  @ApiPropertyOptional()
+  @ValidateIf((o) => o.ruleType !== 'percentage')
+  @IsString()
+  @IsNotEmpty()
+  variationId?: string;
 
   @ApiProperty()
   @IsObject()

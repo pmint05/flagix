@@ -25,6 +25,8 @@ export function useFlagixReady(): boolean {
   );
 }
 
+const EMPTY_FLAGS: Record<string, EvaluationResult> = {};
+
 /**
  * Returns all currently evaluated flags and subscribes to updates.
  */
@@ -34,7 +36,7 @@ export function useFlags(): Record<string, EvaluationResult> {
   return useSyncExternalStore(
     (callback) => client.subscribe(callback),
     () => client.getAllFlags(),
-    () => ({}) // SSR snapshot
+    () => EMPTY_FLAGS // SSR snapshot
   );
 }
 

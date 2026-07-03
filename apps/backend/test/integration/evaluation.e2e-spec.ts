@@ -11,6 +11,7 @@ import {
   environments,
   sdkKeys,
   featureFlags,
+  flagStates,
   variations,
   targetingRules,
 } from '../../src/db/schema';
@@ -60,6 +61,7 @@ describe('Evaluation API (e2e)', () => {
     const [env] = await db
       .insert(environments)
       .values({
+        organizationId: org.id,
         projectId: project.id,
         name: 'Test Env',
         slug: 'test-env',
@@ -84,15 +86,21 @@ describe('Evaluation API (e2e)', () => {
       .insert(featureFlags)
       .values({
         organizationId: org.id,
-        environmentId: env.id,
+        projectId: project.id,
         key: 'test-flag',
         name: 'Test Flag',
         flagType: 'boolean',
-        status: 'active',
-        isEnabled: true,
       })
       .returning();
     flagId = flag.id;
+
+    await db.insert(flagStates).values({
+      organizationId: org.id,
+      featureFlagId: flag.id,
+      environmentId: env.id,
+      isEnabled: true,
+      status: 'active',
+    });
 
     const [vTrue] = await db
       .insert(variations)
@@ -121,6 +129,7 @@ describe('Evaluation API (e2e)', () => {
     await db.insert(targetingRules).values({
       organizationId: org.id,
       featureFlagId: flag.id,
+      environmentId: env.id,
       ruleType: 'user',
       priority: 'b0',
       variationId: vTrue.id,
@@ -131,6 +140,7 @@ describe('Evaluation API (e2e)', () => {
     await db.insert(targetingRules).values({
       organizationId: org.id,
       featureFlagId: flag.id,
+      environmentId: env.id,
       ruleType: 'percentage',
       priority: 'd0',
       variationId: vTrue.id,
@@ -236,19 +246,26 @@ describe('Evaluation API (e2e)', () => {
     });
 
     it('should exclude draft and archived flags', async () => {
+      const orgId = (await db.select().from(organizations).limit(1))[0].id;
+      const projectId = (await db.select().from(projects).limit(1))[0].id;
       const [draftFlag] = await db
         .insert(featureFlags)
         .values({
-          organizationId: (await db.select().from(organizations).limit(1))[0]
-            .id,
-          environmentId: envId,
+          organizationId: orgId,
+          projectId,
           key: 'draft-flag',
           name: 'Draft Flag',
           flagType: 'boolean',
-          status: 'draft',
-          isEnabled: false,
         })
         .returning();
+
+      await db.insert(flagStates).values({
+        organizationId: orgId,
+        featureFlagId: draftFlag.id,
+        environmentId: envId,
+        isEnabled: false,
+        status: 'draft',
+      });
 
       await db.insert(variations).values({
         organizationId: (await db.select().from(organizations).limit(1))[0].id,
@@ -278,9 +295,11 @@ describe('Evaluation API (e2e)', () => {
 
   describe('Kill Switch (SC-004)', () => {
     it('should short-circuit all rules when kill switch is active', async () => {
+      const orgId = (await db.select().from(organizations).limit(1))[0].id;
       await db.insert(targetingRules).values({
-        organizationId: (await db.select().from(organizations).limit(1))[0].id,
+        organizationId: orgId,
         featureFlagId: flagId,
+        environmentId: envId,
         ruleType: 'kill_switch',
         priority: 'a0',
         variationId: varFalseId,
@@ -309,25 +328,31 @@ describe('Evaluation API (e2e)', () => {
 
   describe('Percentage Distribution (SC-005, SC-006)', () => {
     it('should distribute within 2% of target over 10000 users', async () => {
+      const orgId = (await db.select().from(organizations).limit(1))[0].id;
+      const projectId = (await db.select().from(projects).limit(1))[0].id;
       const [pctFlag] = await db
         .insert(featureFlags)
         .values({
-          organizationId: (await db.select().from(organizations).limit(1))[0]
-            .id,
-          environmentId: envId,
+          organizationId: orgId,
+          projectId,
           key: 'pct-flag',
           name: 'Percentage Flag',
           flagType: 'boolean',
-          status: 'active',
-          isEnabled: true,
         })
         .returning();
+
+      await db.insert(flagStates).values({
+        organizationId: orgId,
+        featureFlagId: pctFlag.id,
+        environmentId: envId,
+        isEnabled: true,
+        status: 'active',
+      });
 
       const [pctVarTrue] = await db
         .insert(variations)
         .values({
-          organizationId: (await db.select().from(organizations).limit(1))[0]
-            .id,
+          organizationId: orgId,
           featureFlagId: pctFlag.id,
           key: 'true',
           value: true,
@@ -336,7 +361,7 @@ describe('Evaluation API (e2e)', () => {
         .returning();
 
       await db.insert(variations).values({
-        organizationId: (await db.select().from(organizations).limit(1))[0].id,
+        organizationId: orgId,
         featureFlagId: pctFlag.id,
         key: 'false',
         value: false,
@@ -344,8 +369,9 @@ describe('Evaluation API (e2e)', () => {
       });
 
       await db.insert(targetingRules).values({
-        organizationId: (await db.select().from(organizations).limit(1))[0].id,
+        organizationId: orgId,
         featureFlagId: pctFlag.id,
+        environmentId: envId,
         ruleType: 'percentage',
         priority: 'd0',
         variationId: pctVarTrue.id,

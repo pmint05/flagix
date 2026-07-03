@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const flagTypeEnum = z.enum(['boolean', 'multivariate']);
 export const flagStatusEnum = z.enum(['draft', 'active', 'archived']);
-export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage']);
+export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage', 'custom']);
 export const memberRoleEnum = z.enum(['admin', 'editor', 'viewer']);
 export const actionTypeEnum = z.enum([
   'ORG_CREATE',
@@ -54,3 +54,12 @@ export type MemberRole = z.infer<typeof memberRoleEnum>;
 export type ActionType = z.infer<typeof actionTypeEnum>;
 export type EntityType = z.infer<typeof entityTypeEnum>;
 export type ActorType = z.infer<typeof actorTypeEnum>;
+
+export const flagStateSchema = z.object({
+  featureFlagId: z.string().uuid(),
+  environmentId: z.string().uuid(),
+  isEnabled: z.boolean(),
+  status: flagStatusEnum,
+  version: z.number().int().positive(),
+});
+export type FlagState = z.infer<typeof flagStateSchema>;

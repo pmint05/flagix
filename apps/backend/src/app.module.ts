@@ -17,7 +17,13 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { HealthModule } from './modules/health/health.module';
 import { FlagChangesModule } from './modules/flag-changes/flag-changes.module';
+import { BullMQModule } from './modules/bullmq/bullmq.module';
+import { EvaluationCollectorModule } from './modules/evaluation-collector/evaluation-collector.module';
+import { EvaluationStreamModule } from './modules/evaluation-stream/evaluation-stream.module';
+import { EvaluationAnalyticsModule } from './modules/evaluation-analytics/evaluation-analytics.module';
+import { EvaluationAggregatorModule } from './modules/evaluation-aggregator/evaluation-aggregator.module';
 import { LoggerModule } from 'nestjs-pino';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AuditContextMiddleware } from './common/middleware/audit-context.middleware';
@@ -28,11 +34,12 @@ const isProduction = process.env.NODE_ENV === 'production';
   imports: [
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'auth',
         ttl: 60_000,
-        limit: 10,
+        limit: 1000,
       },
       {
         name: 'evaluate',
@@ -92,6 +99,11 @@ const isProduction = process.env.NODE_ENV === 'production';
     EvaluationModule,
     HealthModule,
     FlagChangesModule,
+    BullMQModule,
+    EvaluationCollectorModule,
+    EvaluationStreamModule,
+    EvaluationAnalyticsModule,
+    EvaluationAggregatorModule,
   ],
   controllers: [AppController],
   providers: [

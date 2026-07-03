@@ -10,10 +10,13 @@ function sanitizeEntity<T>(
   const { excludeKeys = [], pickKeys } = options;
 
   const result: Record<string, unknown> = {};
+  const defaultExcludes = ['updatedAt', 'createdAt'];
 
-  for (const [key, value] of Object.entries(entity as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(
+    entity as Record<string, unknown>,
+  )) {
     if (pickKeys && !pickKeys.includes(key)) continue;
-    if (excludeKeys.includes(key)) continue;
+    if (excludeKeys.includes(key) || defaultExcludes.includes(key)) continue;
 
     result[key] = value;
   }
@@ -27,9 +30,21 @@ export function sanitizeFlag<T>(flag: T) {
   });
 }
 
+export function sanitizeVariation<T>(variation: T) {
+  return sanitizeEntity(variation, {
+    excludeKeys: ['organizationId'],
+  });
+}
+
+export function sanitizeState<T>(state: T) {
+  return sanitizeEntity(state, {
+    excludeKeys: ['organizationId'],
+  });
+}
+
 export function sanitizeSdkKey<T>(sdkKey: T) {
   return sanitizeEntity(sdkKey, {
-    excludeKeys: ['keyHash', 'organizationId'],
+    excludeKeys: ['keyHash', 'organizationId', 'rawKey', 'lastUsedAt'],
   });
 }
 

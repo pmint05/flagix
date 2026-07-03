@@ -10,5 +10,6 @@ export * from './schemas/environment';
 export * from './schemas/sdk-key';
 export { evaluationResultSchema } from './schemas/evaluation-result';
 export type { EvaluationResult } from './schemas/evaluation-result';
+export * from './schemas/analytics';
 export * from './constants/roles';
 export * from './constants/reasons';

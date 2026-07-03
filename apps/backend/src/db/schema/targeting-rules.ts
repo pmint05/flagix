@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { featureFlags } from './feature-flags';
+import { environments } from './environments';
 import { variations } from './variations';
 import { user } from './auth-schema';
 
@@ -25,13 +26,14 @@ export const targetingRules = pgTable(
     featureFlagId: uuid('feature_flag_id')
       .notNull()
       .references(() => featureFlags.id, { onDelete: 'cascade' }),
+    environmentId: uuid('environment_id')
+      .notNull()
+      .references(() => environments.id, { onDelete: 'cascade' }),
     ruleType: text('rule_type', {
-      enum: ['kill_switch', 'user', 'role', 'percentage'],
+      enum: ['kill_switch', 'user', 'role', 'percentage', 'custom'],
     }).notNull(),
     priority: varchar('priority', { length: 255 }).notNull(),
-    variationId: uuid('variation_id')
-      .notNull()
-      .references(() => variations.id),
+    variationId: uuid('variation_id').references(() => variations.id),
     conditions: jsonb('conditions').notNull(),
     isEnabled: boolean('is_enabled').notNull().default(true),
     createdBy: text('created_by').references(() => user.id),
@@ -45,11 +47,13 @@ export const targetingRules = pgTable(
     deletedAt: timestamp('deleted_at'),
   },
   (table) => [
-    uniqueIndex('idx_rules_flag_priority').on(
+    uniqueIndex('idx_rules_flag_env_priority').on(
       table.featureFlagId,
+      table.environmentId,
       table.priority,
     ),
     index('idx_rules_flag').on(table.featureFlagId),
+    index('idx_rules_env').on(table.environmentId),
     index('idx_rules_organization').on(table.organizationId),
   ],
 );
@@ -62,6 +66,10 @@ export const targetingRuleRelations = relations(targetingRules, ({ one }) => ({
   featureFlag: one(featureFlags, {
     fields: [targetingRules.featureFlagId],
     references: [featureFlags.id],
+  }),
+  environment: one(environments, {
+    fields: [targetingRules.environmentId],
+    references: [environments.id],
   }),
   variation: one(variations, {
     fields: [targetingRules.variationId],

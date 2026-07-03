@@ -1,8 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql, type SQL } from 'drizzle-orm';
-import { auditLogs } from '@/db/schema';
+import { eq, and, desc, sql, type SQL, or, ilike, count } from 'drizzle-orm';
+import {
+  auditLogs,
+  user,
+  projects,
+  environments,
+  targetingRules,
+  variations,
+  featureFlags,
+} from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
+import { ListQueryBuilder } from '@/common/utils/list-query-builder';
 
 export interface AuditLogQuery {
   orgId: string;
@@ -14,6 +23,13 @@ export interface AuditLogQuery {
   to?: Date;
   limit?: number;
   offset?: number;
+  actorId?: string;
+  actorEmail?: string;
+  entityId?: string;
+  search?: string;
+  sort?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 @Injectable()
@@ -22,53 +38,199 @@ export class AuditLogsRepository {
 
   async findById(id: string) {
     const [log] = await this.db
-      .select()
+      .select({
+        id: auditLogs.id,
+        organizationId: auditLogs.organizationId,
+        projectId: auditLogs.projectId,
+        environmentId: auditLogs.environmentId,
+        actionType: auditLogs.actionType,
+        entityType: auditLogs.entityType,
+        entityId: auditLogs.entityId,
+        actorId: auditLogs.actorId,
+        actorType: auditLogs.actorType,
+        actorEmail: auditLogs.actorEmail,
+        actorIp: auditLogs.actorIp,
+        userAgent: auditLogs.userAgent,
+        requestId: auditLogs.requestId,
+        requestMethod: auditLogs.requestMethod,
+        requestPath: auditLogs.requestPath,
+        source: auditLogs.source,
+        description: auditLogs.description,
+        changes: auditLogs.changes,
+        timestamp: auditLogs.timestamp,
+        projectName: projects.name,
+        projectSlug: projects.slug,
+        environmentName: environments.name,
+        environmentSlug: environments.slug,
+        actorName: user.name,
+        actorImage: user.image,
+        flagName: featureFlags.name,
+        flagKey: featureFlags.key,
+      })
       .from(auditLogs)
+      .leftJoin(projects, eq(auditLogs.projectId, projects.id))
+      .leftJoin(environments, eq(auditLogs.environmentId, environments.id))
+      .leftJoin(user, eq(auditLogs.actorId, user.id))
+      .leftJoin(targetingRules, eq(auditLogs.entityId, targetingRules.id))
+      .leftJoin(variations, eq(auditLogs.entityId, variations.id))
+      .leftJoin(
+        featureFlags,
+        or(
+          eq(auditLogs.entityId, featureFlags.id),
+          eq(targetingRules.featureFlagId, featureFlags.id),
+          eq(variations.featureFlagId, featureFlags.id),
+        ),
+      )
       .where(eq(auditLogs.id, id))
       .limit(1);
     return log ?? null;
   }
 
   async findMany(query: AuditLogQuery) {
-    const conditions: SQL[] = [eq(auditLogs.organizationId, query.orgId)];
+    const baseConditions: SQL[] = [eq(auditLogs.organizationId, query.orgId)];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    if (query.projectId) {
-      conditions.push(eq(auditLogs.projectId, query.projectId));
-    }
-    if (query.environmentId) {
-      conditions.push(eq(auditLogs.environmentId, query.environmentId));
-    }
-    if (query.entityType) {
-      conditions.push(eq(auditLogs.entityType, query.entityType as any));
-    }
-    if (query.actionType) {
-      conditions.push(eq(auditLogs.actionType, query.actionType as any));
-    }
-    if (query.from) {
-      conditions.push(sql`${auditLogs.timestamp} >= ${query.from}`);
-    }
-    if (query.to) {
-      conditions.push(sql`${auditLogs.timestamp} <= ${query.to}`);
+    if (query.search && query.search.trim()) {
+      const term = `%${query.search.trim()}%`;
+      const searchConditions = [
+        ilike(auditLogs.actorEmail, term),
+        ilike(auditLogs.description, term),
+        ilike(projects.name, term),
+        ilike(projects.slug, term),
+        ilike(environments.name, term),
+        ilike(environments.slug, term),
+        ilike(featureFlags.name, term),
+        ilike(featureFlags.key, term),
+      ];
+
+      if (uuidRegex.test(query.search.trim())) {
+        searchConditions.push(eq(auditLogs.entityId, query.search.trim()));
+      }
+
+      baseConditions.push(or(...searchConditions)!);
     }
 
-    const limit = Math.min(query.limit ?? 50, 200);
-    const offset = query.offset ?? 0;
+    let validEntityId: string | undefined = undefined;
+    if (query.entityId && query.entityId.trim()) {
+      const entityIdTrimmed = query.entityId.trim();
+      if (uuidRegex.test(entityIdTrimmed)) {
+        validEntityId = entityIdTrimmed;
+      } else {
+        const term = `%${entityIdTrimmed}%`;
+        baseConditions.push(
+          or(
+            ilike(featureFlags.name, term),
+            ilike(featureFlags.key, term),
+            ilike(projects.name, term),
+            ilike(projects.slug, term),
+            ilike(environments.name, term),
+            ilike(environments.slug, term),
+            ilike(auditLogs.description, term),
+          )!,
+        );
+      }
+    }
 
-    const [logs, countResult] = await Promise.all([
+    const builder = new ListQueryBuilder({
+      base: baseConditions,
+      filters: {
+        projectId: { column: auditLogs.projectId },
+        environmentId: { column: auditLogs.environmentId },
+        entityType: { column: auditLogs.entityType },
+        actionType: { column: auditLogs.actionType },
+        actorId: { column: auditLogs.actorId },
+        actorEmail: { column: auditLogs.actorEmail },
+        entityId: { column: auditLogs.entityId },
+        from: { column: auditLogs.timestamp, operator: 'dateFrom' },
+        to: { column: auditLogs.timestamp, operator: 'dateTo' },
+      },
+      sort: {
+        timestamp: { column: auditLogs.timestamp },
+        actionType: { column: auditLogs.actionType },
+        entityType: { column: auditLogs.entityType },
+      },
+      defaultSort: { column: auditLogs.timestamp, direction: 'desc' },
+    }).apply({
+      ...query,
+      entityId: validEntityId,
+      from: query.from?.toISOString(),
+      to: query.to?.toISOString(),
+      q: undefined,
+    } as any);
+
+    const where = builder.where;
+    const orderBy = builder.orderBy(query.sort);
+    const { limit, offset } = builder.pagination(query.page, query.pageSize);
+
+    const [rows, countResult] = await Promise.all([
       this.db
-        .select()
+        .select({
+          id: auditLogs.id,
+          organizationId: auditLogs.organizationId,
+          projectId: auditLogs.projectId,
+          environmentId: auditLogs.environmentId,
+          actionType: auditLogs.actionType,
+          entityType: auditLogs.entityType,
+          entityId: auditLogs.entityId,
+          actorId: auditLogs.actorId,
+          actorType: auditLogs.actorType,
+          actorEmail: auditLogs.actorEmail,
+          actorIp: auditLogs.actorIp,
+          userAgent: auditLogs.userAgent,
+          requestId: auditLogs.requestId,
+          requestMethod: auditLogs.requestMethod,
+          requestPath: auditLogs.requestPath,
+          source: auditLogs.source,
+          description: auditLogs.description,
+          changes: auditLogs.changes,
+          timestamp: auditLogs.timestamp,
+          projectName: projects.name,
+          projectSlug: projects.slug,
+          environmentName: environments.name,
+          environmentSlug: environments.slug,
+          actorName: user.name,
+          actorImage: user.image,
+          flagName: featureFlags.name,
+          flagKey: featureFlags.key,
+        })
         .from(auditLogs)
-        .where(and(...conditions))
-        .orderBy(desc(auditLogs.timestamp))
+        .leftJoin(projects, eq(auditLogs.projectId, projects.id))
+        .leftJoin(environments, eq(auditLogs.environmentId, environments.id))
+        .leftJoin(user, eq(auditLogs.actorId, user.id))
+        .leftJoin(targetingRules, eq(auditLogs.entityId, targetingRules.id))
+        .leftJoin(variations, eq(auditLogs.entityId, variations.id))
+        .leftJoin(
+          featureFlags,
+          or(
+            eq(auditLogs.entityId, featureFlags.id),
+            eq(targetingRules.featureFlagId, featureFlags.id),
+            eq(variations.featureFlagId, featureFlags.id),
+          ),
+        )
+        .where(where)
+        .orderBy(orderBy)
         .limit(limit)
         .offset(offset),
       this.db
-        .select({ count: sql<number>`count(*)::int` })
+        .select({ count: count() })
         .from(auditLogs)
-        .where(and(...conditions)),
+        .leftJoin(projects, eq(auditLogs.projectId, projects.id))
+        .leftJoin(environments, eq(auditLogs.environmentId, environments.id))
+        .leftJoin(user, eq(auditLogs.actorId, user.id))
+        .leftJoin(targetingRules, eq(auditLogs.entityId, targetingRules.id))
+        .leftJoin(variations, eq(auditLogs.entityId, variations.id))
+        .leftJoin(
+          featureFlags,
+          or(
+            eq(auditLogs.entityId, featureFlags.id),
+            eq(targetingRules.featureFlagId, featureFlags.id),
+            eq(variations.featureFlagId, featureFlags.id),
+          ),
+        )
+        .where(where),
     ]);
 
-    return { logs, total: countResult[0]?.count ?? 0, limit, offset };
+    return { logs: rows, total: countResult[0]?.count ?? 0, limit, offset };
   }
 
   async insert(entry: {
@@ -107,7 +269,7 @@ export class AuditLogsRepository {
         requestId: entry.requestId ? entry.requestId : null,
         requestMethod: entry.requestMethod ?? null,
         requestPath: entry.requestPath ?? null,
-        source: entry.source as any ?? null,
+        source: (entry.source as any) ?? null,
         description: entry.description ?? null,
         changes: entry.changes,
       })

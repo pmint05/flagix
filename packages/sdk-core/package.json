@@ -20,17 +20,20 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "lint": "eslint src"
+    "lint": "eslint src --fix"
   },
   "dependencies": {
     "@flagix/shared": "workspace:*",
     "eventsource": "^3.0.5"
   },
   "devDependencies": {
-    "tsup": "^8.4.0",
-    "vitest": "^3.0.7",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
     "happy-dom": "^17.1.8",
     "msw": "^2.7.3",
-    "typescript": "^6.0.3"
+    "tsup": "^8.4.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
+    "vitest": "^3.0.7"
   }
 }

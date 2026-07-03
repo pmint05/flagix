@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Optional,
 } from '@nestjs/common';
 import { OrganizationsRepository } from './organizations.repository';
@@ -46,7 +47,7 @@ export class OrganizationsService {
       });
     }
 
-    return org;
+    return { ...org, role: 'admin' as const };
   }
 
   async findOneForUser(id: string, userId: string) {
@@ -61,6 +62,15 @@ export class OrganizationsService {
 
   async findAllForUser(userId: string) {
     return this.orgRepo.findAllForUser(userId);
+  }
+
+  async findUsers(orgId: string, requesterRole?: string) {
+    const users = await this.orgRepo.findUsers(orgId);
+    const maskEmail = requesterRole === 'viewer';
+    return users.map((u) => ({
+      ...u,
+      email: maskEmail ? null : u.email,
+    }));
   }
 
   async update(id: string, input: UpdateOrganizationDto) {
@@ -90,7 +100,12 @@ export class OrganizationsService {
       });
     }
 
-    return updated;
+    const membership = actorId
+      ? await this.orgRepo.findMembership(id, actorId)
+      : null;
+    const role = membership?.role ?? 'viewer';
+
+    return { ...updated, role };
   }
 
   async remove(id: string) {
@@ -111,6 +126,108 @@ export class OrganizationsService {
         sanitize: sanitizeOrganization,
       });
     }
+
+    return { success: true };
+  }
+
+  async inviteMember(
+    orgId: string,
+    invitedBy: string,
+    email: string,
+    role: 'admin' | 'editor' | 'viewer',
+  ) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if they are already a member
+    const targetUser = await this.orgRepo.findUserByEmail(normalizedEmail);
+    if (targetUser) {
+      const membership = await this.orgRepo.findMembership(orgId, targetUser.id);
+      if (membership) {
+        throw new ConflictException('User is already a member of this organization');
+      }
+    }
+
+    // Check if there is already a pending invitation
+    const existingInv = await this.orgRepo.findInvitationByOrgAndEmail(orgId, normalizedEmail);
+    if (existingInv) {
+      return { success: true, message: 'Invitation sent successfully' };
+    }
+
+    // Create the invitation in the database (works whether user exists or not)
+    await this.orgRepo.createInvitation(orgId, invitedBy, normalizedEmail, role);
+
+    return { success: true, message: 'Invitation sent successfully' };
+  }
+
+  async getSentInvitations(orgId: string) {
+    return this.orgRepo.findInvitationsByOrg(orgId);
+  }
+
+  async cancelInvitation(orgId: string, invitationId: string) {
+    const invitation = await this.orgRepo.findInvitationById(invitationId);
+    if (!invitation || invitation.organizationId !== orgId) {
+      throw new NotFoundException('Invitation not found');
+    }
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Only pending invitations can be cancelled');
+    }
+
+    await this.orgRepo.updateInvitationStatus(invitationId, 'cancelled');
+    return { success: true };
+  }
+
+  async getUserPendingInvitations(email: string) {
+    return this.orgRepo.findPendingInvitationsByEmail(email);
+  }
+
+  async acceptInvitation(userId: string, email: string, invitationId: string) {
+    const invitation = await this.orgRepo.findInvitationById(invitationId);
+    if (!invitation || invitation.email !== email) {
+      throw new NotFoundException('Invitation not found');
+    }
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Invitation is no longer pending');
+    }
+
+    await this.orgRepo.updateInvitationStatus(invitationId, 'accepted');
+    await this.orgRepo.addMember(invitation.organizationId, userId, invitation.role);
+
+    return { success: true };
+  }
+
+  async rejectInvitation(email: string, invitationId: string) {
+    const invitation = await this.orgRepo.findInvitationById(invitationId);
+    if (!invitation || invitation.email !== email) {
+      throw new NotFoundException('Invitation not found');
+    }
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Invitation is no longer pending');
+    }
+
+    await this.orgRepo.updateInvitationStatus(invitationId, 'rejected');
+    return { success: true };
+  }
+
+  async updateMemberRole(
+    orgId: string,
+    memberId: string,
+    role: 'admin' | 'editor' | 'viewer',
+  ) {
+    const org = await this.orgRepo.findById(orgId);
+    if (!org) throw new NotFoundException('Organization not found');
+
+    const updated = await this.orgRepo.updateMemberRole(memberId, role);
+    if (!updated) throw new NotFoundException('Member not found');
+
+    return updated;
+  }
+
+  async removeMember(orgId: string, memberId: string) {
+    const org = await this.orgRepo.findById(orgId);
+    if (!org) throw new NotFoundException('Organization not found');
+
+    const deleted = await this.orgRepo.removeMember(memberId);
+    if (!deleted) throw new NotFoundException('Member not found');
 
     return { success: true };
   }

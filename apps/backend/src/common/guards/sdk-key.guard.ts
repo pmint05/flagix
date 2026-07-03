@@ -17,6 +17,8 @@ interface RequestWithSdkEnv {
     environmentId: string;
     organizationId: string;
     projectId: string;
+    keyType?: 'client' | 'server';
+    sdkKeyId?: string;
   };
 }
 
@@ -26,20 +28,22 @@ export class SdkKeyGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<any>();
-    
+
     let rawKey = request.headers['x-sdk-key'] as string | undefined;
 
     // Special case: Allow query param for SSE stream endpoint (browser EventSource support)
-    const isSseStream = request.path?.endsWith('/flags/stream') || request.url?.includes('/flags/stream');
+    const isSseStream =
+      request.path?.endsWith('/flags/stream') ||
+      request.url?.includes('/flags/stream');
     if (!rawKey && isSseStream) {
       rawKey = request.query?.sdkKey as string | undefined;
     }
 
     if (!rawKey) {
       throw new UnauthorizedException(
-        isSseStream 
-          ? 'Missing X-SDK-Key header or sdkKey query parameter' 
-          : 'Missing X-SDK-Key header'
+        isSseStream
+          ? 'Missing X-SDK-Key header or sdkKey query parameter.'
+          : 'Missing X-SDK-Key header.',
       );
     }
 
@@ -52,11 +56,15 @@ export class SdkKeyGuard implements CanActivate {
       .limit(1);
 
     if (!sdkKey) {
-      throw new UnauthorizedException('Invalid SDK key');
+      throw new UnauthorizedException(
+        'Invalid SDK key.',
+      );
     }
 
     if (!sdkKey.isActive) {
-      throw new UnauthorizedException('SDK key has been revoked');
+      throw new UnauthorizedException(
+        'SDK key is inactive.',
+      );
     }
 
     const [env] = await this.db
@@ -78,7 +86,19 @@ export class SdkKeyGuard implements CanActivate {
       environmentId: sdkKey.environmentId,
       organizationId: sdkKey.organizationId,
       projectId: env.projectId,
+      keyType: sdkKey.type,
+      sdkKeyId: sdkKey.id,
     };
+
+    // Asynchronously update lastUsedAt in the background
+    this.db
+      .update(sdkKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(sdkKeys.id, sdkKey.id))
+      .execute()
+      .catch((err) => {
+        console.error('Failed to update SDK key lastUsedAt:', err);
+      });
 
     return true;
   }

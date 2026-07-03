@@ -4,10 +4,14 @@ export * from './projects';
 export * from './environments';
 export * from './sdk-keys';
 export * from './feature-flags';
+export * from './flag-states';
 export * from './variations';
 export * from './targeting-rules';
 export * from './audit-logs';
+export * from './evaluation-events';
+export * from './evaluation-stats';
 export * from './user-relations';
+export * from './organization-invitations';
 
 export * from './auth-schema';
 

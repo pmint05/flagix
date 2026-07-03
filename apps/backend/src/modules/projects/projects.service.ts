@@ -13,10 +13,13 @@ import { slugify } from '@/common/utils/slug';
 import type { CreateProjectDto } from './dto/create-project.dto';
 import type { UpdateProjectDto } from './dto/update-project.dto';
 
+import { EnvironmentsService } from '../environments/environments.service';
+
 @Injectable()
 export class ProjectsService {
   constructor(
     private readonly projectRepo: ProjectsRepository,
+    private readonly environmentsService: EnvironmentsService,
     @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
@@ -30,7 +33,18 @@ export class ProjectsService {
       );
 
     const actorId = getActorId();
-    const project = await this.projectRepo.create({ ...dto, slug, organizationId: orgId }, actorId);
+    const project = await this.projectRepo.create(
+      { ...dto, slug, organizationId: orgId },
+      actorId,
+    );
+
+    // Automatically create a default production environment
+    await this.environmentsService.create(orgId, project.id, {
+      name: 'Production',
+      slug: 'production',
+      type: 'production',
+      description: 'Default production environment',
+    });
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
@@ -54,6 +68,13 @@ export class ProjectsService {
 
   async findOne(orgId: string, projectId: string) {
     const project = await this.projectRepo.findById(projectId);
+    if (!project || project.organizationId !== orgId)
+      throw new NotFoundException('Project not found');
+    return project;
+  }
+
+  async findBySlug(orgId: string, slug: string) {
+    const project = await this.projectRepo.findByOrgAndSlug(orgId, slug);
     if (!project || project.organizationId !== orgId)
       throw new NotFoundException('Project not found');
     return project;

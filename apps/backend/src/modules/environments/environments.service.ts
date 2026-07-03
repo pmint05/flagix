@@ -30,7 +30,10 @@ export class EnvironmentsService {
       );
 
     const actorId = getActorId();
-    const env = await this.envRepo.create({ ...dto, slug, projectId }, actorId);
+    const env = await this.envRepo.create(
+      { ...dto, slug, projectId, organizationId: orgId },
+      actorId,
+    );
 
     if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
@@ -56,6 +59,13 @@ export class EnvironmentsService {
   async findOne(orgId: string, projectId: string, envId: string) {
     const env = await this.envRepo.findById(envId);
     if (!env || env.projectId !== projectId)
+      throw new NotFoundException('Environment not found');
+    return env;
+  }
+
+  async findBySlug(orgId: string, projectId: string, slug: string) {
+    const env = await this.envRepo.findByProjectAndSlug(projectId, slug);
+    if (!env || env.organizationId !== orgId)
       throw new NotFoundException('Environment not found');
     return env;
   }

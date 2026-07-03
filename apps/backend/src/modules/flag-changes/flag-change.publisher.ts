@@ -48,9 +48,7 @@ export class FlagChangePublisher {
     // Apply filters
     if (filterBy?.eventTypes?.length) {
       const types = new Set(filterBy.eventTypes);
-      observable = observable.pipe(
-        filter((event) => types.has(event.type)),
-      );
+      observable = observable.pipe(filter((event) => types.has(event.type)));
     }
 
     if (filterBy?.flagKey) {
