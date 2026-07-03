@@ -66,7 +66,7 @@ function LoginPage() {
 			}
 
 			toast.success("Welcome back!");
-			navigate({ to: "/" });
+			setTimeout(() => navigate({ to: "/" }), 0);
 		} catch (error) {
 			toast.danger("An unexpected error occurred");
 		} finally {
