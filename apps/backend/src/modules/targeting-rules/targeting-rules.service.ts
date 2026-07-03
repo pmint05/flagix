@@ -219,9 +219,9 @@ export class TargetingRulesService {
     this.flagChangePublisher.publish(environmentId, {
       type: eventType,
       flagKey: flag.key,
-      environmentId,
+      // environmentId,
       timestamp: new Date().toISOString(),
-      metadata: { ruleId: rule.id },
+      // metadata: { ruleId: rule.id },
     });
   }
 }

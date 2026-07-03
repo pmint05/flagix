@@ -15,12 +15,12 @@ export type FlagChangeEventType =
 export interface FlagChangeEvent {
   type: FlagChangeEventType;
   flagKey: string;
-  environmentId: string;
+  // environmentId: string;
   timestamp: string;
   // Thin payload: only IDs/Keys of changed sub-entities, no sensitive data
   metadata?: {
-    ruleId?: string;
-    variationId?: string;
+    // ruleId?: string;
+    // variationId?: string;
     version?: number;
     isEnabled?: boolean;
   };

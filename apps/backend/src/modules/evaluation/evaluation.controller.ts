@@ -44,6 +44,7 @@ export class EvaluationController {
       dto.flagKey,
       dto.context,
       env.keyType,
+      env.projectId,
     );
 
     this.collector.record(result, {

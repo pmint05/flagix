@@ -5,6 +5,7 @@ import {
   flagStates,
   variations,
   targetingRules,
+  environments,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -21,12 +22,26 @@ export class FlagLoader {
   async loadFlag(
     environmentId: string,
     flagKey: string,
+    projectId?: string,
   ): Promise<LoadedFlag | null> {
     const cached = await this.cache.getFlagConfig(environmentId, flagKey);
     if (cached) return cached;
 
+    let targetProjectId = projectId;
+    if (!targetProjectId) {
+      const env = await this.db.query.environments.findFirst({
+        where: and(eq(environments.id, environmentId), isNull(environments.deletedAt)),
+      });
+      if (!env) return null;
+      targetProjectId = env.projectId;
+    }
+
     const flag = await this.db.query.featureFlags.findFirst({
-      where: and(eq(featureFlags.key, flagKey), isNull(featureFlags.deletedAt)),
+      where: and(
+        eq(featureFlags.key, flagKey),
+        eq(featureFlags.projectId, targetProjectId),
+        isNull(featureFlags.deletedAt),
+      ),
       with: {
         flagStates: {
           where: and(

@@ -142,7 +142,7 @@ export class FeatureFlagsService {
         this.flagChangePublisher.publish(env.id, {
           type: 'flag.created',
           flagKey: flag.key,
-          environmentId: env.id,
+          // environmentId: env.id,
           timestamp: new Date().toISOString(),
           metadata: {
             version: flag.version,
@@ -303,7 +303,7 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type,
         flagKey: flag.key,
-        environmentId: envId,
+        // environmentId: envId,
         timestamp: new Date().toISOString(),
         metadata: {
           version: updated.version,
@@ -554,7 +554,7 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type: 'flag.updated',
         flagKey: updated.key,
-        environmentId: envId,
+        // environmentId: envId,
         timestamp: new Date().toISOString(),
         metadata: {
           version: updated.version,
@@ -585,6 +585,7 @@ export class FeatureFlagsService {
       flag.key,
       context,
       flagConfig,
+      flag.projectId,
     );
   }
 

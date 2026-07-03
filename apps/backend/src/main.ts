@@ -44,7 +44,7 @@ async function bootstrap() {
       ? process.env.WHITE_LISTED_ORIGINS.split(',').map((origin) =>
           origin.trim(),
         )
-      : ['http://localhost:3000', 'http://localhost:5173'],
+      : true, // true reflects the request origin in the Access-Control-Allow-Origin header, allowing all origins while supporting credentials
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
