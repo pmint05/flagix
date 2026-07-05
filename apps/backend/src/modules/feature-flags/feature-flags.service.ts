@@ -31,9 +31,9 @@ import type {
 } from './dto/feature-flag.dto';
 
 export const COLOR_KEYS = [
-  'red',
   'blue',
   'amber',
+  'red',
   'green',
   'purple',
   'sky',
@@ -50,6 +50,8 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   active: ['archived'],
   archived: ['draft'],
 };
+
+
 
 @Injectable()
 export class FeatureFlagsService {
@@ -80,8 +82,8 @@ export class FeatureFlagsService {
       (!dto.variations || dto.variations.length === 0)
     ) {
       variationData = [
-        { key: 'true', value: true, isDefault: false, color: 'green' },
-        { key: 'false', value: false, isDefault: true, color: 'red' },
+        { key: 'true', value: true, isDefault: false, color: 'blue' },
+        { key: 'false', value: false, isDefault: true, color: 'amber' },
       ];
     } else if (dto.variations && dto.variations.length > 0) {
       const defaultKey = dto.defaultVariationKey ?? dto.variations[0]?.key;
@@ -188,7 +190,16 @@ export class FeatureFlagsService {
     const rules = envId
       ? await this.flagRepo.findRulesForFlag(flagId, envId)
       : [];
-    return { ...flag, variations: flagVariations, states: flagStates, rules };
+    const tags = await this.flagRepo.findTagsForFlag(flagId);
+    const referencedSegments = await this.flagRepo.findReferencedSegments(rules);
+    return {
+      ...flag,
+      variations: flagVariations,
+      states: flagStates,
+      rules,
+      tags,
+      referencedSegments,
+    };
   }
 
   async findByKey(
@@ -209,7 +220,16 @@ export class FeatureFlagsService {
     const rules = envId
       ? await this.flagRepo.findRulesForFlag(flag.id, envId)
       : [];
-    return { ...flag, variations: flagVariations, states: flagStates, rules };
+    const tags = await this.flagRepo.findTagsForFlag(flag.id);
+    const referencedSegments = await this.flagRepo.findReferencedSegments(rules);
+    return {
+      ...flag,
+      variations: flagVariations,
+      states: flagStates,
+      rules,
+      tags,
+      referencedSegments,
+    };
   }
 
   async update(orgId: string, flagId: string, dto: UpdateFeatureFlagDto) {
@@ -565,7 +585,9 @@ export class FeatureFlagsService {
 
     this.cache?.invalidateFlag(envId, updated.key);
 
-    return this.findOne(orgId, flagId, envId);
+    return {
+      ...updated,
+    }
   }
 
   async simulate(

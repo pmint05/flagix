@@ -4,6 +4,8 @@ export const TYPE_OPTIONS = [
 	{ key: "boolean", label: "Boolean" },
 	{ key: "object", label: "Object (JSON)" },
 	{ key: "array", label: "Array" },
+	{ key: "semver", label: "SemVer" },
+	{ key: "date", label: "Date" },
 ];
 
 export const OPERATORS_BY_TYPE: Record<string, { key: string; label: string }[]> = {
@@ -23,6 +25,7 @@ export const OPERATORS_BY_TYPE: Record<string, { key: string; label: string }[]>
 		{ key: "gte", label: ">=" },
 		{ key: "lt", label: "<" },
 		{ key: "lte", label: "<=" },
+		{ key: "between", label: "Between" },
 		{ key: "is_one_of", label: "Is one of" },
 		{ key: "is_not_one_of", label: "Is not one of" },
 	],
@@ -38,7 +41,25 @@ export const OPERATORS_BY_TYPE: Record<string, { key: string; label: string }[]>
 	array: [
 		{ key: "contains", label: "Contains" },
 		{ key: "not_contains", label: "Does not contain" },
+		{ key: "contains_any", label: "Contains any" },
+		{ key: "contains_all", label: "Contains all" },
 		{ key: "is_empty", label: "Is empty" },
 		{ key: "is_not_empty", label: "Is not empty" },
+	],
+	semver: [
+		{ key: "equals", label: "=" },
+		{ key: "not_equals", label: "≠" },
+		{ key: "gt", label: ">" },
+		{ key: "gte", label: ">=" },
+		{ key: "lt", label: "<" },
+		{ key: "lte", label: "<=" },
+		{ key: "between", label: "Between" },
+		{ key: "is_one_of", label: "Is one of" },
+		{ key: "is_not_one_of", label: "Is not one of" },
+	],
+	date: [
+		{ key: "before", label: "Before" },
+		{ key: "after", label: "After" },
+		{ key: "between", label: "Between" },
 	],
 };

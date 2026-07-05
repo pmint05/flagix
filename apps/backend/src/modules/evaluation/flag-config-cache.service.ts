@@ -106,6 +106,21 @@ export class FlagConfigCacheService {
     }
   }
 
+  async invalidateFlags(envId: string, flagKeys: string[]): Promise<void> {
+    if (this.ttl <= 0 || flagKeys.length === 0) return;
+
+    try {
+      await this.redis.del(this.allKey(envId));
+      const keys = flagKeys.map((k) => this.singleKey(envId, k));
+      await this.redis.del(...keys);
+    } catch (err) {
+      this.logger.warn(
+        `Cache invalidation error for flags in env "${envId}"`,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   async invalidateFlag(envId: string, flagKey: string): Promise<void> {
     if (this.ttl <= 0) return;
 

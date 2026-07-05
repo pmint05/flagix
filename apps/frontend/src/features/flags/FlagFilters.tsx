@@ -29,6 +29,7 @@ import {
 import { useContextStore } from "@/stores";
 import { useOrganizationUsers } from "@/features/organizations/api";
 import UserAvatar from "#/components/user/user-avatar";
+import { TagInput } from "@/components/ui/tag-input";
 
 const STATUS_OPTIONS = [
 	{ key: "draft", label: "Draft" },
@@ -61,6 +62,7 @@ export interface FlagFiltersState {
 	creator?: string;
 	createdAtFrom?: string;
 	createdAtTo?: string;
+	tags?: string[];
 }
 
 interface FlagFiltersProps {
@@ -218,6 +220,23 @@ export function FlagFilters({
 										onChange(setArrayFilter(filters, "isTemporary", keys))
 									}
 								/>
+
+								<div className="flex flex-col gap-2">
+									<Label className="text-xs font-medium text-muted-foreground">
+										Tags
+									</Label>
+									<TagInput
+										value={filters.tags || []}
+										onChange={(tags) =>
+											onChange({
+												...filters,
+												tags: tags.length > 0 ? tags : undefined,
+											})
+										}
+										placeholder="Filter by tags..."
+										allowCreation={false}
+									/>
+								</div>
 
 								<div className="flex flex-col gap-2">
 									<Label className="text-xs font-medium text-muted-foreground">
@@ -501,6 +520,9 @@ function buildActiveTags(
 		const end = new Date(filters.createdAtTo).toLocaleDateString();
 		tags.push({ key: "createdAt", label: `Created: ${start} - ${end}` });
 	}
+	for (const tag of filters.tags ?? []) {
+		tags.push({ key: `tag:${tag}`, label: `Tag: ${tag}` });
+	}
 
 	return tags;
 }
@@ -526,6 +548,9 @@ function removeTag(
 			(v) => `isTemporary:${v}` !== tagKey,
 		);
 		if (next.isTemporary?.length === 0) next.isTemporary = undefined;
+	} else if (tagKey.startsWith("tag:")) {
+		next.tags = next.tags?.filter((t) => `tag:${t}` !== tagKey);
+		if (next.tags?.length === 0) next.tags = undefined;
 	} else if (tagKey === "creator") {
 		next.creator = undefined;
 	} else if (tagKey === "createdAt") {

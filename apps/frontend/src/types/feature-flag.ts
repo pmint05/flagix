@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { uuidSchema, timestampSchema, nonEmptyString } from "./base";
+import { targetingRuleSchema } from "./targeting-rule";
 
 export const flagVariationDotSchema = z.object({
 	id: uuidSchema,
@@ -43,12 +44,22 @@ export const featureFlagSchema = z.object({
 	isTemporary: z.boolean().default(false),
 	variations: z.array(variationSchema).optional(),
 	states: z.array(flagStateSchema).optional(),
+	rules: z.array(targetingRuleSchema).optional(),
 	createdBy: z.string().nullable().optional(),
 	updatedBy: z.string().nullable().optional(),
 	deletedBy: z.string().nullable().optional(),
 	createdAt: timestampSchema,
 	updatedAt: timestampSchema,
 	deletedAt: timestampSchema.nullable().optional(),
+	tags: z.array(z.string()).optional(),
+	referencedSegments: z.record(
+		z.string(),
+		z.object({
+			id: z.string(),
+			name: z.string(),
+			key: z.string(),
+		}),
+	).optional(),
 });
 
 export const flagCreatorSchema = z.object({

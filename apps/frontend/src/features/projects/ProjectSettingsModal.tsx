@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -47,7 +47,7 @@ export function ProjectSettingsModal({
 		control,
 		formState: { errors },
 	} = useForm<ProjectSettingsData>({
-		resolver: zodResolver(projectSettingsSchema),
+		resolver: standardSchemaResolver(projectSettingsSchema),
 		values: {
 			name: project?.name ?? "",
 			description: project?.description ?? "",

@@ -89,6 +89,12 @@ export function useDataTableUrlSync(
 				urlParams.filters = allowedFilters;
 			}
 
+			// Skip navigation only if nothing changed AND nothing to clear from URL
+			const existingFilters = (searchParams.filters ?? {}) as Record<string, unknown>;
+			if (Object.keys(urlParams).length === 0 && Object.keys(existingFilters).length === 0) {
+				return;
+			}
+
 			navigate({
 				to: ".",
 				search: (prev: any) => {

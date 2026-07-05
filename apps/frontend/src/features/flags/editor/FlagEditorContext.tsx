@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import type { ReactNode } from "react";
 import type { FeatureFlag, Variation } from "@/types/feature-flag";
 import type { TargetingRule } from "@/types/targeting-rule";
-import { useRules } from "@/features/rules/api";
 import { useContextStore } from "@/stores";
 
 interface FlagEditorContextType {
@@ -37,7 +36,6 @@ export function FlagEditorProvider({
 	children: ReactNode 
 }) {
 	const currentEnv = useContextStore((s) => s.selectedEnvironment);
-	const { data: rulesData } = useRules(flag.id, currentEnv?.id);
 	
 	const [draftVariations, setDraftVariations] = useState<Variation[]>([]);
 	const [isFlagOn, setIsFlagOn] = useState(true);
@@ -51,12 +49,9 @@ export function FlagEditorProvider({
 		const flagState = flag.states?.find(s => s.environmentId === currentEnv?.id);
 		setIsFlagOn(flagState?.isEnabled ?? false);
 		
-		if (rulesData && currentEnv) {
-			const envRules = rulesData.filter((r) => r.environmentId === currentEnv.id);
-			setDraftRules(envRules.sort((a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority)));
-		} else {
-			setDraftRules([]);
-		}
+		const envRules = (flag.rules || [])
+			.sort((a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority));
+		setDraftRules(envRules);
 		
 		if (flagState) {
 			setDefaultVariationId(flagState.defaultVariationId ?? flag.variations?.find((v) => v.isDefault)?.id ?? "");
@@ -65,7 +60,7 @@ export function FlagEditorProvider({
 			setDefaultVariationId(flag.variations?.find((v) => v.isDefault)?.id ?? "");
 			setOffVariationId("");
 		}
-	}, [flag, rulesData, currentEnv]);
+	}, [flag, currentEnv]);
 	
 	useEffect(() => {
 		resetDraft();

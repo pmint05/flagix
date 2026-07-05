@@ -250,31 +250,6 @@ export function ContextPanel({
 					{/* User Context */}
 					<CollapsibleSection title="User Context" defaultOpen={true}>
 						<div className="space-y-3">
-							<div className="space-y-1.5">
-								<Label className="text-xs text-muted-foreground">
-									Quick Preset
-								</Label>
-								<Select
-									value=""
-									onValueChange={(value) => {
-										const preset = CONTEXT_PRESETS.find(
-											(p) => p.name === value,
-										);
-										if (preset) handleApplyPreset(preset);
-									}}>
-									<SelectTrigger className="h-8 w-full text-xs">
-										<SelectValue placeholder="Select a preset..." />
-									</SelectTrigger>
-									<SelectContent>
-										{CONTEXT_PRESETS.map((preset) => (
-											<SelectItem key={preset.name} value={preset.name}>
-												{preset.name} — {preset.description}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
 							<div className="grid grid-cols-2 gap-3">
 								<div className="space-y-1.5">
 									<Label
@@ -327,7 +302,7 @@ export function ContextPanel({
 												<SelectTrigger className="h-8 w-full text-xs">
 													<SelectValue placeholder="None (Visitor)" />
 												</SelectTrigger>
-												<SelectContent>
+												<SelectContent position="popper">
 													<SelectItem value="none">None (Visitor)</SelectItem>
 													<SelectItem value="guest">Guest</SelectItem>
 													<SelectItem value="member">Member</SelectItem>

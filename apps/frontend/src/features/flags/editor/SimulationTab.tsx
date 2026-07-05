@@ -49,7 +49,7 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 		} catch (err: any) {
 			error = err.message;
 		}
-		setSimulationState(flag.id, { jsonValue: val, jsonError: error });
+		setSimulationState(flag.id, { jsonValue: val, jsonError: error }, flag.key);
 	};
 
 	const formatJson = () => {
@@ -58,9 +58,9 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 			setSimulationState(flag.id, {
 				jsonValue: JSON.stringify(parsed, null, 2),
 				jsonError: null,
-			});
+			}, flag.key);
 		} catch (err: any) {
-			toast.error("Format Failed", {
+			toast.danger("Format Failed", {
 				description: "JSON syntax is invalid, cannot format.",
 			});
 		}
@@ -104,8 +104,11 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 						roles: rule.conditions.roles,
 					};
 				} else if (rule.ruleType === "custom") {
+					baseRule.conditions = rule.conditions;
+				} else if (rule.ruleType === "segment") {
 					baseRule.conditions = {
-						conditions: rule.conditions.conditions,
+						operator: rule.conditions.operator,
+						segmentIds: rule.conditions.segmentIds,
 					};
 				}
 				return baseRule;
@@ -116,9 +119,9 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 	const handleSimulate = () => {
 		try {
 			const parsed = JSON.parse(jsonValue);
-			setSimulationState(flag.id, { jsonError: null });
+			setSimulationState(flag.id, { jsonError: null }, flag.key);
 			if (!currentEnv) {
-				toast.error("Simulation Failed", {
+				toast.danger("Simulation Failed", {
 					description: "Please select an environment first.",
 				});
 				return;
@@ -141,26 +144,26 @@ export function SimulationTab({ flag }: SimulationTabProps) {
 				},
 				{
 					onSuccess: (data) => {
-						setSimulationState(flag.id, { simulationResult: data });
+						setSimulationState(flag.id, { simulationResult: data }, flag.key);
 						toast.success("Simulation Complete");
 					},
 					onError: (err: any) => {
-						toast.error("Simulation Failed", {
+						toast.danger("Simulation Failed", {
 							description: err.message || "Failed to resolve flag evaluation.",
 						});
 					},
 				},
 			);
 		} catch (err: any) {
-			setSimulationState(flag.id, { jsonError: err.message });
-			toast.error("Validation Error", {
+			setSimulationState(flag.id, { jsonError: err.message }, flag.key);
+			toast.danger("Validation Error", {
 				description: "JSON syntax is invalid.",
 			});
 		}
 	};
 
 	const handleOptionsChange = (opts: { bypassDraft: boolean }) => {
-		setSimulationState(flag.id, { simulationOptions: opts });
+		setSimulationState(flag.id, { simulationOptions: opts }, flag.key);
 	};
 
 	const resolvedTheme = useThemeStore((s) => s.resolvedTheme);

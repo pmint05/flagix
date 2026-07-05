@@ -22,6 +22,8 @@ import { EvaluationCollectorModule } from './modules/evaluation-collector/evalua
 import { EvaluationStreamModule } from './modules/evaluation-stream/evaluation-stream.module';
 import { EvaluationAnalyticsModule } from './modules/evaluation-analytics/evaluation-analytics.module';
 import { EvaluationAggregatorModule } from './modules/evaluation-aggregator/evaluation-aggregator.module';
+import { SegmentsModule } from './modules/segments/segments.module';
+import { TagsModule } from './modules/tags/tags.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -104,6 +106,8 @@ const isProduction = process.env.NODE_ENV === 'production';
     EvaluationStreamModule,
     EvaluationAnalyticsModule,
     EvaluationAggregatorModule,
+    SegmentsModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [

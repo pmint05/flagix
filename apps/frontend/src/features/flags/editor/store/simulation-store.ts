@@ -12,7 +12,7 @@ export interface SimulationState {
 
 interface SimulationStore {
 	statesByFlagId: Record<string, SimulationState>;
-	setSimulationState: (flagId: string, state: Partial<SimulationState>) => void;
+	setSimulationState: (flagId: string, state: Partial<SimulationState>, flagKey?: string) => void;
 }
 
 export const DEFAULT_SIMULATION_STATE = (flagKey?: string): SimulationState => ({
@@ -26,10 +26,10 @@ export const DEFAULT_SIMULATION_STATE = (flagKey?: string): SimulationState => (
 
 export const useSimulationStore = create<SimulationStore>((set) => ({
 	statesByFlagId: {},
-	setSimulationState: (flagId, state) => {
+	setSimulationState: (flagId, state, flagKey) => {
 		set((s) => {
-			const currentState = s.statesByFlagId[flagId] || DEFAULT_SIMULATION_STATE();
-			
+			const currentState = s.statesByFlagId[flagId] || DEFAULT_SIMULATION_STATE(flagKey);
+
 			// Deep merge for simulationOptions to avoid overwriting nested properties
 			const newOptions = state.simulationOptions
 				? { ...currentState.simulationOptions, ...state.simulationOptions }

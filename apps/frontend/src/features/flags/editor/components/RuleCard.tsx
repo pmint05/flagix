@@ -22,6 +22,7 @@ import { UserTargetingContent } from "./rule-contents/UserTargetingContent";
 import { RoleTargetingContent } from "./rule-contents/RoleTargetingContent";
 import { PercentageContent } from "./rule-contents/PercentageContent";
 import { CustomRuleContent } from "./rule-contents/CustomRuleContent";
+import { SegmentTargetingContent } from "./rule-contents/SegmentTargetingContent";
 import { getVariationColorClass } from "#/lib/variation-colors";
 import { RolloutBar } from "./RolloutBar";
 import { useHasPermission } from "@/hooks/usePermission";
@@ -89,6 +90,8 @@ function RuleCardComponent({
 				return <PercentageContent flag={flag} ruleIndex={index} />;
 			case "custom":
 				return <CustomRuleContent flag={flag} ruleIndex={index} />;
+			case "segment":
+				return <SegmentTargetingContent flag={flag} ruleIndex={index} />;
 			default:
 				return (
 					<div className="text-sm text-default-500">Unknown rule type</div>

@@ -51,7 +51,8 @@ export function createFlagColumns(actions: ColumnActions) {
 						text={info.getValue()}
 						buttonProps={{
 							isIconOnly: true,
-							className: "group-hover:opacity-100 opacity-0 transition size-6 rounded-xl",
+							className:
+								"group-hover:opacity-100 opacity-0 transition size-6 rounded-xl",
 						}}
 					/>
 				</div>
@@ -60,17 +61,31 @@ export function createFlagColumns(actions: ColumnActions) {
 		columnHelper.accessor("name", {
 			enableSorting: true,
 			header: "Name",
-			cell: (info) => (
-				<Link
-					to="/projects/$projectSlug/flags/$flagSlug"
-					params={{
-						projectSlug: actions.projectSlug,
-						flagSlug: info.row.original.key,
-					}}
-					className="font-medium text-foreground hover:text-primary transition-colors">
-					{info.getValue()}
-				</Link>
-			),
+			cell: (info) => {
+				const tags = info.row.original.tags ?? [];
+				return (
+					<div className="flex flex-col gap-1">
+						<Link
+							to="/projects/$projectSlug/flags/$flagSlug"
+							params={{
+								projectSlug: actions.projectSlug,
+								flagSlug: info.row.original.key,
+							}}
+							className="font-medium text-foreground hover:text-primary transition-colors">
+							{info.getValue()}
+						</Link>
+						{tags.length > 0 && (
+							<div className="flex flex-wrap gap-1">
+								{tags.map((tag) => (
+									<Chip key={tag} variant="soft" size="sm">
+										{tag}
+									</Chip>
+								))}
+							</div>
+						)}
+					</div>
+				);
+			},
 		}),
 		columnHelper.accessor("flagType", {
 			enableSorting: true,
@@ -116,18 +131,15 @@ export function createFlagColumns(actions: ColumnActions) {
 				const creator = info.getValue();
 				if (!creator) return <span className="text-muted-foreground">—</span>;
 				return (
-					<div className="flex items-center gap-2">
-						<UserAvatar
-							user={{
-								name: creator.name,
-								email: creator.email || undefined,
-							}}
-							showTooltip={creator.email ? true : false}
-							className="size-6 rounded-2xl"
-							fallbackClassName="text-xs"
-						/>
-						<span className="text-sm">{creator.name}</span>
-					</div>
+					<UserAvatar
+						user={{
+							name: creator.name,
+							email: creator.email || undefined,
+						}}
+						showTooltip={creator.email ? true : false}
+						className="size-6 rounded-2xl"
+						fallbackClassName="text-xs"
+					/>
 				);
 			},
 		}),

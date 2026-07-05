@@ -6,7 +6,7 @@ export const targetingRuleSchema = z.object({
 	organizationId: uuidSchema,
 	featureFlagId: uuidSchema,
 	environmentId: uuidSchema,
-	ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom"]),
+	ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom", "segment"]),
 	priority: z.string(),
 	variationId: uuidSchema,
 	conditions: z.record(z.string(), z.unknown()),

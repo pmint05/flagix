@@ -156,17 +156,16 @@ export const createAuditLogColumns = (
 						}}
 						size="sm"
 						className="size-6"
+						showTooltip
 					/>
-					<div className="flex flex-col min-w-30">
+					{/* <div className="flex flex-col min-w-30">
 						<span className="font-medium text-sm">
 							{row.actorName || (row.actorEmail ? row.actorEmail : "System")}
 						</span>
 						{row.actorEmail && (
-							<span className="text-xs text-default-400 font-mono">
-								{row.actorEmail}
-							</span>
+							<span className="text-xs font-mono">{row.actorEmail}</span>
 						)}
-					</div>
+					</div> */}
 				</div>
 			);
 		},
@@ -241,11 +240,11 @@ export const createAuditLogColumns = (
 			}
 
 			return (
-				<div className="flex flex-col min-w-[120px]">
+				<div className="flex flex-col min-w-30">
 					<span className="font-medium text-sm text-foreground">
 						{displayName}
 					</span>
-					{/* <span className="text-xs text-default-400 capitalize">
+					{/* <span className="text-xs capitalize">
 						{row.entityType.replace("_", " ")}
 					</span> */}
 				</div>
@@ -260,16 +259,17 @@ export const createAuditLogColumns = (
 			const val = info.getValue();
 			return (
 				<div className="flex items-center gap-1.5 font-mono text-xs">
-					<span title={val} className="truncate">
+					<span title={val} className="truncate max-w-25">
 						{val}
 					</span>
 					<CopyButton
 						text={val}
 						buttonProps={{
 							size: "sm",
+							isIconOnly: true,
 							variant: "ghost",
 							className:
-								"p-1 h-auto min-w-0 flex items-center justify-center size-7",
+								"p-1 h-auto min-w-0 flex rounded-xl items-center justify-center size-7",
 						}}
 					/>
 				</div>
@@ -282,19 +282,18 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => {
 			const changes = info.getValue() as { before: any; after: any } | null;
-			if (!changes)
-				return <span className="text-default-400 text-xs">No details</span>;
+			if (!changes) return <span className="text-xs">No details</span>;
 
 			const diffResult = formatFirstChange(changes.before, changes.after);
 
 			if (typeof diffResult === "string") {
-				return <span className="text-default-500 text-xs">{diffResult}</span>;
+				return <span className="text-xs">{diffResult}</span>;
 			}
 
 			return (
-				<div className="flex flex-col gap-1]">
+				<div className="flex flex-col gap-1">
 					<span
-						className="text-xs text-default-600 font-mono truncate"
+						className="text-xs font-mono truncate max-w-200"
 						title={diffResult.summary}>
 						{diffResult.summary}
 					</span>
@@ -316,9 +315,7 @@ export const createAuditLogColumns = (
 		header: "IP Address",
 		enableSorting: false,
 		cell: (info) => (
-			<span className="text-xs text-default-500 font-mono">
-				{info.getValue() || "—"}
-			</span>
+			<span className="text-xs font-mono">{info.getValue() || "—"}</span>
 		),
 	}),
 	columnHelper.accessor("userAgent", {
@@ -327,7 +324,7 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => (
 			<span
-				className="text-xs text-default-500 truncate max-w-[150px] block"
+				className="text-xs truncate max-w-37.5 block"
 				title={info.getValue() || ""}>
 				{info.getValue() || "—"}
 			</span>
@@ -339,7 +336,7 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => {
 			const src = info.getValue();
-			if (!src) return <span className="text-xs text-default-500">—</span>;
+			if (!src) return <span className="text-xs">—</span>;
 			return (
 				<Chip size="sm" variant="soft" className="capitalize text-xs">
 					{src}
@@ -353,7 +350,7 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => {
 			const method = info.getValue();
-			if (!method) return <span className="text-xs text-default-500">—</span>;
+			if (!method) return <span className="text-xs">—</span>;
 			let color: "accent" | "success" | "warning" | "danger" | "default" =
 				"default";
 			if (method === "GET") color = "accent";
@@ -378,7 +375,7 @@ export const createAuditLogColumns = (
 		enableSorting: false,
 		cell: (info) => (
 			<span
-				className="text-xs text-default-500 font-mono truncate block"
+				className="text-xs font-mono truncate block"
 				title={info.getValue() || ""}>
 				{info.getValue() || "—"}
 			</span>

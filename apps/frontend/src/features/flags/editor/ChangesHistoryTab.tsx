@@ -8,6 +8,7 @@ import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
 import { useMemo, useState } from "react";
 import type { AuditLog } from "@/types/audit-log";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
+import { useContextStore } from "@/stores";
 
 interface MonitoringTabProps {
 	flag: FeatureFlag;
@@ -17,10 +18,10 @@ const columnVisibility = {
 	timestamp: true,
 	actor: true,
 	action: true,
-	project: true,
+	project: false,
 	environment: true,
-	entityType: true,
-	entity: true,
+	entityType: false,
+	entity: false,
 	entityId: true,
 	changes: true,
 	actorIp: false,
@@ -34,6 +35,7 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 	const { tableState, updateTableState } = useDataTableUrlSync({});
 	const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
+	const currentEnv = useContextStore((s) => s.selectedEnvironment);
 
 	const columns = useMemo(
 		() =>
@@ -46,6 +48,7 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 
 	const { data, isLoading } = useAuditLogs({
 		projectId: flag.projectId,
+		environmentId: currentEnv?.id,
 		entityType: "feature_flag",
 		entityId: flag.id,
 		limit: tableState.pageSize,
@@ -56,7 +59,7 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 		<div className="py-6 space-y-4">
 			<div className="flex items-center gap-2">
 				<ClockCounterClockwiseIcon className="text-muted" />
-				<h1>Recent changes made to this flag.</h1>
+				<h3>Recent changes made to this flag.</h3>
 			</div>
 
 			<DataTable
@@ -67,6 +70,8 @@ export function MonitoringTab({ flag }: MonitoringTabProps) {
 				onStateChange={updateTableState}
 				isLoading={isLoading}
 				columnVisibility={columnVisibility}
+				isCompact
+				
 			/>
 
 			<AuditLogDetailModal

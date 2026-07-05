@@ -7,6 +7,7 @@ import { useAnalyticsOverview } from "../hooks/useAnalyticsOverview";
 import { MetricCard } from "./MetricCard";
 import { EvaluationTrendChart } from "./EvaluationTrendChart";
 import { EnvironmentComparisonChart } from "./EnvironmentComparisonChart";
+import { HorizontalBarChart } from "./HorizontalBarChart";
 import type { AnalyticsTimeRange } from "../types/analytics";
 
 function calendarRangeToIso(
@@ -72,7 +73,6 @@ export function AnalyticsOverview() {
 	}
 
 	const errorPct = (data.errorRate * 100).toFixed(2);
-	const hasData = data.totalEvaluations > 0;
 
 	return (
 		<div className="space-y-6">
@@ -129,25 +129,13 @@ export function AnalyticsOverview() {
 					<h4 className="text-sm font-medium text-foreground mb-3">
 						Top Evaluated Flags
 					</h4>
-					<div className="space-y-2">
-						{data.topFlags.map((f, i) => (
-							<div
-								key={f.flagKey}
-								className="flex items-center justify-between py-1">
-								<div className="flex items-center gap-3">
-									<span className="text-xs font-mono text-default-400 w-4">
-										{i + 1}.
-									</span>
-									<span className="text-sm font-medium text-foreground">
-										{f.flagKey}
-									</span>
-								</div>
-								<span className="text-xs text-default-500">
-									{f.totalCount.toLocaleString()} evaluations
-								</span>
-							</div>
-						))}
-					</div>
+					<HorizontalBarChart
+						data={data.topFlags.map((f) => ({
+							label: f.flagKey,
+							count: f.totalCount,
+						}))}
+						maxItems={10}
+					/>
 				</Card>
 			)}
 		</div>

@@ -89,6 +89,7 @@ export const featureFlagListQuerySchema = z.object({
 	creator: z.string().optional(),
 	createdAtFrom: z.iso.datetime().optional(),
 	createdAtTo: z.iso.datetime().optional(),
+	tags: z.union([z.string(), z.array(z.string())]).optional(),
 	sort: z
 		.string()
 		.regex(/^[a-zA-Z_]+-(asc|desc)$/)

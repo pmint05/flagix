@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -39,6 +39,7 @@ import { useCreateFlag } from "./api";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { VariationDot } from "@/components/ui/VariationDot";
 import { ActionButton } from "#/components/ui/action-button";
+import { TagInput } from "@/components/ui/tag-input";
 
 const flagFormSchema = z
 	.object({
@@ -55,6 +56,7 @@ const flagFormSchema = z
 		flagType: z.enum(["boolean", "multivariate"]),
 		visibility: z.enum(["all", "client_only", "server_only"]),
 		isTemporary: z.boolean(),
+		tags: z.array(z.string()).optional(),
 		variations: z.array(
 			z.object({
 				key: z.string().optional(),
@@ -219,7 +221,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 		setValue,
 		formState: { errors },
 	} = useForm<FlagFormData>({
-		resolver: zodResolver(flagFormSchema),
+		resolver: standardSchemaResolver(flagFormSchema),
 		defaultValues: {
 			key: "",
 			name: "",
@@ -227,6 +229,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 			flagType: "boolean",
 			visibility: "all",
 			isTemporary: false,
+			tags: [],
 			variations: [
 				{ key: "true", value: "true", description: "" },
 				{ key: "false", value: "false", description: "" },
@@ -251,6 +254,7 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 				flagType: "boolean",
 				visibility: "all",
 				isTemporary: false,
+				tags: [],
 				variations: [
 					{ key: "true", value: "true", description: "" },
 					{ key: "false", value: "false", description: "" },
@@ -294,11 +298,11 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 			};
 			const result = await createFlag.mutateAsync(payload as any);
 			toast.success("Feature flag created successfully");
-			onClose();
 			navigate({
 				to: "/projects/$projectSlug/flags/$flagSlug",
 				params: { projectSlug, flagSlug: result.key },
 			});
+			onClose();
 		} catch {
 			toast.danger("Failed to create feature flag");
 		}
@@ -349,6 +353,21 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 										rows={3}
 									/>
 								</TextField>
+
+								<div className="flex flex-col gap-1.5">
+									<Label>Tags</Label>
+									<Controller
+										name="tags"
+										control={control}
+										render={({ field }) => (
+											<TagInput
+												value={field.value}
+												onChange={field.onChange}
+												placeholder="Search tags or type and press Enter to create..."
+											/>
+										)}
+									/>
+								</div>
 
 								<Controller
 									name="isTemporary"

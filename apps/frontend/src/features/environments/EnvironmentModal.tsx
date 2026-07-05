@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -50,7 +50,7 @@ export function EnvironmentModal({
 		control,
 		formState: { errors },
 	} = useForm<EnvFormData>({
-		resolver: zodResolver(envFormSchema),
+		resolver: standardSchemaResolver(envFormSchema),
 		values: {
 			name: environment?.name ?? "",
 			type: environment?.type ?? "development",

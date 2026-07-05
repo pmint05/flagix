@@ -7,7 +7,6 @@ import type { EvaluationLogEntry } from '@/types';
 
 export function FlagEvaluationLog() {
   const allFlags = useFlags();
-  console.log(allFlags)
   const [logs, setLogs] = useState<EvaluationLogEntry[]>([]);
   const prevKeysRef = useRef<Set<string>>(new Set());
 

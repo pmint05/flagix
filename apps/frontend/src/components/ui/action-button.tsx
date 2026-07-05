@@ -20,7 +20,7 @@ export function ActionButton({
 	toastMessage,
 	...props
 }: ActionButtonProps) {
-	const [isPending, setIsPending] = useState(false);
+	const [isPending, setIsPending] = useState(true);
 
 	const handlePress = async (e: any) => {
 		if (action) {

@@ -33,14 +33,9 @@ import {
 } from "@heroui/react";
 import {
 	useSdkKeys,
-	useCreateSdkKey,
 	useToggleActiveSdkKey,
 	useRevokeSdkKey,
 } from "@/features/keys";
-import type { CreateSdkKeyInput } from "@/features/keys";
-import type { CreateSdkKeyResponse } from "@/features/keys/api";
-import { KeyModal } from "@/features/keys/KeyModal";
-import { KeyDisplay } from "@/features/keys/KeyDisplay";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { AsyncSwitch } from "@/components/ui/async-switch";
 import { StatCard } from "@/components/ui/stat-card";
@@ -54,6 +49,7 @@ import CopyButton from "#/components/ui/copy-button";
 import { useEnvironments } from "@/features/environments/api";
 import { useHasPermission } from "@/hooks/usePermission";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useUIStore } from "@/stores";
 
 function KeyInputCell({ sdkKey }: { sdkKey: SdkKey }) {
 	const [revealed, setRevealed] = useState(false);
@@ -118,11 +114,6 @@ export const Route = createFileRoute(
 function SdkKeysPage() {
 	const { projectSlug } = Route.useParams();
 	const navigate = useNavigate();
-	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [isDisplayOpen, setIsDisplayOpen] = useState(false);
-	const [displayedKey, setDisplayedKey] = useState<CreateSdkKeyResponse | null>(
-		null,
-	);
 	const [revokingKey, setRevokingKey] = useState<SdkKey | null>(null);
 
 	// Filters and snippets state
@@ -135,29 +126,17 @@ function SdkKeysPage() {
 	>("all");
 	const [isSnippetOpen, setIsSnippetOpen] = useState(false);
 
-	const { data: environments, isPending: isEnvironmentsPending } = useEnvironments();
+	const { data: environments, isPending: isEnvironmentsPending } =
+		useEnvironments();
 	const { data: keys, isPending } = useSdkKeys();
-	const createMutation = useCreateSdkKey();
 	const toggleMutation = useToggleActiveSdkKey();
 	const revokeMutation = useRevokeSdkKey();
 	const canCreateKey = useHasPermission("sdk-key:create");
+	const { openCreateSDKKey } = useUIStore();
 
 	const hasEnvironments = !!environments && environments.length > 0;
-	const isTableLoading = isEnvironmentsPending || (isPending && hasEnvironments);
-
-	const handleCreate = (data: CreateSdkKeyInput) => {
-		createMutation.mutate(data, {
-			onSuccess: (res) => {
-				setIsCreateOpen(false);
-				if (data.type === "server") {
-					setDisplayedKey(res);
-					setIsDisplayOpen(true);
-				} else {
-					setDisplayedKey(null);
-				}
-			},
-		});
-	};
+	const isTableLoading =
+		isEnvironmentsPending || (isPending && hasEnvironments);
 
 	const handleRevoke = (key: SdkKey) => {
 		setRevokingKey(key);
@@ -240,7 +219,7 @@ function SdkKeysPage() {
 						variant="primary"
 						className="gap-2"
 						isDisabled={!hasEnvironments}
-						onPress={() => setIsCreateOpen(true)}>
+						onPress={() => openCreateSDKKey()}>
 						<PlusIcon className="h-4 w-4" />
 						Generate Key
 					</Button>
@@ -460,7 +439,12 @@ function SdkKeysPage() {
 									if (!hasEnvironments) {
 										return (
 											<EmptyState
-												icon={<TrayIcon className="size-8 text-muted" weight="duotone" />}
+												icon={
+													<TrayIcon
+														className="size-8 text-muted"
+														weight="duotone"
+													/>
+												}
 												title="No Environments Found"
 												description="You need to create at least one environment before you can manage or generate SDK keys."
 												actionLabel="Go to Environments"
@@ -482,7 +466,9 @@ function SdkKeysPage() {
 												title="No SDK Keys Found"
 												description="Generate a new SDK key to get started."
 												actionLabel={canCreateKey ? "Generate Key" : undefined}
-												onAction={canCreateKey ? () => setIsCreateOpen(true) : undefined}
+												onAction={
+													canCreateKey ? () => openCreateSDKKey() : undefined
+												}
 												actionVariant="primary"
 											/>
 										);
@@ -546,22 +532,13 @@ function SdkKeysPage() {
 										</TableCell>
 										<Table.Cell>
 											{key.creator ? (
-												<div className="flex items-center gap-2">
-													<UserAvatar
-														user={key.creator}
-														size="sm"
-														className="size-6"
-														fallbackClassName="text-xs"
-													/>
-													<div className="flex flex-col">
-														<span className="text-sm font-medium text-foreground">
-															{key.creator.name}
-														</span>
-														<span className="text-xs text-default-400">
-															{key.creator.email}
-														</span>
-													</div>
-												</div>
+												<UserAvatar
+													user={key.creator}
+													size="sm"
+													showTooltip
+													className="size-6"
+													fallbackClassName="text-xs"
+												/>
 											) : (
 												<span className="text-sm text-default-400">System</span>
 											)}
@@ -614,22 +591,6 @@ function SdkKeysPage() {
 					</Table.ScrollContainer>
 				</Table>
 			)}
-
-			<KeyModal
-				isOpen={isCreateOpen}
-				onClose={() => setIsCreateOpen(false)}
-				onSubmit={handleCreate}
-				isLoading={createMutation.isPending}
-			/>
-
-			<KeyDisplay
-				isOpen={isDisplayOpen}
-				onClose={() => {
-					setIsDisplayOpen(false);
-					setDisplayedKey(null);
-				}}
-				createdKey={displayedKey}
-			/>
 
 			<CodeSnippetModal
 				isOpen={isSnippetOpen}

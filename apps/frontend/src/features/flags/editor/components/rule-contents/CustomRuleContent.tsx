@@ -16,7 +16,11 @@ import {
 	TextArea,
 	Switch,
 	FieldError,
+	DateField,
+	DatePicker,
+	Calendar,
 } from "@heroui/react";
+import { parseDate } from "@internationalized/date";
 import {
 	PlusIcon,
 	TrashIcon,
@@ -363,9 +367,143 @@ function ConditionRow({
 						);
 					}
 
+					// ── between operator ────────────────────────────────────────────────
+					if (condOperator === "between") {
+						if (condType === "date") {
+							return (
+								<Controller
+									name={`rules.${ruleIndex}.conditions.conditions.${idx}.values` as any}
+									control={control}
+									render={({ field: valuesField }) => {
+										const vals: string[] = valuesField.value || [];
+										const getDate = (s: string | undefined) => {
+											try { return s ? parseDate(s.split("T")[0]) : null; } catch { return null; }
+										};
+										const startDate = getDate(vals[0]);
+										const endDate = getDate(vals[1]);
+										const betweenErr = startDate && endDate && startDate >= endDate
+											? "Min must be less than Max" : null;
+										return (
+											<div className="flex flex-col gap-1">
+												<div className="flex items-center gap-2 flex-wrap">
+													<DatePicker
+														value={startDate}
+														isDisabled={!canEditFlags}
+														onChange={(v) => valuesField.onChange([v ? v.toString() : "", vals[1] ?? ""])}
+														className="max-w-45">
+														<DateField.Group fullWidth>
+															<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
+															<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
+														</DateField.Group>
+														<DatePicker.Popover>
+															<Calendar aria-label="Start date">
+																<Calendar.Header>
+																	<Calendar.NavButton slot="previous" />
+																	<Calendar.YearPickerTrigger><Calendar.YearPickerTriggerHeading /><Calendar.YearPickerTriggerIndicator /></Calendar.YearPickerTrigger>
+																	<Calendar.NavButton slot="next" />
+																</Calendar.Header>
+																<Calendar.Grid><Calendar.GridHeader>{(d) => <Calendar.HeaderCell>{d}</Calendar.HeaderCell>}</Calendar.GridHeader><Calendar.GridBody>{(d) => <Calendar.Cell date={d} />}</Calendar.GridBody></Calendar.Grid>
+															</Calendar>
+														</DatePicker.Popover>
+													</DatePicker>
+													<span className="text-xs text-muted-foreground">to</span>
+													<DatePicker
+														value={endDate}
+														isDisabled={!canEditFlags}
+														onChange={(v) => valuesField.onChange([vals[0] ?? "", v ? v.toString() : ""])}
+														className="max-w-45">
+														<DateField.Group fullWidth>
+															<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
+															<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
+														</DateField.Group>
+														<DatePicker.Popover>
+															<Calendar aria-label="End date">
+																<Calendar.Header>
+																	<Calendar.NavButton slot="previous" />
+																	<Calendar.YearPickerTrigger><Calendar.YearPickerTriggerHeading /><Calendar.YearPickerTriggerIndicator /></Calendar.YearPickerTrigger>
+																	<Calendar.NavButton slot="next" />
+																</Calendar.Header>
+																<Calendar.Grid><Calendar.GridHeader>{(d) => <Calendar.HeaderCell>{d}</Calendar.HeaderCell>}</Calendar.GridHeader><Calendar.GridBody>{(d) => <Calendar.Cell date={d} />}</Calendar.GridBody></Calendar.Grid>
+															</Calendar>
+														</DatePicker.Popover>
+													</DatePicker>
+												</div>
+												{betweenErr && <FieldError className="text-xs text-danger">{betweenErr}</FieldError>}
+											</div>
+										);
+									}}
+								/>
+							);
+						}
+						// number or semver between
+						return (
+							<Controller
+								name={`rules.${ruleIndex}.conditions.conditions.${idx}.values` as any}
+								control={control}
+								render={({ field: valuesField }) => {
+									const vals: any[] = valuesField.value || [];
+									const v0 = vals[0] ?? "";
+									const v1 = vals[1] ?? "";
+									const betweenErr = (() => {
+										if (v0 === "" || v1 === "") return null;
+										if (condType === "number") {
+											const a = Number(v0), b = Number(v1);
+											if (!isNaN(a) && !isNaN(b) && a >= b) return "Min must be less than Max";
+										} else if (condType === "semver") {
+											const parseSemver = (s: string) => String(s).trim().match(/^v?(\d+)\.(\d+)\.(\d+)/);
+											const pa = parseSemver(String(v0)); const pb = parseSemver(String(v1));
+											if (pa && pb) {
+												const [,ma,mi,pa2] = pa.map(Number); const [,mb,mib,pb2] = pb.map(Number);
+												if (ma > mb || (ma === mb && mi > mib) || (ma === mb && mi === mib && pa2 >= pb2)) return "Min must be less than Max";
+											}
+										}
+										return null;
+									})();
+									return (
+										<div className="flex flex-col gap-1">
+											<div className="flex items-center gap-2">
+												<TextField variant="secondary" className="max-w-35" isInvalid={!!betweenErr}>
+													<InputGroup>
+														<InputGroup.Input
+															type={condType === "number" ? "number" : "text"}
+															placeholder={condType === "semver" ? "e.g. 1.0.0" : "Min"}
+															value={String(v0)}
+															readOnly={!canEditFlags}
+															className={"w-full"}
+															onChange={(e) => valuesField.onChange([e.target.value, v1])}
+														/>
+													</InputGroup>
+												</TextField>
+												<span className="text-xs text-muted-foreground shrink-0">to</span>
+												<TextField variant="secondary" className="max-w-35" isInvalid={!!betweenErr}>
+													<InputGroup>
+														<InputGroup.Input
+															className={"w-full"}
+															type={condType === "number" ? "number" : "text"}
+															placeholder={condType === "semver" ? "e.g. 2.0.0" : "Max"}
+															value={String(v1)}
+															readOnly={!canEditFlags}
+															onChange={(e) => valuesField.onChange([v0, e.target.value])}
+														/>
+													</InputGroup>
+												</TextField>
+											</div>
+											{betweenErr && <FieldError className="text-xs text-danger">{betweenErr}</FieldError>}
+										</div>
+									);
+								}}
+							/>
+						);
+					}
+
+					// ── multi-value (tags) ─────────────────────────────────────────────
 					if (
 						condOperator === "is_one_of" ||
-						condOperator === "is_not_one_of"
+						condOperator === "is_not_one_of" ||
+						condOperator === "contains_any" ||
+						condOperator === "contains_all" ||
+						condOperator === "in" ||
+						condOperator === "not_in"
 					) {
 						return (
 							<Controller
@@ -390,6 +528,7 @@ function ConditionRow({
 						);
 					}
 
+					// ── boolean toggle ────────────────────────────────────────────────
 					if (condType === "boolean") {
 						return (
 							<Controller
@@ -425,6 +564,44 @@ function ConditionRow({
 						);
 					}
 
+					// ── date single value ─────────────────────────────────────────────
+					if (condType === "date") {
+						return (
+							<Controller
+								name={`rules.${ruleIndex}.conditions.conditions.${idx}.value` as any}
+								control={control}
+								render={({ field: valField }) => {
+									const getDate = (s: string | undefined) => {
+										try { return s ? parseDate(s.split("T")[0]) : null; } catch { return null; }
+									};
+									return (
+										<DatePicker
+											value={getDate(valField.value)}
+											isDisabled={!canEditFlags}
+											onChange={(v) => valField.onChange(v ? v.toString() : "")}
+											className="max-w-45">
+											<DateField.Group fullWidth>
+												<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
+												<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
+											</DateField.Group>
+											<DatePicker.Popover>
+												<Calendar aria-label="Select date">
+													<Calendar.Header>
+														<Calendar.NavButton slot="previous" />
+														<Calendar.YearPickerTrigger><Calendar.YearPickerTriggerHeading /><Calendar.YearPickerTriggerIndicator /></Calendar.YearPickerTrigger>
+														<Calendar.NavButton slot="next" />
+													</Calendar.Header>
+													<Calendar.Grid><Calendar.GridHeader>{(d) => <Calendar.HeaderCell>{d}</Calendar.HeaderCell>}</Calendar.GridHeader><Calendar.GridBody>{(d) => <Calendar.Cell date={d} />}</Calendar.GridBody></Calendar.Grid>
+												</Calendar>
+											</DatePicker.Popover>
+										</DatePicker>
+									);
+								}}
+							/>
+						);
+					}
+
+					// ── JSON object ───────────────────────────────────────────────────
 					if (condOperator === "equals_json") {
 						return (
 							<Controller
@@ -443,6 +620,7 @@ function ConditionRow({
 						);
 					}
 
+					// ── default single-value text/number ─────────────────────────────
 					return (
 						<Controller
 							name={`rules.${ruleIndex}.conditions.conditions.${idx}.value` as any}
@@ -453,7 +631,7 @@ function ConditionRow({
 									onChange={valField.onChange}
 									readOnly={!canEditFlags}
 									type={condType === "number" ? "number" : "text"}
-									placeholder="Enter value"
+									placeholder={condType === "semver" ? "e.g. 1.2.3" : "Enter value"}
 									isInvalid={!!condErrors?.value}
 									error={condErrors?.value}
 								/>

@@ -30,7 +30,7 @@ export const targetingRules = pgTable(
       .notNull()
       .references(() => environments.id, { onDelete: 'cascade' }),
     ruleType: text('rule_type', {
-      enum: ['kill_switch', 'user', 'role', 'percentage', 'custom'],
+      enum: ['kill_switch', 'user', 'role', 'percentage', 'custom', 'segment'],
     }).notNull(),
     priority: varchar('priority', { length: 255 }).notNull(),
     variationId: uuid('variation_id').references(() => variations.id),

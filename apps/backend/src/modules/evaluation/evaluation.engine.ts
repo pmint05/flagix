@@ -29,7 +29,7 @@ export function evaluate(
     const matcher = getMatcher(rule.ruleType);
     if (!matcher) continue;
 
-    const matchResult = matcher.matchFn(rule, flag.key, context);
+    const matchResult = matcher.matchFn(rule, flag.key, context, flag.segments);
     if (matchResult.isMatched) {
       const resolvedVarId = matchResult.variationId || rule.variationId;
       const variation = flag.variations.find((v) => v.id === resolvedVarId);

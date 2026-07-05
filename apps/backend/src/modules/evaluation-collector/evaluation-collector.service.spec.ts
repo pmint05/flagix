@@ -12,7 +12,9 @@ jest.mock('@/common/utils/crypto', () => ({
   hashSha256: jest.fn(),
 }));
 
-const mockEvaluationResult = {
+import type { EvaluationResult } from '@flagix/shared';
+
+const mockEvaluationResult: EvaluationResult = {
   flagKey: 'test-flag',
   variationKey: 'on',
   resolvedValue: true,

@@ -4,17 +4,11 @@ import { cn, Spinner, Switch, toast, type SwitchProps } from "@heroui/react";
 import { type ReactNode, useCallback, useState } from "react";
 
 export interface AsyncSwitchProps extends Omit<SwitchProps, "onChange"> {
-	/** Async action to execute on toggle. Switch auto-manages pending state. */
 	action: () => Promise<void> | void;
-	/** Whether to show toast notifications. Default: false */
 	showToast?: boolean;
-	/** Toast message — used as description when actionName is set, or as title otherwise */
 	message?: string;
-	/** Toast title prefix — appends " Successfully" / " Failed" to the title */
 	actionName?: string;
-	/** Standard onChange handler. Ignored when action is provided. */
 	onChange?: SwitchProps["onChange"];
-	/** Label content */
 	children?: ReactNode;
 }
 

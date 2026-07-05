@@ -36,6 +36,7 @@ export interface LoadedFlag {
   variations: LoadedFlagVariation[];
   rules: LoadedFlagRule[];
   visibility: 'all' | 'client_only' | 'server_only';
+  segments?: Record<string, { id: string; key: string; conditions: any }>;
 }
 
 export function buildSafeDefault(

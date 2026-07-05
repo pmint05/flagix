@@ -11,6 +11,9 @@ import {
   variations,
   targetingRules,
   user,
+  tags,
+  featureFlagsToTags,
+  segments,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -158,13 +161,37 @@ export class FeatureFlagsRepository {
     page: number;
     pageSize: number;
   }> {
+    const baseConditions = [
+      eq(featureFlags.projectId, projectId),
+      isNull(featureFlags.deletedAt),
+      eq(flagStates.environmentId, envId),
+      isNull(flagStates.deletedAt),
+    ];
+
+    if (query.tags) {
+      const tagFilterNames = Array.isArray(query.tags)
+        ? query.tags
+        : typeof query.tags === "string"
+        ? [query.tags]
+        : [];
+      const cleanTags = tagFilterNames.map((t) => String(t).trim()).filter(Boolean);
+      if (cleanTags.length > 0) {
+        const flagIdsWithTags = await this.db
+          .select({ id: featureFlagsToTags.featureFlagId })
+          .from(featureFlagsToTags)
+          .innerJoin(tags, eq(featureFlagsToTags.tagId, tags.id))
+          .where(and(eq(tags.projectId, projectId), inArray(tags.name, cleanTags)));
+        const ids = flagIdsWithTags.map((row: { id: string }) => row.id);
+        if (ids.length > 0) {
+          baseConditions.push(inArray(featureFlags.id, ids));
+        } else {
+          baseConditions.push(eq(featureFlags.id, "00000000-0000-0000-0000-000000000000"));
+        }
+      }
+    }
+
     const builder = new ListQueryBuilder({
-      base: [
-        eq(featureFlags.projectId, projectId),
-        isNull(featureFlags.deletedAt),
-        eq(flagStates.environmentId, envId),
-        isNull(flagStates.deletedAt),
-      ],
+      base: baseConditions,
       q: {
         columns: [
           featureFlags.key,
@@ -249,6 +276,25 @@ export class FeatureFlagsRepository {
       variationsByFlag.set(row.featureFlagId, list);
     }
 
+    const tagRows =
+      flagIds.length > 0
+        ? await this.db
+            .select({
+              featureFlagId: featureFlagsToTags.featureFlagId,
+              tagName: tags.name,
+            })
+            .from(featureFlagsToTags)
+            .innerJoin(tags, eq(featureFlagsToTags.tagId, tags.id))
+            .where(inArray(featureFlagsToTags.featureFlagId, flagIds))
+        : [];
+
+    const tagsByFlag = new Map<string, string[]>();
+    for (const row of tagRows) {
+      const list = tagsByFlag.get(row.featureFlagId) ?? [];
+      list.push(row.tagName);
+      tagsByFlag.set(row.featureFlagId, list);
+    }
+
     const data = rows.map(({ flag, state, creator }) => {
       const flagVariations = variationsByFlag.get(flag.id) ?? [];
       return {
@@ -263,6 +309,7 @@ export class FeatureFlagsRepository {
           : null,
         variationCount: flagVariations.length,
         variations: flagVariations,
+        tags: tagsByFlag.get(flag.id) ?? [],
       };
     });
 
@@ -364,6 +411,10 @@ export class FeatureFlagsRepository {
         );
       }
 
+      if (input.tags !== undefined) {
+        await this.syncTags(tx, input.organizationId, input.projectId, flag.id, input.tags);
+      }
+
       const createdVariations = await tx
         .select()
         .from(variations)
@@ -384,27 +435,36 @@ export class FeatureFlagsRepository {
     currentVersion: number,
     actorId?: string,
   ) {
-    const [flag] = await this.db
-      .update(featureFlags)
-      .set({
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && {
-          description: input.description,
-        }),
-        ...(input.visibility !== undefined && {
-          visibility: input.visibility,
-        }),
-        ...(input.isTemporary !== undefined && {
-          isTemporary: input.isTemporary,
-        }),
-        version: currentVersion + 1,
-        updatedBy: actorId ?? null,
-      })
-      .where(
-        and(eq(featureFlags.id, id), eq(featureFlags.version, currentVersion)),
-      )
-      .returning();
-    return flag ?? null;
+    return this.db.transaction(async (tx) => {
+      const [flag] = await tx
+        .update(featureFlags)
+        .set({
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
+          ...(input.visibility !== undefined && {
+            visibility: input.visibility,
+          }),
+          ...(input.isTemporary !== undefined && {
+            isTemporary: input.isTemporary,
+          }),
+          version: currentVersion + 1,
+          updatedBy: actorId ?? null,
+        })
+        .where(
+          and(eq(featureFlags.id, id), eq(featureFlags.version, currentVersion)),
+        )
+        .returning();
+
+      if (!flag) return null;
+
+      if (input.tags !== undefined) {
+        await this.syncTags(tx, flag.organizationId, flag.projectId, flag.id, input.tags);
+      }
+
+      return flag;
+    });
   }
 
   async patchConfig(
@@ -726,6 +786,10 @@ export class FeatureFlagsRepository {
         .where(eq(featureFlags.id, flagId))
         .returning();
 
+      if (payload.tags !== undefined) {
+        await this.syncTags(tx, flag.organizationId, flag.projectId, flag.id, payload.tags);
+      }
+
       return updatedFlag;
     });
   }
@@ -762,5 +826,104 @@ export class FeatureFlagsRepository {
 
       return flag;
     });
+  }
+
+  async findTagsForFlag(flagId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ name: tags.name })
+      .from(featureFlagsToTags)
+      .innerJoin(tags, eq(featureFlagsToTags.tagId, tags.id))
+      .where(eq(featureFlagsToTags.featureFlagId, flagId));
+    return rows.map((r) => r.name);
+  }
+
+  private async syncTags(
+    tx: any,
+    orgId: string,
+    projectId: string,
+    flagId: string,
+    tagNames?: string[],
+  ) {
+    if (!tagNames) return;
+
+    // Delete existing links
+    await tx
+      .delete(featureFlagsToTags)
+      .where(eq(featureFlagsToTags.featureFlagId, flagId));
+
+    if (tagNames.length === 0) return;
+
+    const uniqueTagNames = [...new Set(tagNames.map((t) => t.trim()).filter(Boolean))];
+    if (uniqueTagNames.length === 0) return;
+
+    // Get existing tags
+    const existingTags = await tx
+      .select()
+      .from(tags)
+      .where(
+        and(
+          eq(tags.projectId, projectId),
+          inArray(tags.name, uniqueTagNames),
+        ),
+      );
+
+    const existingNames = new Set(existingTags.map((t: { name: string }) => t.name));
+    const tagsToInsert = uniqueTagNames
+      .filter((name) => !existingNames.has(name))
+      .map((name) => ({
+        organizationId: orgId,
+        projectId,
+        name,
+      }));
+
+    let allTags = [...existingTags];
+
+    if (tagsToInsert.length > 0) {
+      const newlyCreatedTags = await tx
+        .insert(tags)
+        .values(tagsToInsert)
+        .returning();
+      allTags.push(...newlyCreatedTags);
+    }
+
+    const associations = allTags.map((t: { id: string }) => ({
+      featureFlagId: flagId,
+      tagId: t.id,
+    }));
+
+    await tx.insert(featureFlagsToTags).values(associations);
+  }
+
+  async findReferencedSegments(rules: any[]) {
+    const segmentIds: string[] = [];
+    for (const rule of rules) {
+      if (rule.ruleType === 'segment' && rule.conditions) {
+        const conds = rule.conditions as any;
+        if (Array.isArray(conds.segmentIds)) {
+          segmentIds.push(...conds.segmentIds);
+        }
+      }
+    }
+
+    const referenced: Record<string, { id: string; name: string; key: string }> = {};
+    if (segmentIds.length > 0) {
+      const dbSegments = await this.db
+        .select()
+        .from(segments)
+        .where(
+          and(
+            inArray(segments.id, segmentIds),
+            isNull(segments.deletedAt),
+          ),
+        );
+      for (const seg of dbSegments) {
+        referenced[seg.id] = {
+          id: seg.id,
+          name: seg.name,
+          key: seg.key,
+        };
+      }
+    }
+    return referenced;
   }
 }

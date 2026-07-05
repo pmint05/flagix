@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const flagTypeEnum = z.enum(['boolean', 'multivariate']);
 export const flagStatusEnum = z.enum(['draft', 'active', 'archived']);
-export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage', 'custom']);
+export const ruleTypeEnum = z.enum(['kill_switch', 'user', 'role', 'percentage', 'custom', 'segment']);
 export const memberRoleEnum = z.enum(['admin', 'editor', 'viewer']);
 export const actionTypeEnum = z.enum([
   'ORG_CREATE',
@@ -35,6 +35,11 @@ export const actionTypeEnum = z.enum([
   'MBR_INVITE',
   'MBR_REMOVE',
   'MBR_ROLE_CHANGE',
+  'SEGMENT_CREATE',
+  'SEGMENT_UPDATE',
+  'SEGMENT_DELETE',
+  'TAG_CREATE',
+  'TAG_DELETE',
 ]);
 export const entityTypeEnum = z.enum([
   'organization',
@@ -44,6 +49,8 @@ export const entityTypeEnum = z.enum([
   'targeting_rule',
   'variation',
   'sdk_key',
+  'segment',
+  'tag',
 ]);
 export const actorTypeEnum = z.enum(['user', 'system']);
 

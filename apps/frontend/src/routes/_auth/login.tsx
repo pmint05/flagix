@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -47,7 +47,7 @@ function LoginPage() {
 		handleSubmit,
 		formState: { errors },
 	} = useForm<LoginForm>({
-		resolver: zodResolver(loginSchema),
+		resolver: standardSchemaResolver(loginSchema),
 		reValidateMode: "onSubmit",
 		shouldFocusError: true,
 	});

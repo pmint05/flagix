@@ -5,24 +5,22 @@ import {
   IsOptional,
   IsObject,
 } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 
 export class EvaluationContextDto {
-  @ApiProperty({ required: false, example: 'user-123' })
   @IsOptional()
   @IsString()
   userId?: string;
 
-  @ApiProperty({ required: false, example: 'admin' })
   @IsOptional()
   @IsString()
   role?: string;
 
-  @ApiProperty({ required: false, example: { plan: 'pro' } })
+  @Transform(({ value }) => value)
   @IsOptional()
   @IsObject()
-  attributes?: Record<string, string | number | boolean>;
+  attributes?: Record<string, unknown>;
 }
 
 export class EvaluateFlagDto {

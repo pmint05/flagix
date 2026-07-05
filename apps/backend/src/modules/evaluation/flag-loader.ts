@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, isNull, asc } from 'drizzle-orm';
+import { eq, and, isNull, asc, inArray } from 'drizzle-orm';
 import {
   featureFlags,
   flagStates,
   variations,
   targetingRules,
   environments,
+  segments,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -67,6 +68,33 @@ export class FlagLoader {
 
     const state = flag.flagStates[0];
 
+    const segmentIds: string[] = [];
+    for (const r of flag.targetingRules) {
+      if (r.ruleType === 'segment' && r.conditions) {
+        const conds = r.conditions as any;
+        if (Array.isArray(conds.segmentIds)) {
+          segmentIds.push(...conds.segmentIds);
+        }
+      }
+    }
+
+    const segmentsMap: Record<string, { id: string; key: string; conditions: any }> = {};
+    if (segmentIds.length > 0) {
+      const dbSegments = await this.db.query.segments.findMany({
+        where: and(
+          inArray(segments.id, segmentIds),
+          isNull(segments.deletedAt),
+        ),
+      });
+      for (const seg of dbSegments) {
+        segmentsMap[seg.id] = {
+          id: seg.id,
+          key: seg.key,
+          conditions: seg.conditions,
+        };
+      }
+    }
+
     const loaded: LoadedFlag = {
       id: flag.id,
       key: flag.key,
@@ -84,16 +112,20 @@ export class FlagLoader {
         isDefault: v.isDefault,
       })),
       rules: flag.targetingRules.map(
-        (r): LoadedFlagRule => ({
-          id: r.id,
-          ruleType: r.ruleType,
-          priority: r.priority,
-          variationId: r.variationId,
-          conditions: r.conditions as Record<string, unknown>,
-          isEnabled: r.isEnabled,
-        }),
+        (r): LoadedFlagRule => {
+          const conditions = r.conditions as Record<string, unknown>;
+          return {
+            id: r.id,
+            ruleType: r.ruleType,
+            priority: r.priority,
+            variationId: r.variationId,
+            conditions,
+            isEnabled: r.isEnabled,
+          };
+        },
       ),
       visibility: flag.visibility,
+      segments: segmentsMap,
     };
 
     await this.cache.setFlagConfig(environmentId, flagKey, loaded);
@@ -128,6 +160,37 @@ export class FlagLoader {
       },
     });
 
+    const allSegmentIds: string[] = [];
+    for (const state of states) {
+      if (state.featureFlag?.targetingRules) {
+        for (const r of state.featureFlag.targetingRules) {
+          if (r.ruleType === 'segment' && r.conditions) {
+            const conds = r.conditions as any;
+            if (Array.isArray(conds.segmentIds)) {
+              allSegmentIds.push(...conds.segmentIds);
+            }
+          }
+        }
+      }
+    }
+
+    const segmentsMap: Record<string, { id: string; key: string; conditions: any }> = {};
+    if (allSegmentIds.length > 0) {
+      const dbSegments = await this.db.query.segments.findMany({
+        where: and(
+          inArray(segments.id, allSegmentIds),
+          isNull(segments.deletedAt),
+        ),
+      });
+      for (const seg of dbSegments) {
+        segmentsMap[seg.id] = {
+          id: seg.id,
+          key: seg.key,
+          conditions: seg.conditions,
+        };
+      }
+    }
+
     const loaded: LoadedFlag[] = states
       .filter(
         (
@@ -137,6 +200,25 @@ export class FlagLoader {
       )
       .map((s) => {
         const flag = s.featureFlag;
+        
+        // Filter segments map for this flag
+        const flagSegmentIds = new Set<string>();
+        for (const r of flag.targetingRules) {
+          if (r.ruleType === 'segment' && r.conditions) {
+            const conds = r.conditions as any;
+            if (Array.isArray(conds.segmentIds)) {
+              conds.segmentIds.forEach((id: string) => flagSegmentIds.add(id));
+            }
+          }
+        }
+        
+        const flagSegments: Record<string, { id: string; key: string; conditions: any }> = {};
+        flagSegmentIds.forEach((id) => {
+          if (segmentsMap[id]) {
+            flagSegments[id] = segmentsMap[id];
+          }
+        });
+
         return {
           id: flag.id,
           key: flag.key,
@@ -154,16 +236,20 @@ export class FlagLoader {
             isDefault: v.isDefault,
           })),
           rules: flag.targetingRules.map(
-            (r): LoadedFlagRule => ({
-              id: r.id,
-              ruleType: r.ruleType,
-              priority: r.priority,
-              variationId: r.variationId,
-              conditions: r.conditions as Record<string, unknown>,
-              isEnabled: r.isEnabled,
-            }),
+            (r): LoadedFlagRule => {
+              const conditions = r.conditions as Record<string, unknown>;
+              return {
+                id: r.id,
+                ruleType: r.ruleType,
+                priority: r.priority,
+                variationId: r.variationId,
+                conditions,
+                isEnabled: r.isEnabled,
+              };
+            },
           ),
           visibility: flag.visibility,
+          segments: flagSegments,
         };
       });
 

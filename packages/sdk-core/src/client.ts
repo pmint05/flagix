@@ -187,6 +187,29 @@ export class FlagixClient {
   }
 
   /**
+   * Stateless evaluation — fetches a single flag for the given context directly
+   * from the backend without touching the cache or requiring prior init().
+   * Suitable for server-side per-request usage.
+   */
+  async evaluate<T>(key: string, context: EvaluationContext, defaultValue: T): Promise<T> {
+    try {
+      const result = await this.evaluationClient.evaluateFlag(key, context);
+      return result.resolvedValue as T;
+    } catch {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Stateless evaluation — fetches all active flags for the given context directly
+   * from the backend without touching the cache or requiring prior init().
+   * Suitable for server-side per-request usage.
+   */
+  async evaluateAll(context: EvaluationContext): Promise<Record<string, EvaluationResult>> {
+    return this.evaluationClient.evaluateAll(context);
+  }
+
+  /**
    * Subscribe to cache updates. Returns an unsubscribe function.
    */
   subscribe(callback: CacheUpdateCallback): () => void {

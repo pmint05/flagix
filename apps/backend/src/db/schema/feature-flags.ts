@@ -16,6 +16,7 @@ import { flagStates } from './flag-states';
 import { variations } from './variations';
 import { targetingRules } from './targeting-rules';
 import { user } from './auth-schema';
+import { featureFlagsToTags } from './tags';
 
 export const featureFlags = pgTable(
   'feature_flags',
@@ -73,5 +74,6 @@ export const featureFlagRelations = relations(
     flagStates: many(flagStates),
     variations: many(variations),
     targetingRules: many(targetingRules),
+    featureFlagsToTags: many(featureFlagsToTags),
   }),
 );

@@ -4,7 +4,7 @@ import { useContextStore, useIsHydrated } from "@/stores";
 import { BuildingIcon } from "@phosphor-icons/react";
 import { Button, Form, FieldError, TextField, InputGroup } from "@heroui/react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import { useNavigate } from "@tanstack/react-router";
 import { Spinner } from "@heroui/react";
@@ -41,7 +41,7 @@ function NoOrgLayout() {
 		handleSubmit,
 		formState: { errors },
 	} = useForm<CreateOrgForm>({
-		resolver: zodResolver(createOrgSchema),
+		resolver: standardSchemaResolver(createOrgSchema),
 	});
 
 	const createOrg = useCreateOrganization();

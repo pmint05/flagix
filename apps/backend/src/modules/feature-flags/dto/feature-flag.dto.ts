@@ -100,6 +100,12 @@ export class CreateFeatureFlagDto {
   @IsOptional()
   @IsBoolean()
   isTemporary?: boolean;
+
+  @ApiPropertyOptional({ type: [String], example: ['frontend', 'checkout'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
 
 export class UpdateFeatureFlagDto {
@@ -136,6 +142,12 @@ export class UpdateFeatureFlagDto {
   @IsOptional()
   @IsBoolean()
   isTemporary?: boolean;
+
+  @ApiPropertyOptional({ type: [String], example: ['frontend', 'checkout'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
 
 export class PatchFeatureFlagConfigDto {
@@ -193,4 +205,10 @@ export class PatchFeatureFlagConfigDto {
   @IsOptional()
   @IsBoolean()
   isTemporary?: boolean;
+
+  @ApiPropertyOptional({ type: [String], example: ['frontend', 'checkout'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

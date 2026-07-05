@@ -16,10 +16,10 @@ export class CreateTargetingRuleDto {
   id?: string;
 
   @ApiProperty({
-    enum: ['kill_switch', 'user', 'role', 'percentage', 'custom'],
+    enum: ['kill_switch', 'user', 'role', 'percentage', 'custom', 'segment'],
   })
-  @IsEnum(['kill_switch', 'user', 'role', 'percentage', 'custom'])
-  ruleType!: 'kill_switch' | 'user' | 'role' | 'percentage' | 'custom';
+  @IsEnum(['kill_switch', 'user', 'role', 'percentage', 'custom', 'segment'])
+  ruleType!: 'kill_switch' | 'user' | 'role' | 'percentage' | 'custom' | 'segment';
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -83,14 +83,21 @@ export function DataTable<TData>({
 		new Set(),
 	);
 
-	const sorting: SortingState = state.sortBy
-		? [{ id: state.sortBy, desc: state.sortDir === "desc" }]
-		: [];
+	const sorting: SortingState = useMemo(
+		() =>
+			state.sortBy
+				? [{ id: state.sortBy, desc: state.sortDir === "desc" }]
+				: [],
+		[state.sortBy, state.sortDir],
+	);
 
-	const pagination: PaginationState = {
-		pageIndex: state.page - 1,
-		pageSize: state.pageSize,
-	};
+	const pagination: PaginationState = useMemo(
+		() => ({
+			pageIndex: state.page - 1,
+			pageSize: state.pageSize,
+		}),
+		[state.page, state.pageSize],
+	);
 
 	const resolvedSelectionKeys: Selection = selectedRowIds
 		? new Set(selectedRowIds)

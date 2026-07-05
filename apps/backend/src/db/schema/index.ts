@@ -12,6 +12,8 @@ export * from './evaluation-events';
 export * from './evaluation-stats';
 export * from './user-relations';
 export * from './organization-invitations';
+export * from './segments';
+export * from './tags';
 
 export * from './auth-schema';
 

@@ -16,11 +16,10 @@ import { FlagAnalytics } from "@/features/analytics/components/FlagAnalytics";
 import { FlagEditorProvider } from "./FlagEditorContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useForm, FormProvider } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { flagEditorFormSchema, type FlagEditorFormValues } from "./schema";
 import CopyButton from "#/components/ui/copy-button";
 import { useContextStore } from "#/stores";
-import { useRules } from "@/features/rules/api";
 import { usePatchFlagConfig } from "../api";
 import { ActionButton } from "#/components/ui/action-button";
 import { useHasPermission } from "@/hooks/usePermission";
@@ -34,11 +33,13 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 	const search = routeApi.useSearch();
 	const navigate = routeApi.useNavigate();
 	const isMobile = useIsMobile();
-	const { data: rulesData } = useRules(flag.id, currentEnv?.id);
-
 	const canEditFlags = useHasPermission("flag:edit");
 
-	const activeTab = (!canEditFlags && (search.tab === "changes-history" || search.tab === "settings")) ? "targeting" : (search.tab ?? "targeting");
+	const activeTab =
+		!canEditFlags &&
+		(search.tab === "changes-history" || search.tab === "settings")
+			? "targeting"
+			: (search.tab ?? "targeting");
 
 	const setActiveTab = (key: string) => {
 		navigate({
@@ -52,7 +53,7 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 	);
 
 	const methods = useForm<FlagEditorFormValues>({
-		resolver: zodResolver(flagEditorFormSchema),
+		resolver: standardSchemaResolver(flagEditorFormSchema),
 		defaultValues: {
 			isFlagOn: defaultFlagState?.isEnabled ?? false,
 			offVariationId: defaultFlagState?.offVariationId ?? "",
@@ -66,92 +67,109 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 	});
 
 	useEffect(() => {
-		if (rulesData && currentEnv) {
-			const envRules = rulesData
-				.filter((r) => r.environmentId === currentEnv.id)
-				.sort(
-					(a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority),
-				);
-
-			methods.reset({
-				isFlagOn: defaultFlagState?.isEnabled ?? false,
-				offVariationId: defaultFlagState?.offVariationId ?? "",
-				defaultVariationId:
-					defaultFlagState?.defaultVariationId ??
-					flag.variations?.find((v) => v.isDefault)?.id ??
-					"",
-				variations: flag.variations || [],
-				rules: envRules.map((rule) => {
-					const ruleType = rule.ruleType as string;
-					if (ruleType === "percentage") {
-						const conditions: any = rule.conditions || {};
-						const rollouts =
-							conditions.rollouts ||
-							(conditions.percentage !== undefined
-								? [
-										{
-											variationId: rule.variationId || "",
-											percentage: conditions.percentage,
-										},
-									]
-								: []);
-						return {
-							id: rule.id,
-							ruleType: "percentage" as const,
-							isEnabled: rule.isEnabled,
-							variationId: rule.variationId || undefined,
-							conditions: { rollouts },
-						};
-					}
-					if (ruleType === "user") {
-						const conditions: any = rule.conditions || {};
-						return {
-							id: rule.id,
-							ruleType: "user" as const,
-							isEnabled: rule.isEnabled,
-							variationId: rule.variationId || "",
-							conditions: {
-								operator: (conditions.operator as "in" | "not_in") || "in",
-								userIds: conditions.userIds || [],
-							},
-						};
-					}
-					if (ruleType === "role") {
-						const conditions: any = rule.conditions || {};
-						return {
-							id: rule.id,
-							ruleType: "role" as const,
-							isEnabled: rule.isEnabled,
-							variationId: rule.variationId || "",
-							conditions: {
-								operator: (conditions.operator as "in" | "not_in") || "in",
-								roles: conditions.roles || [],
-							},
-						};
-					}
-					if (ruleType === "custom") {
-						const conditions: any = rule.conditions || {};
-						return {
-							id: rule.id,
-							ruleType: "custom" as const,
-							isEnabled: rule.isEnabled,
-							variationId: rule.variationId || "",
-							conditions: {
-								conditions: conditions.conditions || [],
-							},
-						};
+		const envRules = (flag.rules || []).sort(
+			(a, b) => Number.parseInt(a.priority) - Number.parseInt(b.priority),
+		);
+		methods.reset({
+			isFlagOn: defaultFlagState?.isEnabled ?? false,
+			offVariationId: defaultFlagState?.offVariationId ?? "",
+			defaultVariationId:
+				defaultFlagState?.defaultVariationId ??
+				flag.variations?.find((v) => v.isDefault)?.id ??
+				"",
+			variations: flag.variations || [],
+			rules: envRules.map((rule) => {
+				const ruleType = rule.ruleType as string;
+				if (ruleType === "percentage") {
+					const conditions: any = rule.conditions || {};
+					const rollouts =
+						conditions.rollouts ||
+						(conditions.percentage !== undefined
+							? [
+									{
+										variationId: rule.variationId || "",
+										percentage: conditions.percentage,
+									},
+								]
+							: []);
+					return {
+						id: rule.id,
+						ruleType: "percentage" as const,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || undefined,
+						conditions: { rollouts },
+					};
+				}
+				if (ruleType === "user") {
+					const conditions: any = rule.conditions || {};
+					return {
+						id: rule.id,
+						ruleType: "user" as const,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || "",
+						conditions: {
+							operator: (conditions.operator as "in" | "not_in") || "in",
+							userIds: conditions.userIds || [],
+						},
+					};
+				}
+				if (ruleType === "role") {
+					const conditions: any = rule.conditions || {};
+					return {
+						id: rule.id,
+						ruleType: "role" as const,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || "",
+						conditions: {
+							operator: (conditions.operator as "in" | "not_in") || "in",
+							roles: conditions.roles || [],
+						},
+					};
+				}
+				if (ruleType === "custom") {
+					const raw: any = rule.conditions || {};
+					// Normalize: handle flat array, {conditions: [...]}, or old double-wrapped {conditions: {conditions: [...]}}
+					let normalized: { conditions: any[] };
+					if (Array.isArray(raw)) {
+						normalized = { conditions: raw };
+					} else if (Array.isArray(raw.conditions)) {
+						normalized = raw;
+					} else if (raw.conditions && Array.isArray(raw.conditions.conditions)) {
+						normalized = { conditions: raw.conditions.conditions };
+					} else {
+						normalized = { conditions: [] };
 					}
 					return {
 						id: rule.id,
-						ruleType: "kill_switch" as const,
+						ruleType: "custom" as const,
 						isEnabled: rule.isEnabled,
 						variationId: rule.variationId || "",
-						conditions: {},
+						conditions: normalized,
 					};
-				}),
-			});
-		}
-	}, [rulesData, currentEnv, defaultFlagState, flag, methods]);
+				}
+				if (ruleType === "segment") {
+					const conditions: any = rule.conditions || {};
+					return {
+						id: rule.id,
+						ruleType: "segment" as const,
+						isEnabled: rule.isEnabled,
+						variationId: rule.variationId || "",
+						conditions: {
+							operator: (conditions.operator as "in" | "not_in") || "in",
+							segmentIds: conditions.segmentIds || [],
+						},
+					};
+				}
+				return {
+					id: rule.id,
+					ruleType: "kill_switch" as const,
+					isEnabled: rule.isEnabled,
+					variationId: rule.variationId || "",
+					conditions: {},
+				};
+			}),
+		});
+	}, [currentEnv, defaultFlagState, flag, methods]);
 
 	const { mutate: patchConfig, isPending: isSaving } = usePatchFlagConfig();
 
@@ -208,8 +226,12 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 							roles: rule.conditions.roles,
 						};
 					} else if (rule.ruleType === "custom") {
+						// rule.conditions from form is already {conditions: [{contextKey, type, operator, values}]}
+						baseRule.conditions = rule.conditions;
+					} else if (rule.ruleType === "segment") {
 						baseRule.conditions = {
-							conditions: rule.conditions.conditions,
+							operator: rule.conditions.operator,
+							segmentIds: rule.conditions.segmentIds,
 						};
 					}
 					return baseRule;
@@ -232,7 +254,7 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 			);
 		},
 		(errors) => {
-			console.warn("Validation failed:", errors);
+			console.error("Validation failed:", errors);
 			toast.danger("Validation failed", {
 				description:
 					"Please check all fields and fix any errors before saving.",
@@ -277,12 +299,13 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 								</Chip>
 							</div>
 							<div className="mt-1 flex items-center gap-0.5">
-								<code className="leading-tight">
-									{flag.key}
-								</code>
+								<code className="leading-tight">{flag.key}</code>
 								<CopyButton
 									text={flag.key}
-									buttonProps={{ className: "size-6 rounded-2xl", isIconOnly: true }}
+									buttonProps={{
+										className: "size-6 rounded-2xl",
+										isIconOnly: true,
+									}}
 								/>
 							</div>
 						</div>
@@ -314,7 +337,9 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 							},
 							...(isMobile ? [{ id: "variations", title: "Variations" }] : []),
 							{ id: "analytics", title: "Analytics" },
-							...(canEditFlags ? [{ id: "changes-history", title: "Changes History" }] : []),
+							...(canEditFlags
+								? [{ id: "changes-history", title: "Changes History" }]
+								: []),
 							{ id: "simulation", title: "Simulation" },
 							...(canEditFlags ? [{ id: "settings", title: "Settings" }] : []),
 						];

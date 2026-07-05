@@ -14,7 +14,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'test-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -31,7 +30,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.toggled',
         flagKey: 'test-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -56,7 +54,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.created',
         flagKey: 'test-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -75,19 +72,17 @@ describe('FlagChangePublisher', () => {
       const event1: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'test-flag',
-        environmentId: 'env-1',
         timestamp: new Date().toISOString(),
       };
 
       const event2: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'test-flag',
-        environmentId: 'env-2',
         timestamp: new Date().toISOString(),
       };
 
       publisher.subscribe('env-1').subscribe((received) => {
-        expect(received.environmentId).toBe('env-1');
+        expect(received.flagKey).toBe('test-flag');
         done();
       });
 
@@ -102,7 +97,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.toggled',
         flagKey: 'test-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -121,7 +115,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'specific-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -140,7 +133,6 @@ describe('FlagChangePublisher', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'other-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 

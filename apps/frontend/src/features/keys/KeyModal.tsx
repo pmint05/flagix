@@ -16,7 +16,7 @@ import {
 } from "@heroui/react";
 import { BrowserIcon, TerminalIcon } from "@phosphor-icons/react";
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import type { CreateSdkKeyInput } from "./api";
 
@@ -60,7 +60,7 @@ export function KeyModal({
 		reset,
 		formState: { errors },
 	} = useForm<CreateSdkKeyInput>({
-		resolver: zodResolver(createSdkKeyFormSchema),
+		resolver: standardSchemaResolver(createSdkKeyFormSchema),
 		defaultValues: { name: "", type: "client" },
 	});
 

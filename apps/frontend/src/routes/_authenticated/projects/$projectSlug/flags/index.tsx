@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@heroui/react";
 import { PlusIcon, TrayIcon } from "@phosphor-icons/react";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
 	useFlags,
 	useDeleteFlag,
@@ -27,6 +28,7 @@ import { useEnvironments } from "@/features/environments/api";
 
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { useHasPermission } from "@/hooks/usePermission";
+import { useUIStore } from "@/stores";
 
 export const Route = createFileRoute(
 	"/_authenticated/projects/$projectSlug/flags/",
@@ -55,6 +57,7 @@ function toFlagListParams(tableState: TableState): FlagListParams {
 		creator: filters.creator,
 		createdAtFrom: filters.createdAtFrom,
 		createdAtTo: filters.createdAtTo,
+		tags: filters.tags,
 		sort,
 		page: tableState.page,
 		pageSize: tableState.pageSize,
@@ -76,6 +79,7 @@ function FlagsIndex() {
 			"creator",
 			"createdAtFrom",
 			"createdAtTo",
+			"tags",
 		],
 	});
 
@@ -89,7 +93,11 @@ function FlagsIndex() {
 	const canEditFlag = useHasPermission("flag:edit");
 	const canDeleteFlag = useHasPermission("flag:delete");
 
-	const [modalOpen, setModalOpen] = useState(false);
+	const { isCreateFlagOpen, openCreateFlag, closeCreateFlag } = useUIStore();
+	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+	const [flagToDelete, setFlagToDelete] = useState<FeatureFlagListItem | null>(
+		null,
+	);
 
 	const [searchQuery, setSearchQuery] = useState(tableState.query || "");
 	const debouncedSearch = useDebounce(searchQuery, 300);
@@ -105,20 +113,23 @@ function FlagsIndex() {
 	}, [tableState.query]);
 
 	const handleCreate = () => {
-		setModalOpen(true);
+		openCreateFlag();
 	};
 
 	const columns = useMemo(
 		() =>
 			createFlagColumns({
 				projectSlug,
-				onDelete: (flag) => deleteFlag.mutate(flag.id),
+				onDelete: (flag) => {
+					setFlagToDelete(flag);
+					setDeleteModalOpen(true);
+				},
 				onStatusChange: (flag, status) =>
 					updateFlagState.mutate({ flagId: flag.id, status }),
 				canEdit: canEditFlag,
 				canDelete: canDeleteFlag,
 			}) as ColumnDef<FeatureFlagListItem, unknown>[],
-		[projectSlug, deleteFlag, updateFlagState, canEditFlag, canDeleteFlag],
+		[projectSlug, updateFlagState, canEditFlag, canDeleteFlag],
 	);
 
 	const hasEnvironments = !!environments && environments.length > 0;
@@ -128,6 +139,23 @@ function FlagsIndex() {
 	const flags = flagsResponse?.data ?? [];
 	const total = flagsResponse?.total ?? 0;
 	const pageCount = Math.ceil(total / tableState.pageSize);
+
+	if (!hasEnvironments && !isEnvironmentsPending)
+		return (
+			<EmptyState
+				icon={<TrayIcon className="size-8 text-muted" weight="duotone" />}
+				title="No Environments Found"
+				description="You need to create at least one environment before you can create or manage feature flags."
+				actionLabel="Go to Environments"
+				onAction={() =>
+					navigate({
+						to: "/projects/$projectSlug/environments",
+						params: { projectSlug },
+					})
+				}
+				actionVariant="primary"
+			/>
+		);
 
 	return (
 		<div className="space-y-6">
@@ -154,20 +182,6 @@ function FlagsIndex() {
 				<div className="rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger">
 					Failed to load flags. Please try again.
 				</div>
-			) : !hasEnvironments ? (
-				<EmptyState
-					icon={<TrayIcon className="size-8 text-muted" weight="duotone" />}
-					title="No Environments Found"
-					description="You need to create at least one environment before you can create or manage feature flags."
-					actionLabel="Go to Environments"
-					onAction={() =>
-						navigate({
-							to: "/projects/$projectSlug/environments",
-							params: { projectSlug },
-						})
-					}
-					actionVariant="primary"
-				/>
 			) : (
 				<div className="space-y-4">
 					<FlagFilters
@@ -189,7 +203,30 @@ function FlagsIndex() {
 				</div>
 			)}
 
-			<FlagModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+			<FlagModal isOpen={isCreateFlagOpen} onClose={closeCreateFlag} />
+			{flagToDelete && (
+				<ConfirmModal
+					showToast
+					isOpen={deleteModalOpen}
+					onOpenChange={setDeleteModalOpen}
+					title="Delete Flag"
+					description={`Are you sure you want to delete the flag "${flagToDelete.key}"? This action cannot be undone.`}
+					variant="danger"
+					requireRetypeContent={flagToDelete.key}
+					retypeLabel={`Type "${flagToDelete.key}" to confirm`}
+					onConfirm={async () => {
+						await deleteFlag.mutateAsync(flagToDelete.id);
+						setDeleteModalOpen(false);
+						setFlagToDelete(null);
+					}}
+					onCancel={() => {
+						setDeleteModalOpen(false);
+						setFlagToDelete(null);
+					}}
+					confirmText="Delete"
+					cancelText="Cancel"
+				/>
+			)}
 		</div>
 	);
 }

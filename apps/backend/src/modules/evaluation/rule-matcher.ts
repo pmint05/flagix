@@ -26,6 +26,7 @@ export interface RuleMatcherStrategy {
     rule: RuleForMatching,
     flagKey: string,
     context: EvaluationContext,
+    segments?: Record<string, { id: string; key: string; conditions: any }>,
   ) => MatchResult;
 }
 
@@ -143,8 +144,38 @@ function isDeepEqual(a: any, b: any): boolean {
   return true;
 }
 
+function parseSemver(v: string) {
+  if (v == null) return null;
+  const match = String(v).trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.-]+))?(?:\+([a-zA-Z0-9.-]+))?$/);
+  if (!match) return null;
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: parseInt(match[3], 10),
+    prerelease: match[4] || '',
+  };
+}
+
+function compareSemver(v1: string, v2: string): number {
+  const p1 = parseSemver(v1);
+  const p2 = parseSemver(v2);
+  if (!p1 && !p2) return String(v1).localeCompare(String(v2));
+  if (!p1) return -1;
+  if (!p2) return 1;
+
+  if (p1.major !== p2.major) return p1.major - p2.major;
+  if (p1.minor !== p2.minor) return p1.minor - p2.minor;
+  if (p1.patch !== p2.patch) return p1.patch - p2.patch;
+
+  if (!p1.prerelease && p2.prerelease) return 1;
+  if (p1.prerelease && !p2.prerelease) return -1;
+  if (!p1.prerelease && !p2.prerelease) return 0;
+
+  return p1.prerelease.localeCompare(p2.prerelease);
+}
+
 export function matchClause(
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array',
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'semver' | 'date',
   operator: string,
   contextValue: any,
   clauseValue: any,
@@ -220,6 +251,13 @@ export function matchClause(
             Array.isArray(clauseValue) &&
             !clauseValue.map(Number).includes(numVal)
           );
+        case 'between':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.length === 2 &&
+            numVal >= Number(clauseValue[0]) &&
+            numVal <= Number(clauseValue[1])
+          );
         default:
           return false;
       }
@@ -274,10 +312,89 @@ export function matchClause(
           return contextValue.map(String).includes(String(clauseValue));
         case 'not_contains':
           return !contextValue.map(String).includes(String(clauseValue));
+        case 'contains_any':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.some((cv) =>
+              contextValue.map(String).includes(String(cv)),
+            )
+          );
+        case 'contains_all':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.every((cv) =>
+              contextValue.map(String).includes(String(cv)),
+            )
+          );
         case 'is_empty':
           return contextValue.length === 0;
         case 'is_not_empty':
           return contextValue.length > 0;
+        default:
+          return false;
+      }
+    }
+
+    case 'semver': {
+      const semStr = String(contextValue);
+      switch (operator) {
+        case 'equals':
+          return compareSemver(semStr, String(clauseValue)) === 0;
+        case 'not_equals':
+          return compareSemver(semStr, String(clauseValue)) !== 0;
+        case 'gt':
+        case 'greater_than':
+          return compareSemver(semStr, String(clauseValue)) > 0;
+        case 'gte':
+          return compareSemver(semStr, String(clauseValue)) >= 0;
+        case 'lt':
+        case 'less_than':
+          return compareSemver(semStr, String(clauseValue)) < 0;
+        case 'lte':
+          return compareSemver(semStr, String(clauseValue)) <= 0;
+        case 'in':
+        case 'is_one_of':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.some((cv) => compareSemver(semStr, String(cv)) === 0)
+          );
+        case 'not_in':
+        case 'is_not_one_of':
+          return (
+            Array.isArray(clauseValue) &&
+            !clauseValue.some((cv) => compareSemver(semStr, String(cv)) === 0)
+          );
+        case 'between':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.length === 2 &&
+            compareSemver(semStr, String(clauseValue[0])) >= 0 &&
+            compareSemver(semStr, String(clauseValue[1])) <= 0
+          );
+        default:
+          return false;
+      }
+    }
+
+    case 'date': {
+      const dateVal = new Date(contextValue).getTime();
+      if (isNaN(dateVal)) return false;
+      switch (operator) {
+        case 'after':
+        case 'greater_than':
+        case 'gt':
+          return dateVal > new Date(clauseValue).getTime();
+        case 'before':
+        case 'less_than':
+        case 'lt':
+          return dateVal < new Date(clauseValue).getTime();
+        case 'between':
+          return (
+            Array.isArray(clauseValue) &&
+            clauseValue.length === 2 &&
+            dateVal >= new Date(clauseValue[0]).getTime() &&
+            dateVal <= new Date(clauseValue[1]).getTime()
+          );
         default:
           return false;
       }
@@ -293,17 +410,9 @@ export function matchesCustomRule(
   _flagKey: string,
   context: EvaluationContext,
 ): MatchResult {
-  const customConditions = rule.conditions.conditions as
-    | Array<{
-        contextKey: string;
-        type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-        operator: string;
-        value?: any;
-        values?: any[];
-      }>
-    | undefined;
+  const customConditions = (rule.conditions as any)?.conditions as any[] | undefined;
 
-  if (!customConditions || !Array.isArray(customConditions)) {
+  if (!customConditions) {
     return { isMatched: false };
   }
 
@@ -323,10 +432,13 @@ export function matchesCustomRule(
       return { isMatched: false };
     }
 
+    // "between" operator always uses the values array; for others prefer value, fallback to values
     const clauseValue =
-      clause.value !== undefined && clause.value !== null
-        ? clause.value
-        : clause.values;
+      operator === 'between' && Array.isArray(clause.values)
+        ? clause.values
+        : clause.value !== undefined && clause.value !== null
+          ? clause.value
+          : clause.values;
 
     const matched = matchClause(type, operator, contextValue, clauseValue);
 
@@ -336,6 +448,139 @@ export function matchesCustomRule(
   }
 
   return { isMatched: true, variationId: rule.variationId || undefined };
+}
+
+export function evaluateSegment(
+  segment: { conditions: any },
+  context: EvaluationContext,
+): boolean {
+  const conditions = Array.isArray(segment?.conditions) ? segment.conditions : undefined;
+  if (!conditions) return false;
+
+  for (const clause of conditions) {
+    // conditionType discriminator — defaults to "custom" for backward compat
+    const conditionType: string = clause.conditionType ?? 'custom';
+
+    // ── User targeting ───────────────────────────────────────────────────────
+    if (conditionType === 'user') {
+      const userIds = clause.userIds as string[] | undefined;
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return false;
+      }
+      if (!context.userId || !userIds.includes(context.userId)) {
+        return false;
+      }
+      continue;
+    }
+
+    // ── Role targeting ───────────────────────────────────────────────────────
+    if (conditionType === 'role') {
+      const roles = clause.roles as string[] | undefined;
+      if (!roles || !Array.isArray(roles) || roles.length === 0) {
+        return false;
+      }
+      if (!context.role || !roles.includes(context.role)) {
+        return false;
+      }
+      continue;
+    }
+
+    // ── Custom attribute condition (conditionType === "custom" or legacy) ────
+    const { contextKey, operator, type } = clause;
+
+    let contextValue: any = undefined;
+    if (contextKey === 'userId') {
+      contextValue = context.userId;
+    } else if (contextKey === 'role') {
+      contextValue = context.role;
+    } else {
+      contextValue = getNestedValue(context.attributes, contextKey);
+    }
+
+    if (contextValue === undefined) {
+      return false;
+    }
+
+    // "between" operator always uses the values array; for others prefer value, fallback to values
+    const clauseValue =
+      operator === 'between' && Array.isArray(clause.values)
+        ? clause.values
+        : clause.value !== undefined && clause.value !== null
+          ? clause.value
+          : clause.values;
+
+    const matched = matchClause(type, operator, contextValue, clauseValue);
+    if (!matched) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+export function segmentHasMissingAttributes(
+  segment: { conditions: any },
+  context: EvaluationContext,
+): boolean {
+  const conditions = Array.isArray(segment?.conditions) ? segment.conditions : undefined;
+  if (!conditions) return false;
+
+  for (const clause of conditions) {
+    const conditionType: string = clause.conditionType ?? 'custom';
+
+    if (conditionType === 'user' || conditionType === 'role') continue;
+
+    const { contextKey } = clause;
+
+    let contextValue: any = undefined;
+    if (contextKey === 'userId') {
+      contextValue = context.userId;
+    } else if (contextKey === 'role') {
+      contextValue = context.role;
+    } else {
+      contextValue = getNestedValue(context.attributes, contextKey);
+    }
+
+    if (contextValue === undefined || contextValue === null) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function matchesSegmentRule(
+  rule: RuleForMatching,
+  _flagKey: string,
+  context: EvaluationContext,
+  segments?: Record<string, { id: string; key: string; conditions: any }>,
+): MatchResult {
+  const segmentIds = rule.conditions.segmentIds as string[] | undefined;
+  const operator = rule.conditions.operator as 'in' | 'not_in' | undefined;
+
+  if (!segmentIds || !Array.isArray(segmentIds) || !operator || !segments) {
+    return { isMatched: false };
+  }
+
+  const isAnySegmentMatched = segmentIds.some((id) => {
+    const segment = segments[id];
+    return segment ? evaluateSegment(segment, context) : false;
+  });
+
+  if (operator === 'not_in' && !isAnySegmentMatched) {
+    const anySegmentIndeterminate = segmentIds.some((id) => {
+      const segment = segments[id];
+      return segment ? segmentHasMissingAttributes(segment, context) : false;
+    });
+    if (anySegmentIndeterminate) {
+      return { isMatched: false };
+    }
+  }
+
+  const isMatched = operator === 'in' ? isAnySegmentMatched : !isAnySegmentMatched;
+
+  return { isMatched, variationId: rule.variationId || undefined };
 }
 
 export const RULE_MATCHER_REGISTRY: ReadonlyMap<RuleType, RuleMatcherStrategy> =
@@ -372,11 +617,20 @@ export const RULE_MATCHER_REGISTRY: ReadonlyMap<RuleType, RuleMatcherStrategy> =
         matchFn: matchesCustomRule,
       },
     ],
+    [
+      'segment',
+      {
+        ruleType: 'segment',
+        reason: 'SEGMENT_TARGETING',
+        matchFn: matchesSegmentRule,
+      },
+    ],
   ]);
 
 export const MATCHER_TIERS: readonly RuleType[] = [
   'user',
   'role',
+  'segment',
   'custom',
   'percentage',
 ];

@@ -27,8 +27,8 @@ function ProjectSlugLayout() {
 	if (isProjectLoading) {
 		return (
 			<div className="space-y-6">
-				<Skeleton className="h-8 w-1/3 rounded-lg" />
-				<Skeleton className="h-64 w-full rounded-lg" />
+				<Skeleton className="h-8 w-64 rounded-lg" />
+				<Skeleton className="h-125 w-full rounded-lg" />
 			</div>
 		);
 	}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import {
 	Button,
 	Form,
@@ -80,7 +80,7 @@ export function RuleEditor({
 		watch,
 		formState: { errors },
 	} = useForm<RuleFormValues>({
-		resolver: zodResolver(ruleFormSchema),
+		resolver: standardSchemaResolver(ruleFormSchema),
 		defaultValues: {
 			ruleType: rule?.ruleType ?? "kill_switch",
 			environmentId: rule?.environmentId ?? defaultEnvironmentId ?? "",

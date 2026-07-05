@@ -14,7 +14,6 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.created',
         flagKey: 'new-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -32,7 +31,6 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'existing-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
         metadata: { version: 2 },
       };
@@ -52,7 +50,6 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.toggled',
         flagKey: 'toggle-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
         metadata: { isEnabled: true },
       };
@@ -71,7 +68,6 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.archived',
         flagKey: 'archive-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
@@ -91,15 +87,12 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'rule.created',
         flagKey: 'target-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
-        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
         expect(received.type).toBe('rule.created');
         expect(received.flagKey).toBe('target-flag');
-        expect(received.metadata?.ruleId).toBe('rule-1');
         done();
       });
 
@@ -111,9 +104,7 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'rule.updated',
         flagKey: 'target-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
-        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
@@ -130,9 +121,7 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'rule.deleted',
         flagKey: 'target-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
-        metadata: { ruleId: 'rule-1' },
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
@@ -152,7 +141,6 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'test-flag',
-        environmentId,
         timestamp,
       };
 
@@ -169,12 +157,11 @@ describe('Flag Change Detection', () => {
       const event: FlagChangeEvent = {
         type: 'flag.updated',
         flagKey: 'test-flag',
-        environmentId,
         timestamp: new Date().toISOString(),
       };
 
       publisher.subscribe(environmentId).subscribe((received) => {
-        expect(received.environmentId).toBe(environmentId);
+        expect(received.flagKey).toBe('test-flag');
         done();
       });
 

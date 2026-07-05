@@ -8,6 +8,8 @@ import {
 	BroadcastIcon,
 	ChartLineIcon,
 	UsersThreeIcon,
+	TargetIcon,
+	TagIcon,
 } from "@phosphor-icons/react";
 import { useContextStore, useSidebarStore } from "#/stores";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -15,9 +17,11 @@ import { useHasPermission } from "@/hooks/usePermission";
 
 const PROJECT_NAV_ITEMS = [
 	{ to: "/projects/$projectSlug/flags", label: "Feature Flags", icon: FlagIcon },
+	{ to: "/projects/$projectSlug/segments", label: "Segments", icon: TargetIcon },
 	{ to: "/projects/$projectSlug/environments", label: "Environments", icon: TreeStructureIcon },
 	{ to: "/projects/$projectSlug/sdk-keys", label: "SDK Keys", icon: KeyIcon },
 	{ to: "/projects/$projectSlug/analytics", label: "Project Analytics", icon: ChartLineIcon },
+	{ to: "/projects/$projectSlug/tags", label: "Tags", icon: TagIcon },
 ];
 
 const GLOBAL_NAV_ITEMS = [

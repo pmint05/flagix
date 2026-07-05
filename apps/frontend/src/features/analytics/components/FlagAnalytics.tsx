@@ -8,6 +8,7 @@ import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { useFlagAnalytics } from "../hooks/useFlagAnalytics";
 import { EvaluationTrendChart } from "./EvaluationTrendChart";
 import { VariationDistributionChart } from "./VariationDistributionChart";
+import { HorizontalBarChart } from "./HorizontalBarChart";
 import type { AnalyticsTimeRange } from "../types/analytics";
 
 function calendarRangeToIso(
@@ -99,8 +100,6 @@ export function FlagAnalytics({ flag }: FlagAnalyticsProps) {
 
 	const total = data.totalEvaluations;
 	const errors = data.errorCount;
-	const hasData =
-		data.evaluationTrend.length > 0 || data.variationDistribution.length > 0;
 
 	return (
 		<div className="space-y-6">
@@ -113,91 +112,73 @@ export function FlagAnalytics({ flag }: FlagAnalyticsProps) {
 				<DateRangeFilter value={dateRange} onChange={setDateRange} />
 			</div>
 
-			{!hasData ? (
-				<div className="flex flex-col items-center justify-center gap-2 py-16 text-default-400">
-					<p className="text-lg font-medium">No evaluation data yet</p>
-					<p className="text-sm">
-						This flag hasn't been evaluated in the selected time range.
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+				<Card className="p-4">
+					<p className="text-xs text-default-400 uppercase tracking-wide">
+						Evaluations
 					</p>
-				</div>
-			) : (
-				<>
-					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-						<Card className="p-4">
-							<p className="text-xs text-default-400 uppercase tracking-wide">
-								Evaluations
-							</p>
-							<p className="text-2xl font-bold text-foreground mt-1">
-								{total.toLocaleString()}
-							</p>
-						</Card>
-						<Card className="p-4">
-							<p className="text-xs text-default-400 uppercase tracking-wide">
-								Errors
-							</p>
-							<p
-								className={`text-2xl font-bold mt-1 ${errors > 0 ? "text-danger" : "text-foreground"}`}>
-								{errors.toLocaleString()}
-							</p>
-						</Card>
-						<Card className="p-4">
-							<p className="text-xs text-default-400 uppercase tracking-wide">
-								Error Rate
-							</p>
-							<p className="text-2xl font-bold text-foreground mt-1">
-								{total > 0 ? ((errors / total) * 100).toFixed(2) : "0.00"}%
-							</p>
-						</Card>
-						<Card className="p-4">
-							<p className="text-xs text-default-400 uppercase tracking-wide">
-								Flag Type
-							</p>
-							<p className="text-2xl font-bold text-foreground mt-1 capitalize">
-								{data.flagType}
-							</p>
-						</Card>
-					</div>
+					<p className="text-2xl font-bold text-foreground mt-1">
+						{total.toLocaleString()}
+					</p>
+				</Card>
+				<Card className="p-4">
+					<p className="text-xs text-default-400 uppercase tracking-wide">
+						Errors
+					</p>
+					<p
+						className={`text-2xl font-bold mt-1 ${errors > 0 ? "text-danger" : "text-foreground"}`}>
+						{errors.toLocaleString()}
+					</p>
+				</Card>
+				<Card className="p-4">
+					<p className="text-xs text-default-400 uppercase tracking-wide">
+						Error Rate
+					</p>
+					<p className="text-2xl font-bold text-foreground mt-1">
+						{total > 0 ? ((errors / total) * 100).toFixed(2) : "0.00"}%
+					</p>
+				</Card>
+				<Card className="p-4">
+					<p className="text-xs text-default-400 uppercase tracking-wide">
+						Flag Type
+					</p>
+					<p className="text-2xl font-bold text-foreground mt-1 capitalize">
+						{data.flagType}
+					</p>
+				</Card>
+			</div>
 
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						<Card className="p-4">
-							<h4 className="text-sm font-medium text-foreground mb-4">
-								Evaluation Trend
-							</h4>
-							<EvaluationTrendChart
-								data={data.evaluationTrend}
-								variationColors={variationColors}
-							/>
-						</Card>
-						<Card className="p-4">
-							<h4 className="text-sm font-medium text-foreground mb-4">
-								Variation Distribution
-							</h4>
-							<VariationDistributionChart data={data.variationDistribution} />
-						</Card>
-					</div>
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<Card className="p-4">
+					<h4 className="text-sm font-medium text-foreground mb-4">
+						Evaluation Trend
+					</h4>
+					<EvaluationTrendChart
+						data={data.evaluationTrend}
+						variationColors={variationColors}
+					/>
+				</Card>
+				<Card className="p-4">
+					<h4 className="text-sm font-medium text-foreground mb-4">
+						Variation Distribution
+					</h4>
+					<VariationDistributionChart data={data.variationDistribution} />
+				</Card>
+			</div>
 
-					{data.byReason.length > 0 && (
-						<Card className="p-4">
-							<h4 className="text-sm font-medium text-foreground mb-3">
-								By Evaluation Reason
-							</h4>
-							<div className="space-y-2">
-								{data.byReason.map((r) => (
-									<div
-										key={r.reason}
-										className="flex items-center justify-between">
-										<span className="text-xs text-default-500 font-mono">
-											{r.reason}
-										</span>
-										<span className="text-xs font-medium text-foreground">
-											{r.count.toLocaleString()}
-										</span>
-									</div>
-								))}
-							</div>
-						</Card>
-					)}
-				</>
+			{data.byReason.length > 0 && (
+				<Card className="p-4">
+					<h4 className="text-sm font-medium text-foreground mb-3">
+						By Evaluation Reason
+					</h4>
+					<HorizontalBarChart
+						data={data.byReason.map((r) => ({
+							label: r.reason.replace(/_/g, " "),
+							count: r.count,
+						}))}
+						maxItems={10}
+					/>
+				</Card>
 			)}
 		</div>
 	);

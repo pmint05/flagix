@@ -1,6 +1,6 @@
 import type { EvaluationContext } from '@flagix/shared';
 import type { LoadedFlag, LoadedFlagRule } from './safe-default.util';
-import { getMatcher, getNestedValue, matchClause } from './rule-matcher';
+import { getMatcher, getNestedValue, matchClause, evaluateSegment, segmentHasMissingAttributes } from './rule-matcher';
 import { bucket } from './hash.util';
 
 export interface SimulationClauseTrace {
@@ -290,11 +290,66 @@ export function simulate(
       continue;
     }
 
+    if (rule.ruleType === 'segment') {
+      const segmentIds = rule.conditions.segmentIds as string[] | undefined;
+      const operator = rule.conditions.operator as 'in' | 'not_in' | undefined;
+
+      let isMatched = false;
+      const detail: Array<{ segmentId: string; segmentName?: string; isMatched: boolean }> = [];
+
+      if (segmentIds && Array.isArray(segmentIds) && operator && flag.segments) {
+        const isAnySegmentMatched = segmentIds.some((id) => {
+          const segment = flag.segments![id];
+          const matches = segment ? evaluateSegment(segment, context) : false;
+          detail.push({
+            segmentId: id,
+            segmentName: segment?.key,
+            isMatched: matches,
+          });
+          return matches;
+        });
+
+        if (operator === 'not_in' && !isAnySegmentMatched) {
+          const anySegmentIndeterminate = segmentIds.some((id) => {
+            const segment = flag.segments![id];
+            return segment ? segmentHasMissingAttributes(segment, context) : false;
+          });
+          isMatched = !anySegmentIndeterminate;
+        } else {
+          isMatched = operator === 'in' ? isAnySegmentMatched : !isAnySegmentMatched;
+        }
+      }
+
+      trace.isMatched = isMatched;
+      trace.matchDetail = {
+        segment: {
+          operator,
+          segments: detail,
+        },
+      } as any;
+
+      if (isMatched) {
+        matchedRuleIndex = i;
+        const resolvedVarId = rule.variationId;
+        const variation = flag.variations.find((v) => v.id === resolvedVarId);
+        if (variation) {
+          result.resolvedVariationId = variation.id;
+          result.resolvedVariationKey = variation.key;
+          result.resolvedVariationValue = variation.value;
+          result.reason = 'RULE_MATCH';
+        }
+      }
+      result.ruleTraces.push(trace);
+      continue;
+    }
+
     if (rule.ruleType === 'custom') {
-      const customConditions = rule.conditions.conditions as
+      const customConditions = (
+        rule.conditions as Record<string, unknown>
+      )?.conditions as
         | Array<{
             contextKey: string;
-            type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+            type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'semver' | 'date';
             operator: string;
             value?: any;
             values?: any[];

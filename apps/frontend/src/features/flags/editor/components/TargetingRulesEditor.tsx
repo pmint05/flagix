@@ -41,6 +41,11 @@ const ADDABLE_RULE_TYPES = [
 	},
 	{ key: "role", label: "Target Roles", description: "Target users by role" },
 	{
+		key: "segment",
+		label: "Segment Rule",
+		description: "Match users belonging to a defined segment",
+	},
+	{
 		key: "percentage",
 		label: "Percentage Rollout",
 		description: "Resolve variations by percentage of traffic",
@@ -117,6 +122,11 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 				...baseRule,
 				ruleType: "role" as const,
 				conditions: { operator: "in", roles: [] },
+			},
+			segment: {
+				...baseRule,
+				ruleType: "segment" as const,
+				conditions: { operator: "in", segmentIds: [] },
 			},
 			percentage: {
 				...baseRule,

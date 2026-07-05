@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -38,6 +38,7 @@ import type { FeatureFlag } from "@/types/feature-flag";
 import { useUpdateFlag, useUpdateFlagState, useDeleteFlag } from "../api";
 import { useContextStore } from "@/stores";
 import { useNavigate } from "@tanstack/react-router";
+import { TagInput } from "@/components/ui/tag-input";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ActionButton } from "#/components/ui/action-button";
 
@@ -46,6 +47,7 @@ const flagMetadataSchema = z.object({
 	description: z.string().optional(),
 	visibility: z.enum(["all", "client_only", "server_only"]),
 	isTemporary: z.boolean(),
+	tags: z.array(z.string()).optional(),
 });
 
 const visibilityOptions = [
@@ -96,12 +98,13 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 		reset,
 		formState: { isDirty, errors },
 	} = useForm<FlagMetadataValues>({
-		resolver: zodResolver(flagMetadataSchema),
+		resolver: standardSchemaResolver(flagMetadataSchema),
 		defaultValues: {
 			name: flag.name || "",
 			description: flag.description || "",
 			visibility: flag.visibility || "all",
 			isTemporary: flag.isTemporary || false,
+			tags: flag.tags || [],
 		},
 	});
 
@@ -112,6 +115,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 			description: flag.description || "",
 			visibility: flag.visibility || "all",
 			isTemporary: flag.isTemporary || false,
+			tags: flag.tags || [],
 		});
 	}, [flag, reset]);
 
@@ -123,6 +127,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 				description: data.description,
 				visibility: data.visibility,
 				isTemporary: data.isTemporary,
+				tags: data.tags,
 			},
 			{
 				onSuccess: () => {
@@ -258,6 +263,21 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 							</TextField>
 						)}
 					/>
+
+					<div className="flex flex-col gap-1.5">
+						<Label>Tags</Label>
+						<Controller
+							name="tags"
+							control={control}
+							render={({ field }) => (
+								<TagInput
+									value={field.value}
+									onChange={field.onChange}
+									placeholder="Search tags or type and press Enter to create..."
+								/>
+							)}
+						/>
+					</div>
 
 					<Controller
 						name="isTemporary"

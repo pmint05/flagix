@@ -31,6 +31,25 @@ export const BREADCRUMB_CONFIG: Record<string, BreadcrumbSegment[]> = {
 		},
 		{ label: "Flags" },
 	],
+	"/_authenticated/projects/$projectSlug/segments/": [
+		// { label: "Projects", href: "/projects" },
+		{
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/segments`,
+			resolveParam: "projectSlug",
+		},
+		{ label: "Segments" },
+	],
+	"/_authenticated/projects/$projectSlug/segments/$segmentSlug": [
+		// { label: "Projects", href: "/projects" },
+		{
+			label: (p) => p.projectSlug,
+			href: (p) => `/projects/${p.projectSlug}/segments`,
+			resolveParam: "projectSlug",
+		},
+		{ label: "Segments", href: (p) => `/projects/${p.projectSlug}/segments` },
+		{ label: (p) => p.segmentSlug, resolveParam: "segmentSlug" },
+	],
 	"/_authenticated/projects/$projectSlug/flags/$flagSlug": [
 		// { label: "Projects", href: "/projects" },
 		{

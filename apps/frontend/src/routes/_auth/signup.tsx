@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -59,7 +59,7 @@ function SignupPage() {
 		handleSubmit,
 		formState: { errors },
 	} = useForm<SignupForm>({
-		resolver: zodResolver(signupSchema),
+		resolver: standardSchemaResolver(signupSchema),
 	});
 
 	const onSubmit = async (data: SignupForm) => {

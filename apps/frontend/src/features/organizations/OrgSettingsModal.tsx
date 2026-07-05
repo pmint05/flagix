@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { z } from "zod";
 import {
 	Button,
@@ -42,7 +42,7 @@ export function OrgSettingsModal({ isOpen, onClose }: OrgSettingsModalProps) {
 		control,
 		formState: { errors },
 	} = useForm<OrgSettingsData>({
-		resolver: zodResolver(orgSettingsSchema),
+		resolver: standardSchemaResolver(orgSettingsSchema),
 		values: {
 			name: org?.name ?? "",
 		},

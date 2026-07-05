@@ -36,7 +36,7 @@ function FlagEditorPage() {
 
 	if (isPending) {
 		return (
-			<div className="p-6 space-y-6">
+			<div className="space-y-6">
 				<Skeleton className="h-8 w-64 rounded-lg" />
 				<Skeleton className="h-125 w-full rounded-lg" />
 			</div>

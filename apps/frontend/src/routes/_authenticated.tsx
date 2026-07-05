@@ -10,6 +10,7 @@ import {
 import { cn, Skeleton } from "@heroui/react";
 import { ProjectSettingsModal } from "@/features/projects/ProjectSettingsModal";
 import { OrgSettingsModal } from "@/features/organizations/OrgSettingsModal";
+import { GlobalModals } from "@/components/modals/GlobalModals";
 import {
 	Sidebar,
 	SidebarResizeHandle,
@@ -174,6 +175,7 @@ function AuthenticatedLayout() {
 					isOpen={isOrgSettingsOpen}
 					onClose={closeOrgSettings}
 				/>
+				<GlobalModals />
 			</div>
 		);
 	}
@@ -234,6 +236,7 @@ function AuthenticatedLayout() {
 				isOpen={isOrgSettingsOpen}
 				onClose={closeOrgSettings}
 			/>
+			<GlobalModals />
 		</div>
 	);
 }

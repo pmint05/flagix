@@ -8,8 +8,11 @@ export * from './schemas/organization';
 export * from './schemas/project';
 export * from './schemas/environment';
 export * from './schemas/sdk-key';
+export * from './schemas/segment';
+export * from './schemas/tag';
 export { evaluationResultSchema } from './schemas/evaluation-result';
-export type { EvaluationResult } from './schemas/evaluation-result';
+export type { EvaluationResult, EvaluationReason } from './schemas/evaluation-result';
 export * from './schemas/analytics';
 export * from './constants/roles';
 export * from './constants/reasons';
+

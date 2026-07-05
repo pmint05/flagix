@@ -323,6 +323,46 @@ export function SimulationRightPanel({
 																</div>
 															)}
 
+														{/* Segment Detail */}
+														{trace.ruleType === "segment" &&
+															trace.matchDetail?.segment && (
+																<div className="space-y-1.5">
+																	<div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+																		Operator:{" "}
+																		<code className="font-mono normal-case">
+																			{trace.matchDetail.segment.operator?.toUpperCase()}
+																		</code>
+																	</div>
+																	{trace.matchDetail.segment.segments?.map(
+																		(seg: any, sIdx: number) => (
+																			<div
+																				key={sIdx}
+																				className="flex items-start gap-2">
+																				{seg.isMatched ? (
+																					<CheckCircleIcon
+																						className="size-3.5 text-success mt-1 shrink-0"
+																						weight="fill"
+																					/>
+																				) : (
+																					<XCircleIcon
+																						className="size-3.5 text-danger mt-1 shrink-0"
+																						weight="fill"
+																					/>
+																				)}
+																				<div>
+																					<code className="font-mono text-xs">
+																						{seg.segmentName || seg.segmentId}
+																					</code>
+																					<span className="text-muted-foreground ml-1 text-xs">
+																						{seg.isMatched ? "matched" : "not matched"}
+																					</span>
+																				</div>
+																			</div>
+																		),
+																	)}
+																</div>
+															)}
+
 														{!isSkipped && trace.ruleType !== "percentage" && (
 															<div className="border-t border-divider/60 pt-2 flex items-center gap-1.5">
 																<InfoIcon className="size-3.5" />
