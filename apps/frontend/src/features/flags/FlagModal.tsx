@@ -40,17 +40,11 @@ import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { VariationDot } from "@/components/ui/VariationDot";
 import { ActionButton } from "#/components/ui/action-button";
 import { TagInput } from "@/components/ui/tag-input";
+import { SlugInput, slugValidation } from "#/components/ui/slug-input";
 
 const flagFormSchema = z
 	.object({
-		key: z
-			.string()
-			.min(1, "Key is required")
-			.max(255)
-			.regex(
-				/^[a-zA-Z0-9_-]+$/,
-				"Only letters, numbers, underscores, and hyphens",
-			),
+		key: slugValidation,
 		name: z.string().min(1, "Name is required").max(255),
 		description: z.string().optional(),
 		flagType: z.enum(["boolean", "multivariate"]),
@@ -318,18 +312,23 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 						</Modal.Header>
 						<Modal.Body>
 							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-								<TextField
-									autoFocus
-									variant="secondary"
-									isRequired
-									isInvalid={!!errors.key}>
-									<Label>Key</Label>
-									<Input
-										{...register("key")}
-										placeholder="e.g. new-checkout-flow"
-									/>
-									{errors.key && <FieldError>{errors.key.message}</FieldError>}
-								</TextField>
+								<Controller
+									name="key"
+									control={control}
+									render={({ field }) => (
+										<SlugInput
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}
+											nameValue={watch("name")}
+											error={errors.key?.message}
+											label="Key"
+											placeholder="e.g. new-checkout-flow"
+											isRequired
+											autoFocus
+										/>
+									)}
+								/>
 
 								<TextField
 									variant="secondary"

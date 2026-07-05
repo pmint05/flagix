@@ -15,19 +15,16 @@ import {
 import { useCreateProject, useUpdateProject } from "./api";
 import { useContextStore } from "@/stores";
 import type { Project } from "@/types/project";
-import { slugify } from "#/lib/utils";
 import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ActionButton } from "#/components/ui/action-button";
 
+import { SlugInput, slugValidation } from "#/components/ui/slug-input";
+
 const projectFormSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
-	slug: z
-		.string()
-		.regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens")
-		.min(1, "Slug is required")
-		.max(100),
+	slug: slugValidation,
 	description: z.string().optional(),
 });
 
@@ -51,6 +48,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 		handleSubmit,
 		setValue,
 		control,
+		watch,
 		formState: { errors },
 	} = useForm<ProjectFormData>({
 		resolver: standardSchemaResolver(projectFormSchema),
@@ -60,6 +58,8 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 			description: project?.description ?? "",
 		},
 	});
+
+	const watchedName = watch("name");
 
 	const onSubmit = async (data: ProjectFormData) => {
 		try {
@@ -122,12 +122,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 											isInvalid={!!errors.name}
 											variant="secondary"
 											value={field.value}
-											onChange={(val) => {
-												field.onChange(val);
-												if (!isEditing) {
-													setValue("slug", slugify(val));
-												}
-											}}
+											onChange={field.onChange}
 											onBlur={field.onBlur}>
 											<Label>Name</Label>
 											<Input placeholder="My Project" />
@@ -142,19 +137,16 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
 									name="slug"
 									control={control}
 									render={({ field }) => (
-										<TextField
-											isInvalid={!!errors.slug}
-											variant="secondary"
+										<SlugInput
 											value={field.value}
 											onChange={field.onChange}
 											onBlur={field.onBlur}
-											isDisabled={isEditing}>
-											<Label>Slug</Label>
-											<Input placeholder="my-project" />
-											{errors.slug && (
-												<FieldError>{errors.slug.message}</FieldError>
-											)}
-										</TextField>
+											nameValue={watchedName}
+											error={errors.slug?.message}
+											label="Slug"
+											placeholder="my-project"
+											isDisabled={isEditing}
+										/>
 									)}
 								/>
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import {
-	Drawer,
+	Modal,
 	Button,
 	Form,
 	TextField,
@@ -35,8 +35,12 @@ const keyTypeOptions = [
 	{
 		value: "server",
 		title: "Server Key",
-		description:
-			"Secret, use in backend or secure environments. Key shown ONLY ONCE upon creation.",
+		description: (
+			<>
+				Secret, use in backend or secure environments. Key shown{" "}
+				<strong>ONLY ONCE</strong> upon creation.
+			</>
+		),
 		icon: TerminalIcon,
 	},
 ] as const;
@@ -76,17 +80,15 @@ export function KeyModal({
 	};
 
 	return (
-		<Drawer isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<Drawer.Backdrop>
-				<Drawer.Content placement="right">
-					<Drawer.Dialog>
-						<Drawer.Header>
-							<Drawer.Heading>
-								Generate SDK Key
-								<Drawer.CloseTrigger />
-							</Drawer.Heading>
-						</Drawer.Header>
-						<Drawer.Body>
+		<Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<Modal.Backdrop>
+				<Modal.Container>
+					<Modal.Dialog>
+						<Modal.CloseTrigger />
+						<Modal.Header>
+							<Modal.Heading>Generate SDK Key</Modal.Heading>
+						</Modal.Header>
+						<Modal.Body>
 							<Form
 								onSubmit={handleSubmit(handleFormSubmit)}
 								className="space-y-6">
@@ -159,7 +161,7 @@ export function KeyModal({
 									)}
 								/>
 
-								<Drawer.Footer className="pt-4 border-t border-divider">
+								<Modal.Footer className="pt-4 border-t border-divider">
 									<Button variant="outline" onPress={onClose}>
 										Cancel
 									</Button>
@@ -169,12 +171,12 @@ export function KeyModal({
 										isDisabled={isLoading}>
 										{isLoading ? "Generating..." : "Generate"}
 									</Button>
-								</Drawer.Footer>
+								</Modal.Footer>
 							</Form>
-						</Drawer.Body>
-					</Drawer.Dialog>
-				</Drawer.Content>
-			</Drawer.Backdrop>
-		</Drawer>
+						</Modal.Body>
+					</Modal.Dialog>
+				</Modal.Container>
+			</Modal.Backdrop>
+		</Modal>
 	);
 }

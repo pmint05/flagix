@@ -8,6 +8,7 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { CreateSegmentDto } from './dto/create-segment.dto';
 import { UpdateSegmentDto } from './dto/update-segment.dto';
 import { getActorId } from '@/common/audit/audit-context';
+import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 
 @Injectable()
 export class SegmentsService {
@@ -15,6 +16,7 @@ export class SegmentsService {
     private readonly segmentRepo: SegmentsRepository,
     private readonly cacheService: FlagConfigCacheService,
     @Inject(DATABASE) private readonly db: Database,
+    private readonly flagChangePublisher: FlagChangePublisher,
   ) {}
 
   async create(orgId: string, projectId: string, dto: CreateSegmentDto) {
@@ -106,7 +108,7 @@ export class SegmentsService {
           eq(featureFlags.projectId, projectId),
           isNull(targetingRules.deletedAt),
           isNull(featureFlags.deletedAt),
-          sql`${targetingRules.conditions}->'segmentIds' @> to_jsonb(${segmentId}::text)`,
+          sql`jsonb_exists(${targetingRules.conditions}->'segmentIds', ${segmentId})`,
         ),
       );
 
@@ -120,6 +122,13 @@ export class SegmentsService {
 
     for (const [envId, flagKeys] of byEnv) {
       await this.cacheService.invalidateFlags(envId, flagKeys);
+      for (const flagKey of flagKeys) {
+        this.flagChangePublisher.publish(envId, {
+          type: 'flag.updated',
+          flagKey,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
   }
 }

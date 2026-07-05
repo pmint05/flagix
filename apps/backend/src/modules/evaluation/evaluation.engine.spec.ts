@@ -282,23 +282,23 @@ describe('evaluation.engine', () => {
   });
 
   describe('priority ordering', () => {
-    it('should evaluate rules in lexicographical priority order', () => {
+    it('should evaluate rules sequentially in the order they are defined', () => {
       const flag = createFlag({
         rules: [
-          {
-            id: 'rule-pct',
-            ruleType: 'percentage',
-            priority: 'd0',
-            variationId: 'var-true',
-            conditions: { percentage: 100 },
-            isEnabled: true,
-          },
           {
             id: 'rule-user',
             ruleType: 'user',
             priority: 'b0',
             variationId: 'var-true',
             conditions: { userIds: ['user-1'] },
+            isEnabled: true,
+          },
+          {
+            id: 'rule-pct',
+            ruleType: 'percentage',
+            priority: 'd0',
+            variationId: 'var-true',
+            conditions: { percentage: 100 },
             isEnabled: true,
           },
         ],

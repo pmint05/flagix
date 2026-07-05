@@ -162,7 +162,7 @@ export class FlagixClient {
   getFlagValue<T>(key: string, defaultValue: T): T {
     try {
       const flag = this.getFlag(key);
-      if (!flag) return defaultValue;
+      if (!flag || flag.resolvedValue === null) return defaultValue;
       return flag.resolvedValue as T;
     } catch (e) {
       return defaultValue;
@@ -194,6 +194,7 @@ export class FlagixClient {
   async evaluate<T>(key: string, context: EvaluationContext, defaultValue: T): Promise<T> {
     try {
       const result = await this.evaluationClient.evaluateFlag(key, context);
+      if (!result || result.resolvedValue === null) return defaultValue;
       return result.resolvedValue as T;
     } catch {
       return defaultValue;

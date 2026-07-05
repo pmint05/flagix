@@ -19,12 +19,7 @@ export function evaluate(
     return buildSafeDefault(flag, flag.key, 'FLAG_DISABLED');
   }
 
-  // Sort rules by priority ascending to ensure strict order evaluation
-  const sortedRules = [...flag.rules].sort((a, b) =>
-    a.priority.localeCompare(b.priority),
-  );
-
-  for (const rule of sortedRules) {
+  for (const rule of flag.rules) {
     if (!rule.isEnabled) continue;
     const matcher = getMatcher(rule.ruleType);
     if (!matcher) continue;

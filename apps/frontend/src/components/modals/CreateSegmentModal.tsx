@@ -1,9 +1,31 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { Input, TextArea, TextField, Label } from "@heroui/react";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useForm, Controller } from "react-hook-form";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { z } from "zod";
+import {
+	Button,
+	Form,
+	FieldError,
+	Label,
+	TextField,
+	Input,
+	TextArea,
+	Modal,
+	toast,
+} from "@heroui/react";
 import { useCreateSegment } from "@/features/flags/api";
 import { useUIStore } from "@/stores";
+import { ActionButton } from "#/components/ui/action-button";
+import { SlugInput, slugValidation } from "#/components/ui/slug-input";
+
+const segmentFormSchema = z.object({
+	name: z.string().min(1, "Name is required").max(255),
+	key: slugValidation,
+	description: z.string().optional(),
+});
+
+type SegmentFormData = z.infer<typeof segmentFormSchema>;
 
 export function CreateSegmentModal() {
 	const { projectSlug } = useParams({ strict: false });
@@ -11,65 +33,140 @@ export function CreateSegmentModal() {
 	const createSegment = useCreateSegment();
 	const { isCreateSegmentOpen, closeCreateSegment } = useUIStore();
 
-	const [name, setName] = useState("");
-	const [key, setKey] = useState("");
-	const [description, setDescription] = useState("");
+	const {
+		handleSubmit,
+		setValue,
+		control,
+		reset,
+		watch,
+		formState: { errors },
+	} = useForm<SegmentFormData>({
+		resolver: standardSchemaResolver(segmentFormSchema),
+		defaultValues: {
+			name: "",
+			key: "",
+			description: "",
+		},
+	});
 
+	const watchedName = watch("name");
+
+	// Reset form state when drawer opens
 	useEffect(() => {
 		if (isCreateSegmentOpen) {
-			setName("");
-			setKey("");
-			setDescription("");
+			reset({
+				name: "",
+				key: "",
+				description: "",
+			});
 		}
-	}, [isCreateSegmentOpen]);
+	}, [isCreateSegmentOpen, reset]);
 
-	const handleSave = async () => {
-		const payload = { key, name, description, conditions: [] };
-		const newSeg = await createSegment.mutateAsync(payload);
-		closeCreateSegment();
-		navigate({
-			to: "/projects/$projectSlug/segments/$segmentSlug",
-			params: { projectSlug: projectSlug!, segmentSlug: newSeg.key },
-		});
+	const onSubmit = async (data: SegmentFormData) => {
+		try {
+			const payload = { ...data, conditions: [] };
+			const newSeg = await createSegment.mutateAsync(payload);
+			
+			toast.success("Segment created successfully");
+			closeCreateSegment();
+			
+			void navigate({
+				to: "/projects/$projectSlug/segments/$segmentSlug",
+				params: { projectSlug: projectSlug!, segmentSlug: newSeg.key },
+			});
+		} catch (error) {
+			toast.danger("Failed to create segment", {
+				description: (error as Error).message,
+			});
+		}
 	};
 
 	return (
-		<ConfirmModal
-			isOpen={isCreateSegmentOpen}
-			onCancel={closeCreateSegment}
-			onConfirm={handleSave}
-			title="Create Segment"
-			confirmText="Create"
-			description="">
-			<div className="space-y-4 pt-2 text-left">
-				<div className="grid grid-cols-2 gap-4">
-					<TextField variant="secondary">
-						<Label>Name</Label>
-						<Input
-							placeholder="Beta Users"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-						/>
-					</TextField>
-					<TextField variant="secondary">
-						<Label>Key (Slug)</Label>
-						<Input
-							placeholder="beta-users"
-							value={key}
-							onChange={(e) => setKey(e.target.value)}
-						/>
-					</TextField>
-				</div>
-				<TextField variant="secondary">
-					<Label>Description</Label>
-					<TextArea
-						placeholder="Users scoped for beta-testing new features"
-						value={description}
-						onChange={(e) => setDescription(e.target.value)}
-						rows={2}
-					/>
-				</TextField>
-			</div>
-		</ConfirmModal>
+		<Modal isOpen={isCreateSegmentOpen} onOpenChange={(open) => !open && closeCreateSegment()}>
+			<Modal.Backdrop>
+				<Modal.Container>
+					<Modal.Dialog>
+						<Modal.CloseTrigger />
+						<Modal.Header>
+							<Modal.Heading>Create Segment</Modal.Heading>
+						</Modal.Header>
+						<Modal.Body>
+							<Form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											autoFocus
+											isInvalid={!!errors.name}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Name</Label>
+											<Input placeholder="Beta Users" />
+											{errors.name && (
+												<FieldError>{errors.name.message}</FieldError>
+											)}
+										</TextField>
+									)}
+								/>
+
+								<Controller
+									name="key"
+									control={control}
+									render={({ field }) => (
+										<SlugInput
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}
+											nameValue={watchedName}
+											error={errors.key?.message}
+											label="Key (Slug)"
+											placeholder="beta-users"
+										/>
+									)}
+								/>
+
+								<Controller
+									name="description"
+									control={control}
+									render={({ field }) => (
+										<TextField
+											isInvalid={!!errors.description}
+											variant="secondary"
+											value={field.value}
+											onChange={field.onChange}
+											onBlur={field.onBlur}>
+											<Label>Description</Label>
+											<TextArea
+												placeholder="Users scoped for beta-testing new features"
+												rows={3}
+											/>
+											{errors.description && (
+												<FieldError>{errors.description.message}</FieldError>
+											)}
+										</TextField>
+									)}
+								/>
+
+								<Modal.Footer>
+									<Button variant="ghost" onPress={closeCreateSegment}>
+										Cancel
+									</Button>
+									<ActionButton
+										type="submit"
+										variant="primary"
+										isDisabled={createSegment.isPending}
+										isPending={createSegment.isPending}>
+										Create
+									</ActionButton>
+								</Modal.Footer>
+							</Form>
+						</Modal.Body>
+					</Modal.Dialog>
+				</Modal.Container>
+			</Modal.Backdrop>
+		</Modal>
 	);
 }

@@ -48,8 +48,8 @@ export function buildSafeDefault(
     return {
       flagKey,
       enabled: false,
-      variationKey: '',
-      resolvedValue: false,
+      variationKey: null,
+      resolvedValue: null,
       evaluationReason: reason,
     };
   }
@@ -65,8 +65,8 @@ export function buildSafeDefault(
     return {
       flagKey,
       enabled: false,
-      variationKey: '',
-      resolvedValue: false,
+      variationKey: null,
+      resolvedValue: null,
       evaluationReason: reason,
     };
   }

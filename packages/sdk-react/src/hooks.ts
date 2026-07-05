@@ -54,7 +54,7 @@ export function useFlag<T>(key: string, defaultValue: T): {
 
   const flag = flags[key];
   return {
-    value: flag ? (flag.resolvedValue as T) : defaultValue,
+    value: flag && flag.resolvedValue !== null ? (flag.resolvedValue as T) : defaultValue,
     isLoading: !isReady,
     error: null,
   };

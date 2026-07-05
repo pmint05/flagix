@@ -4,6 +4,7 @@ import {
   matchesRoleRule,
   matchesPercentageRule,
   matchesCustomRule,
+  matchesSegmentRule,
   type RuleForMatching,
 } from './rule-matcher';
 
@@ -534,6 +535,128 @@ describe('rule-matcher', () => {
           }).isMatched,
         ).toBe(true);
       });
+
+      it('should evaluate date operators after, before, between', () => {
+        const rule = (op: string, val: any): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [
+              { contextKey: 'dateAttr', type: 'date', operator: op, value: val },
+            ],
+          },
+        });
+
+        expect(
+          matchesCustomRule(rule('after', '2026-07-05T20:00:00Z'), 'flag', {
+            attributes: { dateAttr: '2026-07-05T21:00:00Z' },
+          }).isMatched,
+        ).toBe(true);
+
+        expect(
+          matchesCustomRule(rule('before', '2026-07-05T22:00:00Z'), 'flag', {
+            attributes: { dateAttr: '2026-07-05T21:00:00Z' },
+          }).isMatched,
+        ).toBe(true);
+
+        expect(
+          matchesCustomRule(rule('between', ['2026-07-05T20:00:00Z', '2026-07-05T22:00:00Z']), 'flag', {
+            attributes: { dateAttr: '2026-07-05T21:00:00Z' },
+          }).isMatched,
+        ).toBe(true);
+      });
+
+      it('should evaluate semver operators equals, gt, lte, between', () => {
+        const rule = (op: string, val: any): RuleForMatching => ({
+          ...baseRule,
+          ruleType: 'custom',
+          conditions: {
+            conditions: [
+              { contextKey: 'version', type: 'semver', operator: op, value: val },
+            ],
+          },
+        });
+
+        expect(
+          matchesCustomRule(rule('equals', '1.2.3'), 'flag', {
+            attributes: { version: 'v1.2.3' },
+          }).isMatched,
+        ).toBe(true);
+
+        expect(
+          matchesCustomRule(rule('gt', '1.2.0'), 'flag', {
+            attributes: { version: '1.2.3' },
+          }).isMatched,
+        ).toBe(true);
+
+        expect(
+          matchesCustomRule(rule('lte', '1.2.3'), 'flag', {
+            attributes: { version: '1.2.3' },
+          }).isMatched,
+        ).toBe(true);
+
+        expect(
+          matchesCustomRule(rule('between', ['1.0.0', '2.0.0']), 'flag', {
+            attributes: { version: '1.5.0' },
+          }).isMatched,
+        ).toBe(true);
+      });
+    });
+  });
+
+  describe('matchesSegmentRule', () => {
+    const segmentRule = (op: 'in' | 'not_in', segmentIds: string[]): RuleForMatching => ({
+      ...baseRule,
+      ruleType: 'segment',
+      conditions: {
+        operator: op,
+        segmentIds,
+      },
+    });
+
+    const mockSegments = {
+      'seg-1': {
+        id: 'seg-1',
+        key: 'vip-users',
+        conditions: [
+          { conditionType: 'role', roles: ['admin'] },
+        ],
+      },
+      'seg-2': {
+        id: 'seg-2',
+        key: 'vietnam-users',
+        conditions: [
+          { conditionType: 'custom', contextKey: 'country', type: 'string', operator: 'equals', value: 'VN' },
+        ],
+      },
+    };
+
+    it('should match Segment Rule with operator "in" when user is in the segment', () => {
+      const rule = segmentRule('in', ['seg-1']);
+      const context = { role: 'admin' };
+      const res = matchesSegmentRule(rule, 'flag', context, mockSegments);
+      expect(res.isMatched).toBe(true);
+    });
+
+    it('should not match Segment Rule with operator "in" when user is not in the segment', () => {
+      const rule = segmentRule('in', ['seg-1']);
+      const context = { role: 'user' };
+      const res = matchesSegmentRule(rule, 'flag', context, mockSegments);
+      expect(res.isMatched).toBe(false);
+    });
+
+    it('should match Segment Rule with operator "not_in" when user is not in the segment', () => {
+      const rule = segmentRule('not_in', ['seg-1']);
+      const context = { role: 'user' };
+      const res = matchesSegmentRule(rule, 'flag', context, mockSegments);
+      expect(res.isMatched).toBe(true);
+    });
+
+    it('should fail-through (isMatched=false) for "not_in" if context attribute is missing/indeterminate', () => {
+      const rule = segmentRule('not_in', ['seg-2']);
+      const context = { attributes: {} };
+      const res = matchesSegmentRule(rule, 'flag', context, mockSegments);
+      expect(res.isMatched).toBe(false); 
     });
   });
 });

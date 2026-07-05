@@ -4,8 +4,8 @@ import { variationValueSchema } from './variation';
 export const evaluationResultSchema = z.object({
   flagKey: z.string(),
   enabled: z.boolean(),
-  variationKey: z.string(),
-  resolvedValue: variationValueSchema,
+  variationKey: z.string().nullable(),
+  resolvedValue: variationValueSchema.nullable(),
   evaluationReason: z.enum([
     'KILL_SWITCH',
     'USER_TARGETING',

@@ -18,13 +18,15 @@ export function ActionButton({
 	showToast,
 	toastTitle,
 	toastMessage,
+	isPending: propPending,
 	...props
 }: ActionButtonProps) {
-	const [isPending, setIsPending] = useState(true);
+	const [localPending, setLocalPending] = useState(false);
+	const isPending = propPending !== undefined ? propPending : localPending;
 
 	const handlePress = async (e: any) => {
 		if (action) {
-			setIsPending(true);
+			setLocalPending(true);
 			try {
 				await action();
 				if (showToast) {
@@ -46,7 +48,7 @@ export function ActionButton({
 				}
 				throw error;
 			} finally {
-				setIsPending(false);
+				setLocalPending(false);
 			}
 		} else if (onPress) {
 			onPress(e);
