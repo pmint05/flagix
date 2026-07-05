@@ -33,6 +33,7 @@ export class EvaluationCollectorService {
       projectId: string;
       environmentId: string;
       featureFlagId?: string;
+      variationId?: string;
       sdkKeyId?: string;
       clientIp?: string;
       contextUserId?: string;
@@ -44,7 +45,7 @@ export class EvaluationCollectorService {
       environmentId: meta.environmentId,
       featureFlagId: meta.featureFlagId ?? null,
       flagKey: result.flagKey,
-      variationId: null,
+      variationId: meta.variationId ?? null,
       variationKey: result.variationKey,
       resolvedValue: result.resolvedValue,
       evaluationReason: result.evaluationReason,
@@ -89,6 +90,7 @@ export class EvaluationCollectorService {
       await this.record(result, {
         ...meta,
         featureFlagId: featureFlagIdMap?.get(result.flagKey),
+        variationId: (result as any).variationId,
       });
     }
   }

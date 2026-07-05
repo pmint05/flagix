@@ -62,20 +62,25 @@ export function buildSafeDefault(
   }
 
   if (!variation) {
-    return {
+    const result = {
       flagKey,
       enabled: false,
       variationKey: null,
       resolvedValue: null,
       evaluationReason: reason,
     };
+    Object.defineProperty(result, 'featureFlagId', { value: flag.id, enumerable: false });
+    return result as any;
   }
 
-  return {
+  const result = {
     flagKey,
     enabled: false,
     variationKey: variation.key,
     resolvedValue: variation.value,
     evaluationReason: reason,
   };
+  Object.defineProperty(result, 'featureFlagId', { value: flag.id, enumerable: false });
+  Object.defineProperty(result, 'variationId', { value: variation.id, enumerable: false });
+  return result as any;
 }

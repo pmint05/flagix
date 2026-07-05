@@ -32,13 +32,16 @@ export function evaluate(
       const isEnabled = rule.ruleType !== 'kill_switch';
 
       if (variation) {
-        return {
+        const result = {
           flagKey: flag.key,
           enabled: isEnabled,
           variationKey: variation.key,
           resolvedValue: variation.value,
           evaluationReason: matcher.reason,
         };
+        Object.defineProperty(result, 'featureFlagId', { value: flag.id, enumerable: false });
+        Object.defineProperty(result, 'variationId', { value: variation.id, enumerable: false });
+        return result as any;
       }
     }
   }
@@ -48,13 +51,16 @@ export function evaluate(
     : undefined;
 
   if (defaultVariation) {
-    return {
+    const result = {
       flagKey: flag.key,
       enabled: true,
       variationKey: defaultVariation.key,
       resolvedValue: defaultVariation.value,
       evaluationReason: 'DEFAULT',
     };
+    Object.defineProperty(result, 'featureFlagId', { value: flag.id, enumerable: false });
+    Object.defineProperty(result, 'variationId', { value: defaultVariation.id, enumerable: false });
+    return result as any;
   }
 
   return buildSafeDefault(flag, flag.key, 'EVALUATION_ERROR');

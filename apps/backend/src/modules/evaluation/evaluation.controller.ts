@@ -56,6 +56,8 @@ export class EvaluationController {
       sdkKeyId: env.sdkKeyId,
       clientIp: req.ip,
       contextUserId: dto.context.userId,
+      featureFlagId: (result as any).featureFlagId,
+      variationId: (result as any).variationId,
     });
 
     return result;
@@ -86,6 +88,8 @@ export class EvaluationController {
         sdkKeyId: env.sdkKeyId,
         clientIp: req.ip,
         contextUserId: dto.context.userId,
+        featureFlagId: (result as any).featureFlagId,
+        variationId: (result as any).variationId,
       });
     }
 

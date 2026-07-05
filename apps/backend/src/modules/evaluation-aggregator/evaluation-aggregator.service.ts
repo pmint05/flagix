@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, type OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, Inject, type OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { sql } from 'drizzle-orm';
 import { DATABASE } from '@/modules/database/database.module';
@@ -7,20 +7,53 @@ import type { Database } from '@/db';
 const HOURLY_BATCH_SIZE = 10000;
 
 @Injectable()
-export class EvaluationAggregatorService implements OnModuleInit {
+export class EvaluationAggregatorService implements OnApplicationBootstrap {
   private readonly logger = new Logger(EvaluationAggregatorService.name);
 
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  onModuleInit() {
+  onApplicationBootstrap() {
     this.logger.log('EvaluationAggregatorService initialized');
+    // Run historical aggregation on startup asynchronously to populate stats for testing/development
+    if (process.env.NODE_ENV !== 'test') {
+      this.logger.log('Running startup aggregation for testing...');
+      this.aggregatePastHours(24)
+        .then(() => this.rollupDaily())
+        .catch((err) => {
+          this.logger.error('Startup aggregation failed', err);
+        });
+    }
   }
 
-  @Cron('0 0 * * *')
+  async aggregatePastHours(hoursLimit = 24) {
+    this.logger.log(`Aggregating past ${hoursLimit} hours`);
+    const now = new Date();
+    let totalRows = 0;
+
+    for (let i = 1; i <= hoursLimit; i++) {
+      const bucket = new Date(now.getTime() - i * 60 * 60 * 1000);
+      bucket.setHours(bucket.getHours(), 0, 0, 0);
+
+      let offset = 0;
+      while (true) {
+        const inserted = await this.aggregateHourlyBatch(
+          bucket,
+          offset,
+          HOURLY_BATCH_SIZE,
+        );
+        totalRows += inserted;
+        if (inserted < HOURLY_BATCH_SIZE) break;
+        offset += HOURLY_BATCH_SIZE;
+      }
+    }
+    this.logger.log(`Historical hourly aggregation complete — grouped ${totalRows} events`);
+  }
+
+  @Cron('0 * * * *')
   async aggregateHourly() {
     this.logger.log('Starting hourly aggregation');
     const bucket = new Date();
-    bucket.setMinutes(0, 0, 0);
+    bucket.setHours(bucket.getHours() - 1, 0, 0, 0);
 
     try {
       let offset = 0;
@@ -70,6 +103,7 @@ export class EvaluationAggregatorService implements OnModuleInit {
       FROM evaluation_events evt
       WHERE evt.created_at >= ${bucket.toISOString()}::timestamptz
         AND evt.created_at < ${bucketEnd.toISOString()}::timestamptz
+        AND evt.feature_flag_id IS NOT NULL
       GROUP BY
         evt.organization_id,
         evt.project_id,
