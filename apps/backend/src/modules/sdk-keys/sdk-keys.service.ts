@@ -15,6 +15,8 @@ import { environments } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import { CreateSdkKeyDto } from './dto/create-sdk-key.dto';
+import { IOREDIS_CACHE } from '@/modules/bullmq/bullmq.module';
+import Redis from 'ioredis';
 
 function maskKey(type: 'client' | 'server', hint: string): string {
   const prefix = type === 'client' ? 'sdk_client_' : 'sdk_server_';
@@ -26,6 +28,7 @@ export class SdkKeysService {
   constructor(
     private readonly sdkKeysRepo: SdkKeysRepository,
     @Inject(DATABASE) private readonly db: Database,
+    @Inject(IOREDIS_CACHE) private readonly redis: Redis,
     @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
@@ -52,13 +55,24 @@ export class SdkKeysService {
       actorId,
     );
 
-    if (this.auditLogsService) {
-      const [env] = await this.db
-        .select({ projectId: environments.projectId })
-        .from(environments)
-        .where(eq(environments.id, envId))
-        .limit(1);
+    const [env] = await this.db
+      .select({ projectId: environments.projectId })
+      .from(environments)
+      .where(eq(environments.id, envId))
+      .limit(1);
 
+    // Save to Redis cache
+    const cacheVal = {
+      id: sdkKey.id,
+      organizationId: orgId,
+      projectId: env?.projectId,
+      environmentId: envId,
+      type: sdkKey.type,
+      isActive: sdkKey.isActive,
+    };
+    await this.redis.set(`sdk_key:${keyHash}`, JSON.stringify(cacheVal));
+
+    if (this.auditLogsService) {
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: env?.projectId,
@@ -110,24 +124,37 @@ export class SdkKeysService {
       actorId,
     );
 
-    if (this.auditLogsService && updated) {
+    if (updated) {
       const [env] = await this.db
         .select({ projectId: environments.projectId })
         .from(environments)
         .where(eq(environments.id, envId))
         .limit(1);
 
-      await this.auditLogsService.recordChange({
+      // Update Redis cache
+      const cacheVal = {
+        id: updated.id,
         organizationId: orgId,
         projectId: env?.projectId,
         environmentId: envId,
-        entityType: 'sdk_key',
-        entityId: keyId,
-        before: key,
-        after: updated,
-        resolveAction: resolveSdkKeyAction,
-        sanitize: sanitizeSdkKey,
-      });
+        type: updated.type,
+        isActive: updated.isActive,
+      };
+      await this.redis.set(`sdk_key:${updated.keyHash}`, JSON.stringify(cacheVal));
+
+      if (this.auditLogsService) {
+        await this.auditLogsService.recordChange({
+          organizationId: orgId,
+          projectId: env?.projectId,
+          environmentId: envId,
+          entityType: 'sdk_key',
+          entityId: keyId,
+          before: key,
+          after: updated,
+          resolveAction: resolveSdkKeyAction,
+          sanitize: sanitizeSdkKey,
+        });
+      }
     }
 
     return {
@@ -149,24 +176,29 @@ export class SdkKeysService {
     const actorId = getActorId();
     const deleted = await this.sdkKeysRepo.softDelete(keyId, actorId);
 
-    if (this.auditLogsService && deleted) {
-      const [env] = await this.db
-        .select({ projectId: environments.projectId })
-        .from(environments)
-        .where(eq(environments.id, envId))
-        .limit(1);
+    if (deleted) {
+      // Evict from Redis
+      await this.redis.del(`sdk_key:${key.keyHash}`);
 
-      await this.auditLogsService.recordChange({
-        organizationId: orgId,
-        projectId: env?.projectId,
-        environmentId: envId,
-        entityType: 'sdk_key',
-        entityId: keyId,
-        before: key,
-        after: deleted,
-        resolveAction: resolveSdkKeyAction,
-        sanitize: sanitizeSdkKey,
-      });
+      if (this.auditLogsService) {
+        const [env] = await this.db
+          .select({ projectId: environments.projectId })
+          .from(environments)
+          .where(eq(environments.id, envId))
+          .limit(1);
+
+        await this.auditLogsService.recordChange({
+          organizationId: orgId,
+          projectId: env?.projectId,
+          environmentId: envId,
+          entityType: 'sdk_key',
+          entityId: keyId,
+          before: key,
+          after: deleted,
+          resolveAction: resolveSdkKeyAction,
+          sanitize: sanitizeSdkKey,
+        });
+      }
     }
 
     return { success: true };

@@ -10,6 +10,8 @@ import { sdkKeys, environments } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import { hashSdkKey } from '@/common/utils/crypto';
+import { IOREDIS_CACHE } from '@/modules/bullmq/bullmq.module';
+import Redis from 'ioredis';
 
 interface RequestWithSdkEnv {
   headers: Record<string, string | string[] | undefined>;
@@ -24,7 +26,10 @@ interface RequestWithSdkEnv {
 
 @Injectable()
 export class SdkKeyGuard implements CanActivate {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    @Inject(IOREDIS_CACHE) private readonly redis: Redis,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<any>();
@@ -49,6 +54,36 @@ export class SdkKeyGuard implements CanActivate {
 
     const keyHash = hashSdkKey(rawKey);
 
+    // 1. Try to fetch from Redis Cache
+    const cached = await this.redis.get(`sdk_key:${keyHash}`);
+    if (cached) {
+      const cachedKey = JSON.parse(cached);
+      if (!cachedKey.isActive) {
+        throw new UnauthorizedException('SDK key is inactive.');
+      }
+
+      request.sdkEnvironment = {
+        environmentId: cachedKey.environmentId,
+        organizationId: cachedKey.organizationId,
+        projectId: cachedKey.projectId,
+        keyType: cachedKey.type,
+        sdkKeyId: cachedKey.id,
+      };
+
+      // Asynchronously update lastUsedAt in the background
+      this.db
+        .update(sdkKeys)
+        .set({ lastUsedAt: new Date() })
+        .where(eq(sdkKeys.id, cachedKey.id))
+        .execute()
+        .catch((err) => {
+          console.error('Failed to update SDK key lastUsedAt:', err);
+        });
+
+      return true;
+    }
+
+    // 2. Cache Miss: Query Database
     const [sdkKey] = await this.db
       .select()
       .from(sdkKeys)
@@ -56,15 +91,7 @@ export class SdkKeyGuard implements CanActivate {
       .limit(1);
 
     if (!sdkKey) {
-      throw new UnauthorizedException(
-        'Invalid SDK key.',
-      );
-    }
-
-    if (!sdkKey.isActive) {
-      throw new UnauthorizedException(
-        'SDK key is inactive.',
-      );
+      throw new UnauthorizedException('Invalid SDK key.');
     }
 
     const [env] = await this.db
@@ -80,6 +107,21 @@ export class SdkKeyGuard implements CanActivate {
 
     if (!env) {
       throw new UnauthorizedException('Environment not found');
+    }
+
+    // Save to Redis cache
+    const cacheVal = {
+      id: sdkKey.id,
+      organizationId: sdkKey.organizationId,
+      projectId: env.projectId,
+      environmentId: sdkKey.environmentId,
+      type: sdkKey.type,
+      isActive: sdkKey.isActive,
+    };
+    await this.redis.set(`sdk_key:${keyHash}`, JSON.stringify(cacheVal));
+
+    if (!sdkKey.isActive) {
+      throw new UnauthorizedException('SDK key is inactive.');
     }
 
     request.sdkEnvironment = {
