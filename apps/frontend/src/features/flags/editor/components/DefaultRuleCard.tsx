@@ -30,7 +30,7 @@ export function DefaultRuleCard({ flag }: DefaultRuleCardProps) {
 	const isResolvingToOff = !isFlagOn && !!offVariationId;
 
 	return (
-		<Card className="border border-divider shadow-sm mt-4">
+		<Card className="border border-divider shadow-sm">
 			<h3 className="font-medium text-foreground flex items-center gap-2">
 				<span className="font-semibold">Default Rule</span>
 			</h3>

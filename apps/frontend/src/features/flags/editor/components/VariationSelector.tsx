@@ -50,11 +50,11 @@ export function VariationSelector({
 	const fieldError = getFieldError();
 
 	const renderSelect = (val: string, onValChange: (v: string) => void) => (
-		<div className="flex flex-col gap-1 inline-flex">
+		<div className="flex-col gap-1 inline-flex">
 			<Autocomplete
 				variant="secondary"
-				selectedKey={val}
-				onSelectionChange={(v) => onValChange(v as string)}
+				value={val}
+				onChange={(v) => onValChange(v as string)}
 				className={cn("w-fit", className)}
 				isDisabled={!canEditFlags}
 				isInvalid={!!fieldError}>

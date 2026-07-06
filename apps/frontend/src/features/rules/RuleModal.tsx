@@ -120,8 +120,8 @@ export function RuleModal({
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
 											}}>
 											<Label>Rule Type</Label>
@@ -150,8 +150,8 @@ export function RuleModal({
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
 											}}>
 											<Label>Environment</Label>
@@ -180,8 +180,8 @@ export function RuleModal({
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
 											}}>
 											<Label>Variation</Label>

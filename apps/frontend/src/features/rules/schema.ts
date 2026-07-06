@@ -9,7 +9,7 @@ const percentageDistributionSchema = z.object({
 
 export const createRuleSchema = z
 	.object({
-		ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom"]),
+		ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom", "segment"]),
 		environmentId: z.uuid(),
 		variationId: z.uuid().optional(),
 		conditions: conditionsSchema.default({}),
@@ -44,7 +44,7 @@ export type UpdateRuleValues = z.infer<typeof updateRuleSchema>;
 
 // Combined form type - used for both create and edit
 export const ruleFormSchema = z.object({
-	ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom"]),
+	ruleType: z.enum(["kill_switch", "user", "role", "percentage", "custom", "segment"]),
 	environmentId: z.uuid(),
 	variationId: z.uuid().optional(),
 	conditions: conditionsSchema,

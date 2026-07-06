@@ -156,8 +156,8 @@ export function RuleEditor({
 										control={control}
 										render={({ field }) => (
 											<Select
-												selectedKey={field.value as string}
-												onSelectionChange={(key) => {
+												value={field.value as string}
+												onChange={(key) => {
 													if (key) field.onChange(key);
 												}}>
 												<Label>Rule Type</Label>
@@ -189,8 +189,8 @@ export function RuleEditor({
 									control={control}
 									render={({ field }) => (
 										<Select
-											selectedKey={field.value as string}
-											onSelectionChange={(key) => {
+											value={field.value as string}
+											onChange={(key) => {
 												if (key) field.onChange(key);
 											}}
 											isDisabled={isEditing}>
@@ -307,8 +307,8 @@ function KillSwitchRuleEditor({
 			control={control}
 			render={({ field }) => (
 				<Select
-					selectedKey={field.value as string}
-					onSelectionChange={(key) => {
+					value={field.value as string}
+					onChange={(key) => {
 						if (key) field.onChange(key);
 					}}>
 					<Label>Target Variation</Label>
@@ -351,8 +351,8 @@ function UserRuleEditor({
 				control={control}
 				render={({ field }) => (
 					<Select
-						selectedKey={field.value as string}
-						onSelectionChange={(key) => {
+						value={field.value as string}
+						onChange={(key) => {
 							if (key) field.onChange(key);
 						}}>
 						<Label>Target Variation</Label>
@@ -418,8 +418,8 @@ function RoleRuleEditor({
 				control={control}
 				render={({ field }) => (
 					<Select
-						selectedKey={field.value as string}
-						onSelectionChange={(key) => {
+						value={field.value as string}
+						onChange={(key) => {
 							if (key) field.onChange(key);
 						}}>
 						<Label>Target Variation</Label>

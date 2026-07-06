@@ -163,7 +163,7 @@ export function TargetingRulesEditor({ flag }: TargetingRulesEditorProps) {
 	const isFlagOn = useWatch({ name: "isFlagOn", control });
 
 	return (
-		<div className="relative pt-4">
+		<div className="relative py-4">
 			{/* vertical timeline line */}
 			<div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-border z-0" />
 

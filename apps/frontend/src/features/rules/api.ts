@@ -8,7 +8,7 @@ import { z } from "zod";
 import { useContextStore } from "@/stores";
 
 export interface CreateRuleInput {
-	ruleType: "kill_switch" | "user" | "role" | "percentage" | "custom";
+	ruleType: "kill_switch" | "user" | "role" | "percentage" | "custom" | "segment";
 	environmentId: string;
 	variationId?: string;
 	conditions: Record<string, unknown>;
