@@ -296,17 +296,18 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 				to: "/projects/$projectSlug/flags/$flagSlug",
 				params: { projectSlug, flagSlug: result.key },
 			});
-			onClose();
+			// onClose();
 		} catch {
 			toast.danger("Failed to create feature flag");
 		}
 	};
 
 	return (
-		<Modal.Root isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+		<Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<Modal.Backdrop>
 				<Modal.Container size="lg">
 					<Modal.Dialog className="max-w-xl">
+						<Modal.CloseTrigger />
 						<Modal.Header>
 							<Modal.Heading>Create Feature Flag</Modal.Heading>
 						</Modal.Header>
@@ -690,6 +691,6 @@ export function FlagModal({ isOpen, onClose }: FlagModalProps) {
 					</Modal.Dialog>
 				</Modal.Container>
 			</Modal.Backdrop>
-		</Modal.Root>
+		</Modal>
 	);
 }

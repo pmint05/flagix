@@ -203,7 +203,7 @@ function FlagsIndex() {
 				</div>
 			)}
 
-			<FlagModal isOpen={isCreateFlagOpen} onClose={closeCreateFlag} />
+			{/* <FlagModal isOpen={isCreateFlagOpen} onClose={closeCreateFlag} /> */}
 			{flagToDelete && (
 				<ConfirmModal
 					showToast

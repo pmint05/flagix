@@ -39,14 +39,12 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 								Targeting rules are hidden because the flag is OFF.
 							</p>
 						</div>
-						{rules.length > 0 && (
-							<Button
-								size="sm"
-								variant="ghost"
-								onPress={() => setShowRulesWhenOff(true)}>
-								Show targeting rules
-							</Button>
-						)}
+						<Button
+							size="sm"
+							variant="ghost"
+							onPress={() => setShowRulesWhenOff(true)}>
+							Show targeting rules
+						</Button>
 					</div>
 				)}
 
@@ -65,11 +63,11 @@ export function TargetingTab({ flag }: TargetingTabProps) {
 				)}
 
 				{shouldShowRules && (
-					<div className={!isFlagOn ? "opacity-50 pointer-events-none" : ""}>
+					<div className={!isFlagOn ? "opacity-50" : ""}>
 						<TargetingRulesEditor flag={flag} />
+						<DefaultRuleCard flag={flag} />
 					</div>
 				)}
-				<DefaultRuleCard flag={flag} />
 			</Surface>
 		</div>
 	);

@@ -347,6 +347,164 @@ async function main() {
       },
     ]);
 
+    // Flag 5: hero-headline (multivariate, visibility: all)
+    const flagHeroHeadlineId = crypto.randomUUID();
+    await db.insert(featureFlags).values({
+      id: flagHeroHeadlineId,
+      organizationId: org.id,
+      projectId: project.id,
+      key: 'hero-headline',
+      name: 'Hero Headline Variant',
+      description: 'A/B test hero headline: dev-focused, ops-focused, or growth-focused.',
+      flagType: 'multivariate',
+      visibility: 'all',
+      createdBy: userId,
+    });
+
+    const varHeroDevId = crypto.randomUUID();
+    const varHeroOpsId = crypto.randomUUID();
+    const varHeroGrowthId = crypto.randomUUID();
+    await db.insert(variations).values([
+      {
+        id: varHeroDevId,
+        organizationId: org.id,
+        featureFlagId: flagHeroHeadlineId,
+        key: 'dev-focused',
+        value: 'dev-focused',
+        color: 'blue',
+        isDefault: true,
+      },
+      {
+        id: varHeroOpsId,
+        organizationId: org.id,
+        featureFlagId: flagHeroHeadlineId,
+        key: 'ops-focused',
+        value: 'ops-focused',
+        color: 'green',
+        isDefault: false,
+      },
+      {
+        id: varHeroGrowthId,
+        organizationId: org.id,
+        featureFlagId: flagHeroHeadlineId,
+        key: 'growth-focused',
+        value: 'growth-focused',
+        color: 'purple',
+        isDefault: false,
+      },
+    ]);
+
+    // Flag 6: pricing-hero (boolean, visibility: all)
+    const flagPricingHeroId = crypto.randomUUID();
+    await db.insert(featureFlags).values({
+      id: flagPricingHeroId,
+      organizationId: org.id,
+      projectId: project.id,
+      key: 'pricing-hero',
+      name: 'Pricing Hero Layout',
+      description: 'A/B test pricing page: enterprise single-plan vs standard 3-tier.',
+      flagType: 'boolean',
+      visibility: 'all',
+      createdBy: userId,
+    });
+
+    const varPricingTrueId = crypto.randomUUID();
+    const varPricingFalseId = crypto.randomUUID();
+    await db.insert(variations).values([
+      {
+        id: varPricingTrueId,
+        organizationId: org.id,
+        featureFlagId: flagPricingHeroId,
+        key: 'true',
+        value: true,
+        color: 'green',
+        isDefault: false,
+      },
+      {
+        id: varPricingFalseId,
+        organizationId: org.id,
+        featureFlagId: flagPricingHeroId,
+        key: 'false',
+        value: false,
+        color: 'red',
+        isDefault: true,
+      },
+    ]);
+
+    // Flag 7: promo-banner (boolean, visibility: all)
+    const flagPromoBannerId = crypto.randomUUID();
+    await db.insert(featureFlags).values({
+      id: flagPromoBannerId,
+      organizationId: org.id,
+      projectId: project.id,
+      key: 'promo-banner',
+      name: 'Promotional Banner',
+      description: 'Toggle promotional banner for holiday campaigns and targeted offers.',
+      flagType: 'boolean',
+      visibility: 'all',
+      createdBy: userId,
+    });
+
+    const varPromoTrueId = crypto.randomUUID();
+    const varPromoFalseId = crypto.randomUUID();
+    await db.insert(variations).values([
+      {
+        id: varPromoTrueId,
+        organizationId: org.id,
+        featureFlagId: flagPromoBannerId,
+        key: 'true',
+        value: true,
+        color: 'amber',
+        isDefault: false,
+      },
+      {
+        id: varPromoFalseId,
+        organizationId: org.id,
+        featureFlagId: flagPromoBannerId,
+        key: 'false',
+        value: false,
+        color: 'red',
+        isDefault: true,
+      },
+    ]);
+
+    // Flag 8: beta-analytics (boolean, visibility: all)
+    const flagBetaAnalyticsId = crypto.randomUUID();
+    await db.insert(featureFlags).values({
+      id: flagBetaAnalyticsId,
+      organizationId: org.id,
+      projectId: project.id,
+      key: 'beta-analytics',
+      name: 'Beta Analytics Dashboard',
+      description: 'Kill-switch gated beta feature for advanced analytics. Only visible to beta users.',
+      flagType: 'boolean',
+      visibility: 'all',
+      createdBy: userId,
+    });
+
+    const varBetaTrueId = crypto.randomUUID();
+    const varBetaFalseId = crypto.randomUUID();
+    await db.insert(variations).values([
+      {
+        id: varBetaTrueId,
+        organizationId: org.id,
+        featureFlagId: flagBetaAnalyticsId,
+        key: 'true',
+        value: true,
+        color: 'green',
+        isDefault: false,
+      },
+      {
+        id: varBetaFalseId,
+        organizationId: org.id,
+        featureFlagId: flagBetaAnalyticsId,
+        key: 'false',
+        value: false,
+        color: 'red',
+        isDefault: true,
+      },
+    ]);
+
     // 8. Create Flag States
     console.log('Creating flag states...');
     // Dev flag states
@@ -390,6 +548,46 @@ async function main() {
         status: 'active',
         defaultVariationId: varThemeLightBlueId,
         offVariationId: varThemeRoseId,
+      },
+      {
+        id: crypto.randomUUID(),
+        organizationId: org.id,
+        featureFlagId: flagHeroHeadlineId,
+        environmentId: devEnvId,
+        isEnabled: true,
+        status: 'active',
+        defaultVariationId: varHeroDevId,
+        offVariationId: varHeroOpsId,
+      },
+      {
+        id: crypto.randomUUID(),
+        organizationId: org.id,
+        featureFlagId: flagPricingHeroId,
+        environmentId: devEnvId,
+        isEnabled: true,
+        status: 'active',
+        defaultVariationId: varPricingFalseId,
+        offVariationId: varPricingFalseId,
+      },
+      {
+        id: crypto.randomUUID(),
+        organizationId: org.id,
+        featureFlagId: flagPromoBannerId,
+        environmentId: devEnvId,
+        isEnabled: true,
+        status: 'active',
+        defaultVariationId: varPromoFalseId,
+        offVariationId: varPromoFalseId,
+      },
+      {
+        id: crypto.randomUUID(),
+        organizationId: org.id,
+        featureFlagId: flagBetaAnalyticsId,
+        environmentId: devEnvId,
+        isEnabled: true,
+        status: 'active',
+        defaultVariationId: varBetaFalseId,
+        offVariationId: varBetaFalseId,
       },
     ]);
 

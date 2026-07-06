@@ -2,6 +2,7 @@ import type { ContextPreset } from "@/types";
 
 export const DEFAULT_SDK_KEY = "sdk_client_devkey123abcdefghijklmnopqrstuv";
 export const DEFAULT_BASE_URL = "http://localhost:9000/api/v1";
+export const DEMO_SERVER_URL = "http://localhost:3002";
 
 export const FLAG_KEYS = {
 	DARK_MODE: "dark-mode",
@@ -25,13 +26,11 @@ export type AccentKey = keyof typeof ACCENT_COLORS;
 export const CONTEXT_PRESETS: ContextPreset[] = [
 	{
 		name: "Anonymous Visitor",
-		description: "First-time visitor, no account",
+		description: "Canary Release — first-time visitor, no account. Sees default homepage unless in rollout group.",
 		context: {
 			userId: "anon_visitor_01",
 			role: undefined,
 			attributes: {
-				device: "Desktop",
-				browser: "Chrome",
 				country: "US",
 				isAuthenticated: false,
 			},
@@ -39,13 +38,11 @@ export const CONTEXT_PRESETS: ContextPreset[] = [
 	},
 	{
 		name: "Free Tier User",
-		description: "Registered user on free plan",
+		description: "Tier Gating — free plan user. Premium features (SSO, custom targeting) hidden.",
 		context: {
 			userId: "user_free_01",
 			role: "member",
 			attributes: {
-				device: "Desktop",
-				browser: "Firefox",
 				country: "VN",
 				plan: "free",
 				isPremium: false,
@@ -54,13 +51,11 @@ export const CONTEXT_PRESETS: ContextPreset[] = [
 	},
 	{
 		name: "Pro Tier User",
-		description: "Premium subscriber with full access",
+		description: "A/B Testing — pro subscriber. Sees tailored hero-headline variant.",
 		context: {
 			userId: "user_pro_01",
 			role: "member",
 			attributes: {
-				device: "Desktop",
-				browser: "Chrome",
 				country: "US",
 				plan: "pro",
 				isPremium: true,
@@ -70,49 +65,71 @@ export const CONTEXT_PRESETS: ContextPreset[] = [
 	},
 	{
 		name: "Enterprise Admin",
-		description: "Large org admin with all features",
+		description: "Tier Gating + Geo Targeting — enterprise admin in EU. All features + EU data residency + enterprise pricing.",
 		context: {
 			userId: "user_ent_01",
 			role: "admin",
 			attributes: {
-				device: "Desktop",
-				browser: "Edge",
 				country: "DE",
+				region: "EU",
 				plan: "enterprise",
 				isPremium: true,
 				companySize: 500,
-				region: "EU",
 			},
 		},
 	},
 	{
-		name: "Mobile Beta Tester",
-		description: "Beta tester on mobile device",
+		name: "Beta Tester",
+		description: "Beta Program + Kill Switch — developer with betaAccess. Sees beta-analytics unless flag is killed.",
 		context: {
 			userId: "user_beta_01",
 			role: "developer",
 			attributes: {
-				device: "Mobile",
-				browser: "Safari",
 				country: "JP",
+				plan: "pro",
 				betaAccess: true,
-				isMobile: true,
 				os: "iOS",
 			},
 		},
 	},
 	{
-		name: "Dark Mode User",
-		description: "User who prefers dark interfaces",
+		name: "EU Data Subject",
+		description: "Geo Targeting — free user in France. GDPR-required features activated via region=EU.",
 		context: {
-			userId: "user_dark_01",
+			userId: "user_eu_01",
 			role: "member",
 			attributes: {
-				device: "Desktop",
-				browser: "Chrome",
+				country: "FR",
+				region: "EU",
+				plan: "free",
+				gdprRequired: true,
+			},
+		},
+	},
+	{
+		name: "Ops Team Lead",
+		description: "A/B Testing + Promo Banner — enterprise admin in UK. Gets ops-focused headline + may see promo.",
+		context: {
+			userId: "user_ops_01",
+			role: "admin",
+			attributes: {
 				country: "UK",
-				prefersDarkMode: true,
+				plan: "enterprise",
+				isPremium: true,
+				team: "platform",
+			},
+		},
+	},
+	{
+		name: "Dark Mode Enthusiast",
+		description: "Kill Switch — pro user with dark preference. dark-mode ON, beta-analytics OFF (killed).",
+		context: {
+			userId: "user_dark_01",
+			role: "developer",
+			attributes: {
+				country: "UK",
 				plan: "pro",
+				prefersDarkMode: true,
 			},
 		},
 	},

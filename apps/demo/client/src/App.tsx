@@ -11,6 +11,7 @@ import { FlagEvaluationLog } from './components/FlagEvaluationLog';
 import { FloatingConfigButton } from './components/FloatingConfig';
 import { ContextPanel } from './components/ContextPanel';
 import { BetaAnalytics } from './components/BetaAnalytics';
+import { ServerEvalPanel } from './components/ServerEvalPanel';
 import { FLAG_KEYS, ACCENT_COLORS, DEFAULT_SDK_KEY, DEFAULT_BASE_URL } from './lib/constants';
 import type { AccentKey } from './lib/constants';
 
@@ -131,6 +132,7 @@ function DemoContent({
       <Features />
       <BetaAnalytics />
       <Pricing />
+      <ServerEvalPanel activeContext={activeContext} />
 
       <section id="demo" className="border-t border-border bg-muted/30">
         <div className="mx-auto max-w-7xl px-6 py-24">

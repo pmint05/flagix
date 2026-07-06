@@ -97,6 +97,7 @@ export function KeyModal({
 									control={control}
 									render={({ field }) => (
 										<TextField
+											autoFocus
 											isInvalid={!!errors.name}
 											variant="secondary"
 											value={field.value}

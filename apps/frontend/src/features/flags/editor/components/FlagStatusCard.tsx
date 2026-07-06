@@ -62,11 +62,6 @@ export function FlagStatusCard({ flag: _flag }: FlagStatusCardProps) {
 						<span className="">resolving</span>
 						<OffVariationSelect variations={variations} />
 						<span className="">to all traffic</span>
-						{!offVariationId && (
-							<span className="text-warning">
-								(falling back to default variation in the default rule: {defaultVariationName})
-							</span>
-						)}
 					</>
 				)}
 			</div>
