@@ -51,9 +51,11 @@ router.get('/hero', async (req, res) => {
       variant: heroHeadline,
       promoActive: showPromo,
       isNewHomepage,
-      scenario: isNewHomepage
-        ? `[Canary Release] User \"${req.flagixContext.userId}\" is in the rollout group for new-homepage`
-        : `[Canary Release] User \"${req.flagixContext.userId}\" sees default homepage`,
+      scenario: [
+        `[Canary Release] new-homepage = ${isNewHomepage} — user "${req.flagixContext.userId}" ${isNewHomepage ? 'sees new layout' : 'sees default homepage'}`,
+        `[Promo Banner] promo-banner = ${showPromo} — ${showPromo ? 'promotional banner shown' : 'banner hidden'}`,
+        `[A/B Test] hero-headline = "${heroHeadline}" — ${heroHeadline === 'dev-focused' ? 'developer-focused messaging' : heroHeadline === 'ops-focused' ? 'ops-focused messaging' : 'growth-focused messaging'}`,
+      ],
     });
   } catch (err) {
     res.status(502).json({ error: 'Failed to evaluate content', message: String(err) });

@@ -1,93 +1,245 @@
-# Flagix - Safe & Real-time Feature Flag Platform
+# Flagix - Feature Flag Management Platform
 
-Flagix là một nền tảng quản lý và phát hành tính năng (Feature Flag) an toàn, thời gian thực và hỗ trợ phân quyền người dùng (Multi-tenant RBAC). Hệ thống được xây dựng theo kiến trúc Monorepo hiệu năng cao bằng `pnpm` và `Turborepo`.
+Flagix is a real-time feature flag platform with multi-tenant RBAC, built as a pnpm + Turborepo monorepo. It provides a management dashboard, SDKs for client and server integration, and real-time flag updates via Server-Sent Events.
 
----
+## Architecture
 
-## 🏗️ Cấu trúc dự án (Monorepo)
+```
+apps/
+  backend/          NestJS API server (port 9000)
+  frontend/         React admin dashboard (port 3000)
+  demo/
+    client/         React SPA - landing page demo (port 3001)
+    server/         Express.js API - BFF demo (port 3002)
+packages/
+  sdk-core/         TypeScript SDK (universal: browser + Node.js)
+  sdk-react/        React wrapper (FlagixProvider, useFlag hook)
+  shared/           Zod schemas and shared types
+infra/
+  docker/           Docker Compose files for PostgreSQL and Redis
+```
 
-- **`apps/backend`**: Dịch vụ API phát triển bằng NestJS, sử dụng Drizzle ORM kết nối PostgreSQL, phân tích thống kê sự kiện qua BullMQ + Redis, xác thực bằng Better Auth.
-- **`apps/frontend`**: Bảng điều khiển quản trị (Admin Dashboard) viết bằng React 19, Vite 8, Tailwind CSS v4, HeroUI v3 và TanStack Router.
-- **`apps/demo`**: Ứng dụng client mẫu mô phỏng tích hợp Feature Flag sử dụng SDK chính thức của hệ thống.
-- **`packages/sdk-core`**: SDK TypeScript cốt lõi cho các client/server tích hợp cờ, hỗ trợ kết nối SSE thời gian thực.
-- **`packages/sdk-react`**: Thư viện bọc React SDK cung cấp `<FlagixProvider>` và hook `useFlag` tối ưu re-render.
-- **`packages/shared`**: Nơi lưu trữ các schema validate Zod và kiểu dữ liệu dùng chung.
+**Demo architecture:**
 
----
+```
+Demo Client (React)       Demo Server (Express)        Flagix Backend (NestJS)
+     |                          |                             |
+     |  useFlag('dark-mode')    |                             |
+     |------------------------------------------------------>|
+     |  SSE updates             |                             |
+     |<------------------------------------------------------|
+     |                          |                             |
+     |  fetch /api/content/*    |  evaluateAll(context)       |
+     |------------------------->|---------------------------->|
+     |  JSON response           |  flag results               |
+     |<-------------------------|<----------------------------|
+```
 
-## 🛠️ Hướng dẫn Khởi chạy Hệ thống
+## Prerequisites
 
-### 1. Yêu cầu hệ thống
-- **Node.js**: Phiên bản 20+ LTS
-- **pnpm**: Phiên bản 10+ hoặc 11+
-- **Docker**: Khởi chạy cơ sở dữ liệu PostgreSQL & Redis
+- Node.js 20+ (LTS)
+- pnpm 10+ or 11+
+- Docker (for PostgreSQL and Redis)
 
-### 2. Cài đặt ban đầu
-Tại thư mục gốc của dự án:
+## Quick Start
+
+### 1. Install dependencies
+
 ```bash
-# Cài đặt toàn bộ dependencies trong monorepo
 pnpm install
+```
 
-# Khởi động PostgreSQL & Redis trong Docker
+### 2. Start infrastructure
+
+```bash
 pnpm run db:up
 ```
 
-### 3. Đồng bộ Cơ sở dữ liệu & Seed data
+This starts PostgreSQL 18 and Redis 8 via Docker Compose.
+
+### 3. Initialize the database
+
 ```bash
-# Đồng bộ schema với database
-pnpm --filter backend db:push
-
-# Tạo schema cho Better Auth
 pnpm --filter backend auth:generate
-
-# Tạo dữ liệu mẫu khởi đầu (Tài khoản thử nghiệm & Cờ tính năng cờ mẫu)
+pnpm --filter backend db:push
 pnpm --filter backend db:seed
 ```
 
-### 4. Khởi chạy các ứng dụng ở chế độ Phát triển (Dev)
-Bạn có thể khởi chạy song song cả 3 ứng dụng bằng Turborepo:
+`auth:generate` creates the Better Auth schema file. `db:push` synchronizes all table schemas to the database. `db:seed` populates the database with a test organization, project, environments, SDK keys, and seven demo feature flags.
+
+### 4. Start the backend and dashboard
+
+```bash
+pnpm dev:backend     # http://localhost:9000
+```
+
+In a separate terminal:
+
+```bash
+pnpm dev:frontend    # http://localhost:3000
+```
+
+### 5. Start the demo applications
+
+Terminal 3 - Demo Express server:
+
+```bash
+pnpm --filter demo-server dev    # http://localhost:3002
+```
+
+Terminal 4 - Demo React client:
+
+```bash
+pnpm --filter demo-client dev    # http://localhost:3001
+```
+
+Or start all apps at once:
+
 ```bash
 pnpm dev
 ```
-Hoặc chạy riêng lẻ từng ứng dụng:
-```bash
-# Chạy NestJS Backend (Cổng mặc định: http://localhost:9000)
-pnpm dev:backend
 
-# Chạy Admin Dashboard (Cổng mặc định: http://localhost:3000)
-pnpm dev:frontend
+## Demo Credentials
 
-# Chạy Demo App (Cổng mặc định: http://localhost:3001)
-pnpm --filter demo dev
+After running `db:seed`, the following accounts and keys are available:
+
+**Dashboard login:**
+
+| Field | Value |
+|---|---|
+| Email | `dev@flagix.com` |
+| Password | `password123` |
+
+**SDK keys (Development environment):**
+
+| Type | Key |
+|---|---|
+| Client | `sdk_client_devkey123abcdefghijklmnopqrstuv` |
+| Server | `sdk_server_devkey123abcdefghijklmnopqrstuv` |
+
+## Demo Walkthrough
+
+### Client-side evaluation (React SDK)
+
+The demo client at `http://localhost:3001` shows a SaaS landing page controlled by feature flags. Two flags are evaluated directly by the React SDK:
+
+| Flag Key | Type | Description |
+|---|---|---|
+| `dark-mode` | Boolean | Toggles dark/light theme across the entire UI |
+| `theme-color` | Multivariate | Switches accent color among `light-blue`, `dark-slate`, `rose` |
+
+Open the Context Controller (floating button, bottom-right) to switch between user personas. Each persona has a different `EvaluationContext` that affects which flag variations they receive.
+
+When `dark-mode` is toggled in the Flagix dashboard, the demo client receives an SSE event and applies the theme change instantly - no page reload required.
+
+### Server-side evaluation (Express BFF)
+
+The demo server at `http://localhost:3002` demonstrates how a backend application evaluates flags using `@flagix/sdk-core` in stateless mode. Instead of caching, each HTTP request evaluates flags fresh for the given context.
+
+**API endpoints:**
+
+```
+GET /api/health
+GET /api/flags?context=<JSON>        # Evaluate all flags
+GET /api/flags/:key?context=<JSON>   # Evaluate a single flag
+GET /api/content/hero?context=<JSON> # Hero section (canary release + A/B test + promo)
+GET /api/content/features?context=<JSON> # Feature list (tier gating + kill switch + beta)
+GET /api/content/pricing?context=<JSON>  # Pricing table (A/B test layout)
 ```
 
----
+**Server-side flags:**
 
-## 🔑 Tài khoản & Key chạy Demo
+| Flag Key | Type | Rule | Scenario |
+|---|---|---|---|
+| `hero-headline` | Multivariate | User targeting: `team=platform` | A/B tests hero messaging across dev, ops, and growth audiences |
+| `new-homepage` | Boolean | Percentage rollout: 50% | Canary release of a new homepage layout |
+| `pricing-hero` | Boolean | User targeting: `plan=enterprise` | A/B tests pricing page layout for enterprise users |
+| `promo-banner` | Boolean | User targeting: `plan=free` | Promotional banner targeting free-tier users |
+| `beta-analytics` | Boolean | User targeting: `betaAccess=true` | Kill switch for a beta analytics feature |
 
-Sau khi chạy lệnh `db:seed`, dữ liệu mẫu sau đây sẽ được nạp vào hệ thống:
+### Consistency verification
 
-### Tài khoản Admin Đăng nhập Dashboard:
-- **Email**: `dev@flagix.com`
-- **Mật khẩu**: `password123`
+The demo client includes a ServerEvalPanel section that fetches flag evaluations from the Express server and compares them side-by-side with the React SDK results. All flags should match, confirming that Flagix evaluates consistently regardless of which SDK (client or server) performs the evaluation.
 
-### Client SDK Key cho môi trường Development (chạy demo):
-- **SDK Client Key**: `sdk_client_devkey123abcdefghijklmnopqrstuv`
-- **Môi trường**: `Development`
+## Project Structure Reference
 
-Ứng dụng demo tại `apps/demo` được cấu hình mặc định kết nối với API backend tại `http://localhost:9000` và sử dụng Key trên để tải cờ thời gian thực. Bạn có thể thay đổi trạng thái cờ `dark-mode`, `new-homepage`, hoặc `theme-color` trên dashboard để thấy ứng dụng demo cập nhật lập tức mà không cần tải lại trang.
+```
+flagix/
+  AGENTS.md                  AI agent guidelines (HeroUI v3 + Phosphor Icons)
+  package.json               Root workspace config
+  pnpm-workspace.yaml        Workspace package paths
+  turbo.json                 Turborepo task pipeline
+  tsconfig.base.json         Shared TypeScript config
+  apps/
+    backend/                 NestJS 11 API
+      src/
+        modules/             Feature modules (auth, flags, rules, evaluation, etc.)
+        common/              Guards, decorators, filters, interceptors
+        db/                  Drizzle ORM schema and seed data
+    frontend/                React 19 admin dashboard
+      src/
+        components/          Reusable UI components
+        features/            Feature modules (flags, projects, keys, audit, etc.)
+        routes/              TanStack Router file-based routes
+        lib/                 API client, auth, utilities
+        stores/              Zustand stores
+    demo/
+      client/                React SPA (landing page demo)
+        src/
+          components/        Hero, Pricing, Features, PromoBanner, BetaAnalytics, ServerEvalPanel
+          lib/               Constants, flag keys, context presets
+      server/                Express.js BFF demo
+        src/
+          routes/            Health, flags, and content API endpoints
+          middleware/         EvaluationContext extraction from query params
+  packages/
+    sdk-core/                @flagix/sdk-core - FlagixClient with SSE, cache, stateless evaluation
+    sdk-react/               @flagix/sdk-react - FlagixProvider, useFlag, useFlags hooks
+    shared/                  @flagix/shared - Zod schemas, types, constants
+  infra/
+    docker/                  docker-compose.infra.yml (PostgreSQL 18 + Redis 8)
+```
 
----
-
-## 🧪 Chạy Kiểm thử (Testing)
+## Package Scripts
 
 ```bash
-# Chạy toàn bộ unit test ở backend
+pnpm dev                 # Start all apps via Turborepo
+pnpm dev:backend         # Start NestJS backend (port 9000)
+pnpm dev:frontend        # Start React dashboard (port 3000)
+pnpm build               # Build all packages and apps
+pnpm --filter demo-server dev   # Start Express demo server (port 3002)
+pnpm --filter demo-client dev   # Start React demo client (port 3001)
+pnpm run db:up           # Start PostgreSQL and Redis
+pnpm run db:down         # Stop PostgreSQL and Redis
+pnpm run db:logs         # Tail PostgreSQL logs
+```
+
+## Testing
+
+```bash
 pnpm --filter backend test
-
-# Chạy unit test ở sdk-core
 pnpm --filter @flagix/sdk-core test run
-
-# Chạy unit test ở sdk-react
 pnpm --filter @flagix/sdk-react test run
 ```
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Backend framework | NestJS 11 |
+| ORM | Drizzle ORM |
+| Database | PostgreSQL 18 (Alpine) |
+| Cache / Queue | Redis 8 (Alpine) + BullMQ v5 |
+| Auth | Better Auth |
+| Frontend framework | React 19 |
+| Build tool | Vite 8 |
+| Router | TanStack Router + TanStack Start |
+| Data fetching | TanStack Query + ky |
+| UI library | HeroUI v3 (React Aria) |
+| Styling | Tailwind CSS v4 |
+| State | Zustand v5 |
+| Forms | React Hook Form + Zod v4 |
+| Charts | Recharts v3 |
+| Package manager | pnpm |
+| Monorepo | Turborepo |
+| Language | TypeScript (strict mode) |

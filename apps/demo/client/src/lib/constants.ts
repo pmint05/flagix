@@ -4,14 +4,16 @@ export const DEFAULT_SDK_KEY = "sdk_client_devkey123abcdefghijklmnopqrstuv";
 export const DEFAULT_BASE_URL = "http://localhost:9000/api/v1";
 export const DEMO_SERVER_URL = "http://localhost:3002";
 
+// Client flags: evaluated by React SDK (useFlag hook) — UI-only concerns
+// Server flags: evaluated by Express API (fetch) — business logic / A/B tests / kill switches
 export const FLAG_KEYS = {
-	DARK_MODE: "dark-mode",
-	NEW_HOMEPAGE: "new-homepage",
-	PROMO_BANNER: "promo-banner",
-	THEME_ACCENT: "theme-color",
-	BETA_ANALYTICS: "beta-analytics",
-	HERO_HEADLINE: "hero-headline",
-	PRICING_HERO: "pricing-hero",
+	DARK_MODE: "dark-mode",         // client: dark/light theme toggle
+	NEW_HOMEPAGE: "new-homepage",   // server: canary release, fetched via /api/content/hero
+	PROMO_BANNER: "promo-banner",   // server: promo banner, fetched via /api/content/hero
+	THEME_ACCENT: "theme-color",    // client: accent color switch
+	BETA_ANALYTICS: "beta-analytics", // server: beta feature kill-switch, fetched via /api/content/features
+	HERO_HEADLINE: "hero-headline", // server: A/B test headline, fetched via /api/content/hero
+	PRICING_HERO: "pricing-hero",   // server: A/B test pricing, fetched via /api/content/pricing
 } as const;
 
 export const ACCENT_COLORS = {

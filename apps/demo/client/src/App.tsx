@@ -126,12 +126,12 @@ function DemoContent({
         </div>
       )}
 
-      <PromoBanner />
+      <PromoBanner activeContext={activeContext} />
       <Header />
-      <Hero />
+      <Hero activeContext={activeContext} />
       <Features />
-      <BetaAnalytics />
-      <Pricing />
+      <BetaAnalytics activeContext={activeContext} />
+      <Pricing activeContext={activeContext} />
       <ServerEvalPanel activeContext={activeContext} />
 
       <section id="demo" className="border-t border-border bg-muted/30">

@@ -1,12 +1,44 @@
-import { useFlag } from '@flagix/sdk-react';
+import { useState, useEffect } from 'react';
 import { ChartBarIcon, LightningIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { FLAG_KEYS } from '@/lib/constants';
+import { DEMO_SERVER_URL } from '@/lib/constants';
+import type { EvaluationContext } from '@flagix/sdk-core';
 
-export function BetaAnalytics() {
-  const { value: showAnalytics, isLoading } = useFlag(FLAG_KEYS.BETA_ANALYTICS, false);
+interface Feature {
+  key: string;
+  title: string;
+  desc: string;
+  enabled?: boolean;
+}
 
-  if (isLoading || !showAnalytics) return null;
+interface FeaturesData {
+  features: Feature[];
+  pricingLayout: string;
+  scenarios: string[];
+  context: { userId: string; plan: string; betaAccess: boolean };
+}
+
+interface BetaAnalyticsProps {
+  activeContext: EvaluationContext;
+}
+
+export function BetaAnalytics({ activeContext }: BetaAnalyticsProps) {
+  const [show, setShow] = useState(false);
+  const [scenario, setScenario] = useState('');
+
+  useEffect(() => {
+    const ctx = JSON.stringify(activeContext);
+    fetch(`${DEMO_SERVER_URL}/api/content/features?context=${encodeURIComponent(ctx)}`)
+      .then((r) => r.json())
+      .then((d: FeaturesData) => {
+        const hasBeta = d.features.some((f) => f.key === 'beta-analytics' && f.enabled !== false);
+        setShow(hasBeta);
+        setScenario(d.scenarios.find((s) => s.includes('beta')) || d.scenarios[0] || '');
+      })
+      .catch(() => setShow(false));
+  }, [activeContext]);
+
+  if (!show) return null;
 
   return (
     <section id="analytics" className="border-t border-b border-accent/20 bg-accent/5">
@@ -63,7 +95,7 @@ export function BetaAnalytics() {
               {[
                 { flag: 'dark-mode', result: 'true', reason: 'RULE_MATCH', time: '1.2ms' },
                 { flag: 'new-homepage', result: 'false', reason: 'DEFAULT', time: '0.8ms' },
-                { flag: 'theme-accent', result: 'light-blue', reason: 'ROLLOUT', time: '1.5ms' },
+                { flag: 'theme-color', result: 'light-blue', reason: 'ROLLOUT', time: '1.5ms' },
                 { flag: 'beta-analytics', result: 'true', reason: 'BOOL_TRUE', time: '0.6ms' },
                 { flag: 'hero-headline', result: 'growth', reason: 'ROLLOUT', time: '1.1ms' },
               ].map((log) => (
@@ -86,6 +118,9 @@ export function BetaAnalytics() {
             </div>
           </div>
         </div>
+        <p className="mt-8 text-center text-xs text-muted-foreground font-mono">
+          Evaluated by Express Server · {scenario}
+        </p>
       </div>
     </section>
   );

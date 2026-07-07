@@ -1,7 +1,8 @@
-import { useFlag } from '@flagix/sdk-react';
+import { useState, useEffect } from 'react';
 import { ArrowRightIcon, CodeIcon, RocketIcon, ShieldPlusIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { FLAG_KEYS } from '@/lib/constants';
+import { DEMO_SERVER_URL } from '@/lib/constants';
+import type { EvaluationContext } from '@flagix/sdk-core';
 
 const HEADLINE_VARIANTS = {
   'dev-focused': {
@@ -36,19 +37,63 @@ const FEATURE_ITEMS = [
   { title: 'User Targeting', desc: 'Target by region, role, device, plan, or any attribute.' },
 ];
 
-export function Hero() {
-  const { value: isNewHomepage } = useFlag(FLAG_KEYS.NEW_HOMEPAGE, false);
-
-  if (isNewHomepage) {
-    return <HeroVariant />;
-  }
-
-  return <HeroDefault />;
+interface HeroData {
+  variant: string;
+  headline: string;
+  accent: string;
+  sub: string;
+  tagline: string;
+  isNewHomepage: boolean;
+  promoActive: boolean;
+  scenario: string[];
 }
 
-function HeroDefault() {
-  const { value: headlineVariant } = useFlag(FLAG_KEYS.HERO_HEADLINE, 'dev-focused');
-  const variant = HEADLINE_VARIANTS[headlineVariant as HeadlineVariant] || HEADLINE_VARIANTS['dev-focused'];
+interface HeroProps {
+  activeContext: EvaluationContext;
+}
+
+export function Hero({ activeContext }: HeroProps) {
+  const [data, setData] = useState<HeroData | null>(null);
+
+  useEffect(() => {
+    const ctx = JSON.stringify(activeContext);
+    fetch(`${DEMO_SERVER_URL}/api/content/hero?context=${encodeURIComponent(ctx)}`)
+      .then((r) => r.json())
+      .then((d) => { setData(d); })
+      .catch(() => {
+        setData({
+          variant: 'dev-focused',
+          headline: 'Ship features with',
+          accent: 'confidence',
+          sub: 'not chaos',
+          tagline: 'Flagix lets you deploy, test, and roll back features instantly.',
+          isNewHomepage: false,
+          promoActive: false,
+          scenario: [],
+        });
+      });
+  }, [activeContext]);
+
+  if (!data) {
+    return (
+      <section className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto h-8 w-48 animate-pulse rounded bg-muted" />
+          <div className="mx-auto mt-6 h-6 w-96 animate-pulse rounded bg-muted" />
+        </div>
+      </section>
+    );
+  }
+
+  if (data.isNewHomepage) {
+    return <HeroVariant scenario={data.scenario} />;
+  }
+
+  return <HeroDefault variant={data.variant as HeadlineVariant} scenario={data.scenario} />;
+}
+
+function HeroDefault({ variant: headlineVariant, scenario }: { variant: HeadlineVariant; scenario: string[] }) {
+  const variant = HEADLINE_VARIANTS[headlineVariant] || HEADLINE_VARIANTS['dev-focused'];
   const Icon = variant.icon;
 
   return (
@@ -62,7 +107,7 @@ function HeroDefault() {
           Now in Public Beta
           <span className="text-border">|</span>
           <Icon className="h-3 w-3 text-accent" weight="bold" />
-          <span className="text-xs text-accent font-medium">{headlineVariant as string} audience</span>
+          <span className="text-xs text-accent font-medium">{headlineVariant} audience</span>
         </div>
 
         <h1 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -97,12 +142,16 @@ function HeroDefault() {
             </div>
           ))}
         </div>
+
+        <p className="mt-8 text-xs text-muted-foreground font-mono">
+          Evaluated by Express Server · {scenario.join(' · ')}
+        </p>
       </div>
     </section>
   );
 }
 
-function HeroVariant() {
+function HeroVariant({ scenario }: { scenario: string[] }) {
   return (
     <section className="mx-auto max-w-7xl px-6 py-24 md:py-32">
       <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -150,6 +199,9 @@ function HeroVariant() {
           ))}
         </div>
       </div>
+      <p className="mt-8 text-center text-xs text-muted-foreground font-mono">
+        Evaluated by Express Server · {scenario.join(' · ')}
+      </p>
     </section>
   );
 }

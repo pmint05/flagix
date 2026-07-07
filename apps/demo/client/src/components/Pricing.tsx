@@ -1,20 +1,64 @@
-import { useFlag } from '@flagix/sdk-react';
+import { useState, useEffect } from 'react';
 import { CheckIcon, BuildingsIcon, ArrowUpRightIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { FLAG_KEYS } from '@/lib/constants';
+import { DEMO_SERVER_URL } from '@/lib/constants';
+import type { EvaluationContext } from '@flagix/sdk-core';
 
-const STARTER_FEATURES = ['5 team members', '10 feature flags', 'Basic targeting rules', '7-day audit log', 'Community support'];
-const PRO_FEATURES = ['25 team members', 'Unlimited flags', 'Advanced targeting', '30-day audit log', 'Webhooks', 'Priority support'];
-const ENTERPRISE_FEATURES = ['Unlimited members', 'Unlimited flags', 'Custom targeting', 'Unlimited audit log', 'SSO & SAML', 'On-premise', 'SLA guarantee'];
+interface PricingPlan {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  highlighted: boolean;
+  cta: string;
+}
 
-export function Pricing() {
-  const { value: isPricingHero } = useFlag(FLAG_KEYS.PRICING_HERO, false);
+interface PricingData {
+  layout: string;
+  plans: PricingPlan[];
+  scenario: string;
+}
+
+interface PricingProps {
+  activeContext: EvaluationContext;
+}
+
+export function Pricing({ activeContext }: PricingProps) {
+  const [data, setData] = useState<PricingData | null>(null);
+
+  useEffect(() => {
+    const ctx = JSON.stringify(activeContext);
+    fetch(`${DEMO_SERVER_URL}/api/content/pricing?context=${encodeURIComponent(ctx)}`)
+      .then((r) => r.json())
+      .then(setData)
+      .catch(() => setData({ layout: 'default', plans: [], scenario: '' }));
+  }, [activeContext]);
+
+  if (!data) {
+    return (
+      <section id="pricing" className="border-t border-border">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mx-auto h-8 w-64 animate-pulse rounded bg-muted" />
+          </div>
+          <div className="mt-16 grid gap-8 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-80 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const isHeroLayout = data.layout === 'enterprise';
 
   return (
     <section id="pricing" className="border-t border-border">
       <div className="mx-auto max-w-7xl px-6 py-24">
         <div className="mx-auto max-w-2xl text-center">
-          {isPricingHero ? (
+          {isHeroLayout ? (
             <>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent">
                 <BuildingsIcon className="h-3.5 w-3.5" weight="bold" />
@@ -40,46 +84,51 @@ export function Pricing() {
           )}
         </div>
 
-        {isPricingHero ? <PricingHeroLayout /> : <PricingDefaultLayout />}
+        {isHeroLayout ? (
+          <PricingHeroLayout plans={data.plans} />
+        ) : (
+          <PricingDefaultLayout plans={data.plans} />
+        )}
+
+        <p className="mt-8 text-center text-xs text-muted-foreground font-mono">
+          Evaluated by Express Server · {data.scenario}
+        </p>
       </div>
     </section>
   );
 }
 
-function PricingDefaultLayout() {
+function PricingDefaultLayout({ plans }: { plans: PricingPlan[] }) {
   return (
     <div className="mt-16 grid gap-8 lg:grid-cols-3">
-      <PricingCard name="Starter" price="Free" period="forever" description="For individuals and small projects." features={STARTER_FEATURES} />
-      <PricingCard name="Pro" price="$49" period="/month" description="For growing teams that need more power." features={PRO_FEATURES} highlighted />
-      <PricingCard name="Enterprise" price="Custom" period="" description="For large organizations with custom needs." features={ENTERPRISE_FEATURES} cta="Contact Sales" />
+      {plans.map((plan) => (
+        <PricingCard key={plan.name} {...plan} />
+      ))}
     </div>
   );
 }
 
-function PricingHeroLayout() {
+function PricingHeroLayout({ plans }: { plans: PricingPlan[] }) {
   return (
     <div className="mt-16">
       <div className="mx-auto max-w-2xl">
-        <PricingCard
-          name="Enterprise"
-          price="Custom"
-          period=""
-          description="Everything you need to manage flags at enterprise scale."
-          features={ENTERPRISE_FEATURES}
-          highlighted
-          cta="Request a Demo"
-          footer={
-            <div className="mt-8 border-t border-border pt-6 text-center">
-              <p className="text-xs text-muted-foreground">Ideal for teams 50+</p>
-              <p className="mt-2 text-sm font-medium">
-                Need something smaller?{' '}
-                <a href="#" className="text-accent hover:underline">
-                  See Pro plan <ArrowUpRightIcon className="inline h-3 w-3" weight="bold" />
-                </a>
-              </p>
-            </div>
-          }
-        />
+        {plans.map((plan) => (
+          <PricingCard
+            key={plan.name}
+            {...plan}
+            footer={
+              <div className="mt-8 border-t border-border pt-6 text-center">
+                <p className="text-xs text-muted-foreground">Ideal for teams 50+</p>
+                <p className="mt-2 text-sm font-medium">
+                  Need something smaller?{' '}
+                  <a href="#" className="text-accent hover:underline">
+                    See Pro plan <ArrowUpRightIcon className="inline h-3 w-3" weight="bold" />
+                  </a>
+                </p>
+              </div>
+            }
+          />
+        ))}
       </div>
 
       <div className="mt-12 grid gap-4 text-center text-sm text-muted-foreground sm:grid-cols-3">

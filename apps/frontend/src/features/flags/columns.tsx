@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { Chip, Button, Tooltip } from "@heroui/react";
-import { RocketLaunchIcon, TrashIcon } from "@phosphor-icons/react";
+import { RocketLaunchIcon, TrashIcon, GlobeSimpleIcon, BrowserIcon, TerminalIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { FlagToggle } from "./FlagToggle";
 import { VariationDots } from "@/components/ui/filters/VariationDots";
@@ -16,6 +16,12 @@ const STATUS_CHIP_COLOR: Record<
 	draft: "warning",
 	active: "success",
 	archived: "default",
+};
+
+const VISIBILITY_META: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
+	all: { icon: GlobeSimpleIcon, label: "All SDKs" },
+	client_only: { icon: BrowserIcon, label: "Client Only" },
+	server_only: { icon: TerminalIcon, label: "Server Only" },
 };
 
 const columnHelper = createColumnHelper<FeatureFlagListItem>();
@@ -92,9 +98,20 @@ export function createFlagColumns(actions: ColumnActions) {
 			header: "Type",
 			cell: (info) => {
 				const isTemp = info.row.original.isTemporary;
+				const visibility = info.row.original.visibility;
+				const visMeta = VISIBILITY_META[visibility];
+				const VisIcon = visMeta?.icon;
 				return (
 					<div className="flex items-center gap-1.5">
 						<Chip variant="soft">{info.getValue()}</Chip>
+						{VisIcon && (
+							<Tooltip>
+								<Tooltip.Trigger>
+									<VisIcon className="size-3.5 text-default-500" />
+								</Tooltip.Trigger>
+								<Tooltip.Content>{visMeta.label}</Tooltip.Content>
+							</Tooltip>
+						)}
 						{isTemp && (
 							<Chip
 								variant="soft"
