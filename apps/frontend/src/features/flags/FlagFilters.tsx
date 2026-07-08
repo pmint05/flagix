@@ -169,7 +169,7 @@ export function FlagFilters({
 							<MagnifyingGlassIcon className="text-muted-foreground" />
 						</SearchField.SearchIcon>
 						<SearchField.Input placeholder="Search by key or name..." />
-						<SearchField.ClearButton />
+						<SearchField.ClearButton onPress={() => onSearchChange("")} />
 					</SearchField.Group>
 				</SearchField>
 				<Popover>

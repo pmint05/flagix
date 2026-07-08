@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, desc, sql, type SQL, or, ilike, count } from 'drizzle-orm';
+import { eq, and, desc, sql, type SQL, or, ilike, count, isNull } from 'drizzle-orm';
 import {
   auditLogs,
   user,
@@ -131,11 +131,19 @@ export class AuditLogsRepository {
       }
     }
 
+    if (query.environmentId) {
+      baseConditions.push(
+        or(
+          eq(auditLogs.environmentId, query.environmentId),
+          isNull(auditLogs.environmentId),
+        )!,
+      );
+    }
+
     const builder = new ListQueryBuilder({
       base: baseConditions,
       filters: {
         projectId: { column: auditLogs.projectId },
-        environmentId: { column: auditLogs.environmentId },
         entityType: { column: auditLogs.entityType },
         actionType: { column: auditLogs.actionType },
         actorId: { column: auditLogs.actorId },

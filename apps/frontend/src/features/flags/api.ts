@@ -418,6 +418,7 @@ export function useUpdateSegment() {
 	return useMutation({
 		mutationFn: ({
 			segmentId,
+			segmentSlug: _slug,
 			...input
 		}: {
 			segmentId: string;

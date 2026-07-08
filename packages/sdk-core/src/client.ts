@@ -19,6 +19,7 @@ export class FlagixClient {
   private isInitialized = false;
   private pendingFetch: Promise<void> | null = null;
   private snapshot: Record<string, EvaluationResult> = {};
+  private initError: Error | null = null;
   private static readonly EMPTY_FLAGS: Record<string, EvaluationResult> = {};
 
   constructor(config: FlagixConfig) {
@@ -88,6 +89,7 @@ export class FlagixClient {
         this.notifySubscribers(cachedFlags);
         this.setReady(true);
       } else {
+        this.initError = e instanceof Error ? e : new Error(String(e));
         console.error('Flagix: Failed to initialize and no cached flags available', e);
       }
     }
@@ -207,7 +209,12 @@ export class FlagixClient {
    * Suitable for server-side per-request usage.
    */
   async evaluateAll(context: EvaluationContext): Promise<Record<string, EvaluationResult>> {
-    return this.evaluationClient.evaluateAll(context);
+    try {
+      return this.evaluationClient.evaluateAll(context);
+    } catch (e) {
+      console.error('Flagix: evaluateAll failed, falling back to empty flags', e);
+      return {};
+    }
   }
 
   /**
@@ -241,6 +248,10 @@ export class FlagixClient {
    */
   getIsReady(): boolean {
     return this.isReady;
+  }
+
+  getError(): Error | null {
+    return this.initError;
   }
 
   /**

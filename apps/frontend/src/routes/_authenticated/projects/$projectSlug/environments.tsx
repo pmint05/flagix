@@ -202,7 +202,7 @@ function EnvironmentsIndex() {
 			<div className="flex items-center gap-3">
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">Environments</h1>
-					<p className="mt-1 text-sm">
+					<p className="mt-1 text-sm text-muted">
 						Manage deployment environments for this project
 					</p>
 				</div>

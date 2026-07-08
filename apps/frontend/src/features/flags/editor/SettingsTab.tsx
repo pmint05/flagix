@@ -293,7 +293,7 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 									</Checkbox.Control>
 									<div className="flex flex-col gap-0.5">
 										<span className="text-sm font-medium text-foreground">Temporary flag</span>
-										<span className="text-xs text-muted-foreground">
+										<span className="text-xs text-muted">
 											Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
 										</span>
 									</div>

@@ -48,7 +48,7 @@ export function createEnvironmentColumns(actions: ColumnActions) {
 				const slug = info.getValue();
 				return (
 					<div className="flex items-center gap-2 group">
-						<span className="text-muted-foreground">{slug}</span>
+						<span>{slug}</span>
 						<CopyButton
 							text={slug}
 							buttonProps={{

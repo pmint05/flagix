@@ -15,6 +15,7 @@ import type { FeatureFlagListItem } from "@/types/feature-flag";
 import { formatDate } from "#/lib/date";
 import UserAvatar from "#/components/user/user-avatar";
 import CopyButton from "#/components/ui/copy-button";
+import { ExpandableCell } from "@/components/ui/expandable-cell";
 
 const STATUS_CHIP_COLOR: Record<
 	string,
@@ -102,6 +103,11 @@ export function createFlagColumns(actions: ColumnActions) {
 					</div>
 				);
 			},
+		}),
+		columnHelper.accessor("description", {
+			enableSorting: false,
+			header: "Description",
+			cell: (info) => <ExpandableCell text={info.getValue()} />,
 		}),
 		columnHelper.accessor("flagType", {
 			enableSorting: true,

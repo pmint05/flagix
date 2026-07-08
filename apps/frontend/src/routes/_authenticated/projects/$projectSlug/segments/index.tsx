@@ -117,11 +117,11 @@ function SegmentsIndex() {
 	);
 
 	return (
-		<div className="space-y-6 p-6">
+		<div className="space-y-6">
 			<div className="flex justify-between items-center">
 				<div className="text-left">
 					<h1 className="text-2xl font-bold tracking-tight">Segments</h1>
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-muted mt-1">
 						Create rulesets to target group of users across multiple feature
 						flags.
 					</p>

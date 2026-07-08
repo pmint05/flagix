@@ -75,11 +75,11 @@ function TagsIndex() {
 	);
 
 	return (
-		<div className="space-y-6 p-6">
+		<div className="space-y-6">
 			<div className="flex justify-between items-center">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">Project Tags</h1>
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-muted mt-1">
 						Manage metadata tags used to organize your feature flags.
 					</p>
 				</div>

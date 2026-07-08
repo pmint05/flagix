@@ -295,7 +295,7 @@ function SegmentEditorPage() {
 				<h1 className="text-2xl font-bold text-foreground">
 					Segment Not Found
 				</h1>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-muted">
 					The segment you are looking for does not exist or has been deleted.
 				</p>
 				<Link to="/projects/$projectSlug/segments" params={{ projectSlug }}>
@@ -321,7 +321,7 @@ function SegmentEditorPage() {
 						</span>
 					</div>
 					{segment.description && (
-						<p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+						<p className="text-sm text-muted mt-1 max-w-2xl">
 							{segment.description}
 						</p>
 					)}

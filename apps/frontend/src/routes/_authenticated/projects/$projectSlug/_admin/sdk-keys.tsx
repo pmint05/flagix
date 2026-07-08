@@ -194,7 +194,7 @@ function SdkKeysPage() {
 			<div className="flex items-center gap-3">
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">SDK Keys</h1>
-					<p className="mt-1 text-sm text-default-500">
+					<p className="mt-1 text-sm text-muted">
 						Manage authorization keys for your SDKs. Client keys are public;
 						server keys must be kept secret.
 					</p>
@@ -238,7 +238,7 @@ function SdkKeysPage() {
 					title="Client Keys"
 					value={clientCount}
 					icon={BrowserIcon}
-					iconClassName="rounded-xl bg-default-soft p-3 text-default-600"
+					iconClassName="rounded-xl bg-default-soft p-3"
 				/>
 				<StatCard
 					title="Server Keys"
@@ -523,7 +523,7 @@ function SdkKeysPage() {
 												aria-label={`Toggle active state of ${key.name}`}
 											/>
 										</TableCell>
-										<TableCell className="text-sm text-default-600">
+										<TableCell className="text-sm">
 											{key.lastUsedAt
 												? formatDistanceToNow(new Date(key.lastUsedAt), {
 														addSuffix: true,
@@ -540,10 +540,10 @@ function SdkKeysPage() {
 													fallbackClassName="text-xs"
 												/>
 											) : (
-												<span className="text-sm text-default-400">System</span>
+												<span className="text-sm">System</span>
 											)}
 										</Table.Cell>
-										<TableCell className="text-sm text-default-600">
+										<TableCell className="text-sm">
 											{formatDate(key.createdAt)}
 										</TableCell>
 										<Table.Cell>

@@ -8,7 +8,6 @@ import {
 	useUpdateFlagState,
 	type FlagListParams,
 } from "@/features/flags/api";
-import { FlagModal } from "@/features/flags/FlagModal";
 import {
 	FlagFilters,
 	type FlagFiltersState,
@@ -93,7 +92,7 @@ function FlagsIndex() {
 	const canEditFlag = useHasPermission("flag:edit");
 	const canDeleteFlag = useHasPermission("flag:delete");
 
-	const { isCreateFlagOpen, openCreateFlag, closeCreateFlag } = useUIStore();
+	const { openCreateFlag } = useUIStore();
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [flagToDelete, setFlagToDelete] = useState<FeatureFlagListItem | null>(
 		null,
@@ -162,7 +161,7 @@ function FlagsIndex() {
 			<div className="flex items-center gap-3">
 				<div className="flex-1">
 					<h1 className="text-2xl font-bold text-foreground">Feature Flags</h1>
-					<p className="mt-1 text-sm">
+					<p className="mt-1 text-sm text-muted">
 						Manage feature flags for this environment
 					</p>
 				</div>
