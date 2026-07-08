@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Inject,
+} from '@nestjs/common';
 import { SegmentsRepository } from './segments.repository';
 import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
 import { DATABASE } from '@/modules/database/database.module';
@@ -9,6 +14,7 @@ import { CreateSegmentDto } from './dto/create-segment.dto';
 import { UpdateSegmentDto } from './dto/update-segment.dto';
 import { getActorId } from '@/common/audit/audit-context';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
+import { FlagChangeEvent } from '../flag-changes/flag-change.types';
 
 @Injectable()
 export class SegmentsService {
@@ -20,7 +26,10 @@ export class SegmentsService {
   ) {}
 
   async create(orgId: string, projectId: string, dto: CreateSegmentDto) {
-    const existing = await this.segmentRepo.findByProjectAndKey(projectId, dto.key);
+    const existing = await this.segmentRepo.findByProjectAndKey(
+      projectId,
+      dto.key,
+    );
     if (existing) {
       throw new ConflictException('Segment key already exists in this project');
     }
@@ -99,9 +108,13 @@ export class SegmentsService {
       .select({
         envId: targetingRules.environmentId,
         flagKey: featureFlags.key,
+        visibility: featureFlags.visibility,
       })
       .from(targetingRules)
-      .innerJoin(featureFlags, eq(targetingRules.featureFlagId, featureFlags.id))
+      .innerJoin(
+        featureFlags,
+        eq(targetingRules.featureFlagId, featureFlags.id),
+      )
       .where(
         and(
           eq(targetingRules.ruleType, 'segment'),
@@ -112,21 +125,22 @@ export class SegmentsService {
         ),
       );
 
-    // Group by environment and invalidate
-    const byEnv = new Map<string, string[]>();
+    const byEnv = new Map<string, Map<string, string | null>>();
     for (const row of rows) {
-      const keys = byEnv.get(row.envId) ?? [];
-      keys.push(row.flagKey);
+      const keys = byEnv.get(row.envId) ?? new Map<string, string | null>();
+      keys.set(row.flagKey, row.visibility);
       byEnv.set(row.envId, keys);
     }
 
-    for (const [envId, flagKeys] of byEnv) {
+    for (const [envId, flagMap] of byEnv) {
+      const flagKeys = [...flagMap.keys()];
       await this.cacheService.invalidateFlags(envId, flagKeys);
-      for (const flagKey of flagKeys) {
+      for (const [flagKey, visibility] of flagMap) {
         this.flagChangePublisher.publish(envId, {
           type: 'flag.updated',
           flagKey,
           timestamp: new Date().toISOString(),
+          visibility: visibility as FlagChangeEvent['visibility'],
         });
       }
     }

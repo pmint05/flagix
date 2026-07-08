@@ -1,6 +1,13 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { Chip, Button, Tooltip } from "@heroui/react";
-import { RocketLaunchIcon, TrashIcon, GlobeSimpleIcon, BrowserIcon, TerminalIcon } from "@phosphor-icons/react";
+import {
+	RocketLaunchIcon,
+	TrashIcon,
+	GlobeSimpleIcon,
+	BrowserIcon,
+	TerminalIcon,
+	type IconProps,
+} from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { FlagToggle } from "./FlagToggle";
 import { VariationDots } from "@/components/ui/filters/VariationDots";
@@ -18,7 +25,10 @@ const STATUS_CHIP_COLOR: Record<
 	archived: "default",
 };
 
-const VISIBILITY_META: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
+const VISIBILITY_META: Record<
+	string,
+	{ icon: React.ComponentType<IconProps>; label: string }
+> = {
 	all: { icon: GlobeSimpleIcon, label: "All SDKs" },
 	client_only: { icon: BrowserIcon, label: "Client Only" },
 	server_only: { icon: TerminalIcon, label: "Server Only" },
@@ -103,20 +113,21 @@ export function createFlagColumns(actions: ColumnActions) {
 				const VisIcon = visMeta?.icon;
 				return (
 					<div className="flex items-center gap-1.5">
-						<Chip variant="soft">{info.getValue()}</Chip>
 						{VisIcon && (
 							<Tooltip>
 								<Tooltip.Trigger>
-									<VisIcon className="size-3.5 text-default-500" />
+									<Chip
+										variant="soft"
+										className="p-1 rounded-xl size-6 relative top-0.5">
+										<VisIcon className="size-5" weight="bold" />
+									</Chip>
 								</Tooltip.Trigger>
 								<Tooltip.Content>{visMeta.label}</Tooltip.Content>
 							</Tooltip>
 						)}
+						<Chip variant="soft">{info.getValue()}</Chip>
 						{isTemp && (
-							<Chip
-								variant="soft"
-								color="warning"
-								className="text-[10px] h-5 py-0 px-1.5">
+							<Chip variant="soft" color="warning">
 								Temp
 							</Chip>
 						)}

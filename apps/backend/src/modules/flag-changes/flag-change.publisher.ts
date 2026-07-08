@@ -7,6 +7,17 @@ interface EnvironmentEntry {
   count: number;
 }
 
+interface SubscribeFilter {
+  eventTypes?: FlagChangeEventType[];
+  flagKey?: string;
+  keyType?: 'client' | 'server';
+}
+
+const VISIBILITY_BLOCKS: Record<string, string> = {
+  client: 'server_only',
+  server: 'client_only',
+};
+
 @Injectable()
 export class FlagChangePublisher {
   private readonly entries = new Map<string, EnvironmentEntry>();
@@ -20,7 +31,7 @@ export class FlagChangePublisher {
 
   subscribe(
     environmentId: string,
-    filterBy?: { eventTypes?: FlagChangeEventType[]; flagKey?: string },
+    filterBy?: SubscribeFilter,
   ): Observable<FlagChangeEvent> {
     let entry = this.entries.get(environmentId);
     if (!entry) {
@@ -28,7 +39,6 @@ export class FlagChangePublisher {
       this.entries.set(environmentId, entry);
     }
 
-    // Increment subscriber count
     entry.count++;
 
     let observable = entry.subject.asObservable().pipe(
@@ -36,7 +46,6 @@ export class FlagChangePublisher {
         const currentEntry = this.entries.get(environmentId);
         if (currentEntry) {
           currentEntry.count--;
-          // Cleanup if no more subscribers
           if (currentEntry.count <= 0) {
             currentEntry.subject.complete();
             this.entries.delete(environmentId);
@@ -45,7 +54,13 @@ export class FlagChangePublisher {
       }),
     );
 
-    // Apply filters
+    if (filterBy?.keyType && filterBy.keyType in VISIBILITY_BLOCKS) {
+      const blocked = VISIBILITY_BLOCKS[filterBy.keyType];
+      observable = observable.pipe(
+        filter((event) => !event.visibility || event.visibility !== blocked),
+      );
+    }
+
     if (filterBy?.eventTypes?.length) {
       const types = new Set(filterBy.eventTypes);
       observable = observable.pipe(filter((event) => types.has(event.type)));

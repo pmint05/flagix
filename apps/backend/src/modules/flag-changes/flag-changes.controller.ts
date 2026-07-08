@@ -19,6 +19,7 @@ interface RequestWithSdkEnv {
     environmentId: string;
     organizationId: string;
     projectId: string;
+    keyType?: 'client' | 'server';
   };
 }
 
@@ -50,6 +51,7 @@ export class FlagChangesController {
     @Query() query: FlagChangesQuery,
   ): Observable<{ data: FlagChangeEvent; type?: string }> {
     const environmentId = req.sdkEnvironment!.environmentId;
+    const keyType = req.sdkEnvironment!.keyType;
     const eventTypes = query.eventTypes
       ? (query.eventTypes.split(',') as FlagChangeEventType[])
       : undefined;
@@ -58,9 +60,10 @@ export class FlagChangesController {
       .subscribe(environmentId, {
         eventTypes,
         flagKey: query.flagKey,
+        keyType,
       })
       .pipe(
-        map((event: FlagChangeEvent) => ({
+        map(({ visibility: _, ...event }: FlagChangeEvent) => ({
           data: event,
           type: event.type,
         })),

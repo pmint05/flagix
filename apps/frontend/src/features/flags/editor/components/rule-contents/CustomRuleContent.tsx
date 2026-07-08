@@ -391,7 +391,7 @@ function ConditionRow({
 														isDisabled={!canEditFlags}
 														onChange={(v) => valuesField.onChange([v ? v.toString() : "", vals[1] ?? ""])}
 														className="max-w-45">
-														<DateField.Group fullWidth>
+														<DateField.Group fullWidth variant="secondary">
 															<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
 															<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
 														</DateField.Group>
@@ -412,7 +412,7 @@ function ConditionRow({
 														isDisabled={!canEditFlags}
 														onChange={(v) => valuesField.onChange([vals[0] ?? "", v ? v.toString() : ""])}
 														className="max-w-45">
-														<DateField.Group fullWidth>
+														<DateField.Group fullWidth variant="secondary">
 															<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
 															<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
 														</DateField.Group>
@@ -580,7 +580,7 @@ function ConditionRow({
 											isDisabled={!canEditFlags}
 											onChange={(v) => valField.onChange(v ? v.toString() : "")}
 											className="max-w-45">
-											<DateField.Group fullWidth>
+											<DateField.Group fullWidth variant="secondary">
 												<DateField.Input>{(seg) => <DateField.Segment segment={seg} />}</DateField.Input>
 												<DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
 											</DateField.Group>

@@ -41,12 +41,12 @@ const isProduction = process.env.NODE_ENV === 'production';
       {
         name: 'auth',
         ttl: 60_000,
-        limit: 1000,
+        limit: 10000,
       },
       {
         name: 'evaluate',
         ttl: 60_000,
-        limit: 1000,
+        limit: 10000,
         getTracker: (req: Record<string, any>) =>
           Promise.resolve(
             (req.headers?.['x-sdk-key'] as string) || req.ip || 'unknown',
@@ -57,7 +57,7 @@ const isProduction = process.env.NODE_ENV === 'production';
       {
         name: 'sse',
         ttl: 60_000,
-        limit: 100,
+        limit: 10000,
         getTracker: (req: Record<string, any>) =>
           Promise.resolve(
             (req.headers?.['x-sdk-key'] as string) || req.ip || 'unknown',

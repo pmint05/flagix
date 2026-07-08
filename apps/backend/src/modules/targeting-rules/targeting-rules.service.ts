@@ -12,6 +12,7 @@ import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
 import { TargetingRulesRepository } from './targeting-rules.repository';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
+import { FlagChangeEvent } from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
 import { getActorId } from '@/common/audit/audit-context';
@@ -201,6 +202,7 @@ export class TargetingRulesService {
       .select({
         key: featureFlags.key,
         projectId: featureFlags.projectId,
+        visibility: featureFlags.visibility,
       })
       .from(featureFlags)
       .where(eq(featureFlags.id, flagId))
@@ -211,7 +213,7 @@ export class TargetingRulesService {
   private emitRuleChangeEvent(
     eventType: 'rule.created' | 'rule.updated' | 'rule.deleted',
     rule: { id: string },
-    flag: { key: string } | null,
+    flag: { key: string; visibility: string | null } | null,
     environmentId: string,
   ): void {
     if (!this.flagChangePublisher || !flag) return;
@@ -219,9 +221,8 @@ export class TargetingRulesService {
     this.flagChangePublisher.publish(environmentId, {
       type: eventType,
       flagKey: flag.key,
-      // environmentId,
       timestamp: new Date().toISOString(),
-      // metadata: { ruleId: rule.id },
+      visibility: flag.visibility as FlagChangeEvent['visibility'],
     });
   }
 }

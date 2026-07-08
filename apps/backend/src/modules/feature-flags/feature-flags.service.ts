@@ -8,7 +8,10 @@ import {
 import { FeatureFlagsRepository } from './feature-flags.repository';
 import { EnvironmentsRepository } from '../environments/environments.repository';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
-import { FlagChangeEventType } from '../flag-changes/flag-change.types';
+import {
+  FlagChangeEvent,
+  FlagChangeEventType,
+} from '../flag-changes/flag-change.types';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { EvaluationService } from '../evaluation/evaluation.service';
@@ -50,8 +53,6 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   active: ['archived'],
   archived: ['draft'],
 };
-
-
 
 @Injectable()
 export class FeatureFlagsService {
@@ -144,8 +145,8 @@ export class FeatureFlagsService {
         this.flagChangePublisher.publish(env.id, {
           type: 'flag.created',
           flagKey: flag.key,
-          // environmentId: env.id,
           timestamp: new Date().toISOString(),
+          visibility: flag.visibility as FlagChangeEvent['visibility'],
           metadata: {
             version: flag.version,
             isEnabled: false,
@@ -191,7 +192,8 @@ export class FeatureFlagsService {
       ? await this.flagRepo.findRulesForFlag(flagId, envId)
       : [];
     const tags = await this.flagRepo.findTagsForFlag(flagId);
-    const referencedSegments = await this.flagRepo.findReferencedSegments(rules);
+    const referencedSegments =
+      await this.flagRepo.findReferencedSegments(rules);
     return {
       ...flag,
       variations: flagVariations,
@@ -221,7 +223,8 @@ export class FeatureFlagsService {
       ? await this.flagRepo.findRulesForFlag(flag.id, envId)
       : [];
     const tags = await this.flagRepo.findTagsForFlag(flag.id);
-    const referencedSegments = await this.flagRepo.findReferencedSegments(rules);
+    const referencedSegments =
+      await this.flagRepo.findReferencedSegments(rules);
     return {
       ...flag,
       variations: flagVariations,
@@ -323,8 +326,8 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type,
         flagKey: flag.key,
-        // environmentId: envId,
         timestamp: new Date().toISOString(),
+        visibility: flag.visibility as FlagChangeEvent['visibility'],
         metadata: {
           version: updated.version,
           isEnabled: updated.isEnabled,
@@ -574,8 +577,8 @@ export class FeatureFlagsService {
       this.flagChangePublisher.publish(envId, {
         type: 'flag.updated',
         flagKey: updated.key,
-        // environmentId: envId,
         timestamp: new Date().toISOString(),
+        visibility: updated.visibility as FlagChangeEvent['visibility'],
         metadata: {
           version: updated.version,
           isEnabled: isEnabledState,
@@ -587,7 +590,7 @@ export class FeatureFlagsService {
 
     return {
       ...updated,
-    }
+    };
   }
 
   async simulate(

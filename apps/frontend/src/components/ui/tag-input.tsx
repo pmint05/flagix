@@ -4,8 +4,6 @@ import {
 	TagGroup,
 	Tag,
 	Popover,
-	TextField,
-	Input,
 	ListBox,
 	Button,
 	SearchField,
@@ -88,7 +86,7 @@ export function TagInput({
 							{allowCreation ? "Add Tag" : "Filter Tags"}
 						</Button>
 					</Popover.Trigger>
-					<Popover.Content className="p-3 w-64">
+					<Popover.Content className="p-2 pb-1 w-64">
 						<SearchField variant="secondary">
 							<SearchField.Group>
 							<SearchField.SearchIcon />
@@ -105,11 +103,12 @@ export function TagInput({
 									}
 								}}
 							/>
+							<SearchField.ClearButton onClick={() => setSearchQuery("")} />
 							</SearchField.Group>
 						</SearchField>
 
 						<ListBox
-							className="max-h-48 overflow-y-auto"
+							className="max-h-48 overflow-y-auto mt-1.5 px-0"
 							renderEmptyState={() => (
 								<span className="text-xs text-muted-foreground px-2 py-3 block">
 									{debouncedQuery.trim()
@@ -131,7 +130,7 @@ export function TagInput({
 									id="create-new-tag"
 									textValue={searchQuery}
 									className="text-primary font-medium">
-									<div className="flex items-center gap-1.5">
+									<div className="flex items-center gap-2">
 										<PlusIcon className="size-4" />
 										<span>Create tag "{searchQuery}"</span>
 									</div>
@@ -142,8 +141,8 @@ export function TagInput({
 									key={suggestion}
 									id={suggestion}
 									textValue={suggestion}>
-									<div className="flex items-center gap-1.5">
-										<TagIcon className="size-4 text-muted-foreground" />
+									<div className="flex items-center gap-2">
+										<TagIcon className="size-4 text-muted" weight="duotone" />
 										<span>{suggestion}</span>
 									</div>
 								</ListBox.Item>

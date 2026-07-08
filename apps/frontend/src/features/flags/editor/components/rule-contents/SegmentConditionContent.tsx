@@ -174,7 +174,7 @@ function DatePickerField({
 			value={getCalendarDate(value)}
 			onChange={(val) => onChange(val ? val.toString() : "")}
 			className="max-w-[180px]">
-			<DateField.Group fullWidth>
+			<DateField.Group fullWidth variant="secondary">
 				<DateField.Input>
 					{(segment) => <DateField.Segment segment={segment} />}
 				</DateField.Input>
