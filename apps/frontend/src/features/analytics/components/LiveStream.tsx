@@ -80,10 +80,10 @@ export function LiveStream() {
 		<div className="space-y-4">
 			<div className="flex items-center gap-3">
 				<div>
-					<h2 className="text-xl font-semibold text-foreground">
+					<h2 className="text-2xl font-semibold text-foreground">
 						Live Evaluation Stream
 					</h2>
-					<p className="text-sm">Real-time flag evaluation events</p>
+					<p className="text-sm mt-1 text-muted">Real-time flag evaluation events</p>
 				</div>
 				<div className="flex items-center gap-2 ml-auto">
 					<Chip size="sm" color={isConnected ? "success" : "danger"}>

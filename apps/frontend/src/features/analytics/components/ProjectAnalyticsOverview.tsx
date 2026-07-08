@@ -62,7 +62,7 @@ export function ProjectAnalyticsOverview() {
 					</div>
 					<DateRangeFilter value={dateRange} onChange={setDateRange} />
 				</div>
-				<div className="flex flex-col items-center justify-center gap-3 py-16 text-default-400">
+				<div className="flex flex-col items-center justify-center gap-3 py-16">
 					<p className="text-sm">Failed to load analytics data.</p>
 					<Button variant="outline" size="sm" onPress={() => refetch()}>
 						Retry
@@ -78,12 +78,10 @@ export function ProjectAnalyticsOverview() {
 		<div className="space-y-6">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-semibold text-foreground">
+					<h2 className="text-2xl font-bold tracking-tight">
 						Project Analytics
 					</h2>
-					{project && (
-						<p className="text-sm text-default-400">{project.name}</p>
-					)}
+					{project && <p className="text-sm text-muted mt-1">{project.name}</p>}
 				</div>
 				<DateRangeFilter value={dateRange} onChange={setDateRange} />
 			</div>
@@ -112,40 +110,44 @@ export function ProjectAnalyticsOverview() {
 				</Card>
 			)}
 
-			{showMultiEnv && (isPending ? (
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-					{selectedEnvIds.map((id) => (
-						<Card key={id} className="p-3 space-y-2">
-							<Skeleton className="h-4 w-1/2 rounded" />
-							<Skeleton className="h-6 w-1/3 rounded" />
-							<Skeleton className="h-3 w-3/4 rounded" />
-						</Card>
-					))}
-				</div>
-			) : data && data.byEnvironment.length > 0 && (
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-					{data.byEnvironment.map((env) => {
-						const envName =
-							activeEnvs.find((e) => e.id === env.environmentId)?.name ??
-							env.environmentName;
-						const envErrorPct =
-							env.totalCount > 0
-								? ((env.errorCount / env.totalCount) * 100).toFixed(1)
-								: "0.0";
-						return (
-							<Card key={env.environmentId} className="p-3">
-								<p className="text-xs text-default-400 truncate">{envName}</p>
-								<p className="text-lg font-bold text-foreground mt-1">
-									{env.totalCount.toLocaleString()}
-								</p>
-								<p className="text-xs text-default-500 mt-0.5">
-									{envErrorPct}% errors ({env.errorCount})
-								</p>
+			{showMultiEnv &&
+				(isPending ? (
+					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+						{selectedEnvIds.map((id) => (
+							<Card key={id} className="p-3 space-y-2">
+								<Skeleton className="h-4 w-1/2 rounded" />
+								<Skeleton className="h-6 w-1/3 rounded" />
+								<Skeleton className="h-3 w-3/4 rounded" />
 							</Card>
-						);
-					})}
-				</div>
-			))}
+						))}
+					</div>
+				) : (
+					data &&
+					data.byEnvironment.length > 0 && (
+						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+							{data.byEnvironment.map((env) => {
+								const envName =
+									activeEnvs.find((e) => e.id === env.environmentId)?.name ??
+									env.environmentName;
+								const envErrorPct =
+									env.totalCount > 0
+										? ((env.errorCount / env.totalCount) * 100).toFixed(1)
+										: "0.0";
+								return (
+									<Card key={env.environmentId} className="p-3">
+										<p className="text-xs truncate">{envName}</p>
+										<p className="text-lg font-bold text-foreground mt-1">
+											{env.totalCount.toLocaleString()}
+										</p>
+										<p className="text-xs mt-0.5">
+											{envErrorPct}% errors ({env.errorCount})
+										</p>
+									</Card>
+								);
+							})}
+						</div>
+					)
+				))}
 
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 				<MetricCard
@@ -180,10 +182,13 @@ export function ProjectAnalyticsOverview() {
 						<Skeleton className="h-48 w-full rounded-lg" />
 					) : data ? (
 						<EvaluationTrendChart
-							data={data.evaluationTrend.map((d) => ({ ...d, byVariation: {} }))}
+							data={data.evaluationTrend.map((d) => ({
+								...d,
+								byVariation: {},
+							}))}
 						/>
 					) : (
-						<div className="h-48 flex items-center justify-center text-default-400">No data</div>
+						<div className="h-48 flex items-center justify-center">No data</div>
 					)}
 				</Card>
 				<Card className="p-4">
@@ -195,7 +200,7 @@ export function ProjectAnalyticsOverview() {
 					) : data ? (
 						<EnvironmentComparisonChart data={data.byEnvironment} />
 					) : (
-						<div className="h-48 flex items-center justify-center text-default-400">No data</div>
+						<div className="h-48 flex items-center justify-center">No data</div>
 					)}
 				</Card>
 			</div>

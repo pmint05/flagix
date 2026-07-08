@@ -51,11 +51,12 @@ export function useFlag<T>(key: string, defaultValue: T): {
 } {
   const flags = useFlags();
   const isReady = useFlagixReady();
+  const client = useFlagix();
 
   const flag = flags[key];
   return {
     value: flag && flag.resolvedValue !== null ? (flag.resolvedValue as T) : defaultValue,
     isLoading: !isReady,
-    error: null,
+    error: client.getError(),
   };
 }

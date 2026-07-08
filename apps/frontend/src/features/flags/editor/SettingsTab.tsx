@@ -287,16 +287,20 @@ export function SettingsTab({ flag, projectSlug }: SettingsTabProps) {
 								isSelected={field.value}
 								onChange={field.onChange}
 								variant="secondary">
-								<Checkbox.Content>
-									<Checkbox.Control>
+								<Checkbox.Content className="items-start">
+									<Checkbox.Control className="relative top-0.5">
 										<Checkbox.Indicator />
 									</Checkbox.Control>
-									<div className="flex flex-col gap-0.5">
-										<span className="text-sm font-medium text-foreground">Temporary flag</span>
-										<span className="text-xs text-muted-foreground">
-											Temporary flags are used for short-lived changes (e.g. rollouts, migrations). They should be removed once complete.
+									<Label className="flex flex-col gap-0.5">
+										<span className="text-sm font-medium text-foreground">
+											Temporary flag
 										</span>
-									</div>
+										<span className="text-xs text-muted">
+											Temporary flags are used for short-lived changes (e.g.
+											rollouts, migrations). They should be removed once
+											complete.
+										</span>
+									</Label>
 								</Checkbox.Content>
 							</Checkbox>
 						)}

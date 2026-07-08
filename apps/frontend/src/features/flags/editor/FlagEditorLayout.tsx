@@ -19,6 +19,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { flagEditorFormSchema, type FlagEditorFormValues } from "./schema";
 import CopyButton from "#/components/ui/copy-button";
+import { ExpandableCell } from "@/components/ui/expandable-cell";
 import { useContextStore } from "#/stores";
 import { usePatchFlagConfig } from "../api";
 import { ActionButton } from "#/components/ui/action-button";
@@ -134,7 +135,10 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 						normalized = { conditions: raw };
 					} else if (Array.isArray(raw.conditions)) {
 						normalized = raw;
-					} else if (raw.conditions && Array.isArray(raw.conditions.conditions)) {
+					} else if (
+						raw.conditions &&
+						Array.isArray(raw.conditions.conditions)
+					) {
 						normalized = { conditions: raw.conditions.conditions };
 					} else {
 						normalized = { conditions: [] };
@@ -278,7 +282,7 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 		<FormProvider {...methods}>
 			<div className="flex flex-col">
 				{/* Sticky Header */}
-				<div className="flex items-center justify-between">
+				<div className="flex items-start justify-between">
 					<div className="flex items-center gap-4">
 						<div>
 							<div className="flex items-center gap-3">
@@ -298,7 +302,7 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 									{defaultFlagState?.status ?? "draft"}
 								</Chip>
 							</div>
-							<div className="mt-1 flex items-center gap-0.5">
+							<div className="mt-1 flex items-center text-muted gap-0.5">
 								<code className="leading-tight">{flag.key}</code>
 								<CopyButton
 									text={flag.key}
@@ -308,6 +312,13 @@ function EditorContent({ flag, projectSlug }: FlagEditorLayoutProps) {
 									}}
 								/>
 							</div>
+							{flag.description && (
+								<ExpandableCell
+									text={flag.description}
+									maxLines={1}
+									className="max-w-lg!"
+								/>
+							)}
 						</div>
 					</div>
 					{canEditFlags && (
