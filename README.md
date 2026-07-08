@@ -19,22 +19,6 @@ infra/
   docker/           Docker Compose files for PostgreSQL and Redis
 ```
 
-**Demo architecture:**
-
-```
-Demo Client (React)       Demo Server (Express)        Flagix Backend (NestJS)
-     |                          |                             |
-     |  useFlag('dark-mode')    |                             |
-     |------------------------------------------------------>|
-     |  SSE updates             |                             |
-     |<------------------------------------------------------|
-     |                          |                             |
-     |  fetch /api/content/*    |  evaluateAll(context)       |
-     |------------------------->|---------------------------->|
-     |  JSON response           |  flag results               |
-     |<-------------------------|<----------------------------|
-```
-
 ## Prerequisites
 
 - Node.js 20+ (LTS)
