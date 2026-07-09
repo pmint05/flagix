@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   Inject,
+  Optional,
 } from '@nestjs/common';
 import { SegmentsRepository } from './segments.repository';
 import { FlagConfigCacheService } from '../evaluation/flag-config-cache.service';
@@ -15,6 +16,9 @@ import { UpdateSegmentDto } from './dto/update-segment.dto';
 import { getActorId } from '@/common/audit/audit-context';
 import { FlagChangePublisher } from '../flag-changes/flag-change.publisher';
 import { FlagChangeEvent } from '../flag-changes/flag-change.types';
+import { AuditLogsService } from '@/modules/audit-logs/audit-logs.service';
+import { resolveSegmentAction } from '@/common/audit/resolve-action';
+import { sanitizeSegment } from '@/common/audit/sanitize';
 
 @Injectable()
 export class SegmentsService {
@@ -23,6 +27,7 @@ export class SegmentsService {
     private readonly cacheService: FlagConfigCacheService,
     @Inject(DATABASE) private readonly db: Database,
     private readonly flagChangePublisher: FlagChangePublisher,
+    @Optional() private readonly auditLogsService?: AuditLogsService,
   ) {}
 
   async create(orgId: string, projectId: string, dto: CreateSegmentDto) {
@@ -35,10 +40,25 @@ export class SegmentsService {
     }
 
     const actorId = getActorId();
-    return this.segmentRepo.create(
+    const segment = await this.segmentRepo.create(
       { ...dto, projectId, organizationId: orgId },
       actorId,
     );
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        projectId,
+        entityType: 'segment',
+        entityId: segment.id,
+        before: null,
+        after: segment,
+        resolveAction: resolveSegmentAction,
+        sanitize: sanitizeSegment,
+      });
+    }
+
+    return segment;
   }
 
   async findAllForProject(projectId: string) {
@@ -78,7 +98,19 @@ export class SegmentsService {
     const actorId = getActorId();
     const updated = await this.segmentRepo.update(segmentId, dto, actorId);
 
-    // Invalidate only flags that reference this segment
+    if (this.auditLogsService && updated) {
+      await this.auditLogsService.recordChange({
+        organizationId: segment.organizationId,
+        projectId,
+        entityType: 'segment',
+        entityId: segmentId,
+        before: segment,
+        after: updated,
+        resolveAction: resolveSegmentAction,
+        sanitize: sanitizeSegment,
+      });
+    }
+
     await this.invalidateFlagsReferencingSegment(segmentId, projectId);
 
     return updated;
@@ -91,9 +123,21 @@ export class SegmentsService {
     }
 
     const actorId = getActorId();
-    await this.segmentRepo.softDelete(segmentId, actorId);
+    const deleted = await this.segmentRepo.softDelete(segmentId, actorId);
 
-    // Invalidate only flags that reference this segment
+    if (this.auditLogsService && deleted) {
+      await this.auditLogsService.recordChange({
+        organizationId: segment.organizationId,
+        projectId,
+        entityType: 'segment',
+        entityId: segmentId,
+        before: segment,
+        after: deleted,
+        resolveAction: resolveSegmentAction,
+        sanitize: sanitizeSegment,
+      });
+    }
+
     await this.invalidateFlagsReferencingSegment(segmentId, projectId);
 
     return { success: true };
@@ -103,7 +147,6 @@ export class SegmentsService {
     segmentId: string,
     projectId: string,
   ) {
-    // Find all flags that reference this segment via targeting rules
     const rows = await this.db
       .select({
         envId: targetingRules.environmentId,

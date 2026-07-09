@@ -43,22 +43,27 @@ interface AuditFilterProps {
 }
 
 const ENTITY_PREFIX_MAP: Record<string, string> = {
-	organization: "ORG",
-	project: "PROJECT",
-	environment: "ENV",
-	feature_flag: "FLAG",
-	sdk_key: "SDK_KEY",
-	member: "MBR",
+  organization: "ORG",
+  project: "PROJECT",
+  environment: "ENV",
+  feature_flag: "FLAG",
+  sdk_key: "SDK_KEY",
+  member: "MBR",
+  segment: "SEGMENT",
+  tag: "TAG",
+  organization_member: "MBR",
 };
 
 const ENTITY_TYPES = [
-	{ value: "all", label: "All Entities" },
-	{ value: "organization", label: "Organization" },
-	{ value: "project", label: "Project" },
-	{ value: "environment", label: "Environment" },
-	{ value: "feature_flag", label: "Feature Flag" },
-	{ value: "sdk_key", label: "SDK Key" },
-	{ value: "member", label: "Member" },
+  { value: "all", label: "All Entities" },
+  { value: "organization", label: "Organization" },
+  { value: "project", label: "Project" },
+  { value: "environment", label: "Environment" },
+  { value: "feature_flag", label: "Feature Flag" },
+  { value: "sdk_key", label: "SDK Key" },
+  { value: "member", label: "Member" },
+  { value: "segment", label: "Segment" },
+  { value: "tag", label: "Tag" },
 ];
 
 const ACTION_TYPES = [
@@ -87,9 +92,14 @@ const ACTION_TYPES = [
 	"SDK_KEY_ROTATE",
 	"SDK_KEY_ENABLE",
 	"SDK_KEY_DISABLE",
-	"MBR_INVITE",
-	"MBR_REMOVE",
-	"MBR_ROLE_CHANGE",
+  "MBR_INVITE",
+  "MBR_REMOVE",
+  "MBR_ROLE_CHANGE",
+  "SEGMENT_CREATE",
+  "SEGMENT_UPDATE",
+  "SEGMENT_DELETE",
+  "TAG_CREATE",
+  "TAG_DELETE",
 ];
 
 export function AuditFilter({ filters, onChange }: AuditFilterProps) {

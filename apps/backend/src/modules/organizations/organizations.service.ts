@@ -9,7 +9,8 @@ import { OrganizationsRepository } from './organizations.repository';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { getActorId } from '@/common/audit/audit-context';
 import { resolveOrganizationAction } from '@/common/audit/resolve-action';
-import { sanitizeOrganization } from '@/common/audit/sanitize';
+import { sanitizeOrganization, sanitizeMember } from '@/common/audit/sanitize';
+import { resolveMemberAction } from '@/common/audit/resolve-action';
 import { slugify } from '@/common/utils/slug';
 import type {
   CreateOrganizationDto,
@@ -154,7 +155,19 @@ export class OrganizationsService {
     }
 
     // Create the invitation in the database (works whether user exists or not)
-    await this.orgRepo.createInvitation(orgId, invitedBy, normalizedEmail, role);
+    const invitation = await this.orgRepo.createInvitation(orgId, invitedBy, normalizedEmail, role);
+
+    if (this.auditLogsService) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        entityType: 'organization_member',
+        entityId: invitation.id,
+        before: null,
+        after: { email: normalizedEmail, role } as any,
+        resolveAction: resolveMemberAction,
+        sanitize: sanitizeMember,
+      });
+    }
 
     return { success: true, message: 'Invitation sent successfully' };
   }
@@ -216,8 +229,21 @@ export class OrganizationsService {
     const org = await this.orgRepo.findById(orgId);
     if (!org) throw new NotFoundException('Organization not found');
 
+    const before = await this.orgRepo.findMembershipById(memberId);
     const updated = await this.orgRepo.updateMemberRole(memberId, role);
     if (!updated) throw new NotFoundException('Member not found');
+
+    if (this.auditLogsService && before) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        entityType: 'organization_member',
+        entityId: memberId,
+        before,
+        after: updated,
+        resolveAction: resolveMemberAction,
+        sanitize: sanitizeMember,
+      });
+    }
 
     return updated;
   }
@@ -226,8 +252,21 @@ export class OrganizationsService {
     const org = await this.orgRepo.findById(orgId);
     if (!org) throw new NotFoundException('Organization not found');
 
+    const before = await this.orgRepo.findMembershipById(memberId);
     const deleted = await this.orgRepo.removeMember(memberId);
     if (!deleted) throw new NotFoundException('Member not found');
+
+    if (this.auditLogsService && before) {
+      await this.auditLogsService.recordChange({
+        organizationId: orgId,
+        entityType: 'organization_member',
+        entityId: memberId,
+        before,
+        after: deleted,
+        resolveAction: resolveMemberAction,
+        sanitize: sanitizeMember,
+      });
+    }
 
     return { success: true };
   }

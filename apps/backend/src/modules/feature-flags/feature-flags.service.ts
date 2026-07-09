@@ -249,6 +249,7 @@ export class FeatureFlagsService {
     }
 
     const actorId = getActorId();
+    const beforeTags = await this.flagRepo.findTagsForFlag(flagId);
     const updated = await this.flagRepo.update(
       flagId,
       dto,
@@ -261,13 +262,15 @@ export class FeatureFlagsService {
       );
 
     if (this.auditLogsService) {
+      const afterTags = await this.flagRepo.findTagsForFlag(flagId);
+
       await this.auditLogsService.recordChange({
         organizationId: orgId,
         projectId: flag.projectId,
         entityType: 'feature_flag',
         entityId: flagId,
-        before: flag,
-        after: updated,
+        before: { ...flag, tags: beforeTags },
+        after: { ...updated, tags: afterTags },
         resolveAction: resolveFlagAction,
         sanitize: sanitizeFlag,
       });
@@ -533,7 +536,26 @@ export class FeatureFlagsService {
           }
         }
 
-        // 5. Fallback: if name, description, etc. changed but nothing above matched
+        // 5. Tags Update
+        const beforeTags = [...(beforeConfig.tags ?? [])].sort();
+        const afterTags = [...(afterConfig.tags ?? [])].sort();
+        const tagsChanged = beforeTags.join(',') !== afterTags.join(',');
+
+        if (tagsChanged) {
+          await this.auditLogsService.recordChange({
+            organizationId: orgId,
+            projectId: updated.projectId,
+            environmentId: envId,
+            entityType: 'feature_flag',
+            entityId: flagId,
+            before: { tags: beforeTags },
+            after: { tags: afterTags },
+            resolveAction: () => 'FLAG_UPDATE',
+            sanitize: (val) => val,
+          });
+        }
+
+        // 6. Fallback: if name, description, etc. changed but nothing above matched
         const hasOtherChanges =
           beforeConfig.name !== afterConfig.name ||
           beforeConfig.description !== afterConfig.description ||
@@ -546,6 +568,7 @@ export class FeatureFlagsService {
             beforeConfig.variations,
             afterConfig.variations,
           ) ||
+          tagsChanged ||
           (stateBefore &&
             stateAfter &&
             (stateBefore.status !== stateAfter.status ||

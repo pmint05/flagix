@@ -69,3 +69,21 @@ export function sanitizeEnvironment<T>(env: T) {
 export function sanitizeOrganization<T>(org: T) {
   return sanitizeEntity(org);
 }
+
+export function sanitizeSegment<T>(segment: T) {
+  return sanitizeEntity(segment, {
+    excludeKeys: ['organizationId'],
+  });
+}
+
+export function sanitizeTag<T>(tag: T) {
+  return sanitizeEntity(tag, {
+    excludeKeys: ['organizationId'],
+  });
+}
+
+export function sanitizeMember<T>(member: T) {
+  return sanitizeEntity(member, {
+    excludeKeys: ['organizationId'],
+  });
+}

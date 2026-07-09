@@ -237,6 +237,12 @@ export const createAuditLogColumns = (
 				displayName = row.flagKey ? `Rule of ${row.flagKey}` : "Targeting Rule";
 			} else if (row.entityType === "variation") {
 				displayName = row.flagKey ? `Variation of ${row.flagKey}` : "Variation";
+			} else if (row.entityType === "segment") {
+				displayName = row.segmentKey || row.segmentName || "Segment";
+			} else if (row.entityType === "tag") {
+				displayName = row.tagName || "Tag";
+			} else if (row.entityType === "organization_member") {
+				displayName = "Member";
 			}
 
 			return (

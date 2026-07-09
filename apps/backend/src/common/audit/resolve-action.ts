@@ -7,6 +7,9 @@ import {
   projects,
   environments,
   organizations,
+  segments,
+  tags,
+  organizationMembers,
 } from '@/db/schema';
 
 type FeatureFlagEntity = InferSelectModel<typeof featureFlags>;
@@ -16,6 +19,9 @@ type SdkKeyEntity = InferSelectModel<typeof sdkKeys>;
 type ProjectEntity = InferSelectModel<typeof projects>;
 type EnvironmentEntity = InferSelectModel<typeof environments>;
 type OrganizationEntity = InferSelectModel<typeof organizations>;
+type SegmentEntity = InferSelectModel<typeof segments>;
+type TagEntity = InferSelectModel<typeof tags>;
+type OrganizationMemberEntity = InferSelectModel<typeof organizationMembers>;
 
 type BaseEntity = {
   id: string;
@@ -119,4 +125,32 @@ export function resolveOrganizationAction(
   if (!before && after) return 'ORG_CREATE';
   if (isDeleted(before, after)) return 'ORG_DELETE';
   return 'ORG_UPDATE';
+}
+
+export function resolveSegmentAction(
+  before: SegmentEntity | null,
+  after: SegmentEntity | null,
+): string {
+  if (!before && after) return 'SEGMENT_CREATE';
+  if (isDeleted(before, after)) return 'SEGMENT_DELETE';
+  return 'SEGMENT_UPDATE';
+}
+
+export function resolveTagAction(
+  before: TagEntity | null,
+  after: TagEntity | null,
+): string {
+  if (!before && after) return 'TAG_CREATE';
+  if (!after) return 'TAG_DELETE';
+  return 'TAG_CREATE';
+}
+
+export function resolveMemberAction(
+  before: OrganizationMemberEntity | null,
+  after: OrganizationMemberEntity | null,
+): string {
+  if (!before && after) return 'MBR_INVITE';
+  if (isDeleted(before, after)) return 'MBR_REMOVE';
+  if (before && after && before.role !== after.role) return 'MBR_ROLE_CHANGE';
+  return 'MBR_INVITE';
 }

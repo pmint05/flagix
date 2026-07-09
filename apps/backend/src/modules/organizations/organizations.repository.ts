@@ -128,6 +128,15 @@ export class OrganizationsRepository {
     return membership ?? null;
   }
 
+  async findMembershipById(memberId: string) {
+    const [membership] = await this.db
+      .select()
+      .from(organizationMembers)
+      .where(eq(organizationMembers.id, memberId))
+      .limit(1);
+    return membership ?? null;
+  }
+
   async findUsers(orgId: string) {
     return this.db
       .select({

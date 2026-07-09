@@ -8,6 +8,8 @@ import {
   targetingRules,
   variations,
   featureFlags,
+  segments,
+  tags,
 } from '@/db/schema';
 import { DATABASE } from '@/modules/database/database.module';
 import { type Database } from '@/db';
@@ -66,6 +68,9 @@ export class AuditLogsRepository {
         actorImage: user.image,
         flagName: featureFlags.name,
         flagKey: featureFlags.key,
+        segmentName: segments.name,
+        segmentKey: segments.key,
+        tagName: tags.name,
       })
       .from(auditLogs)
       .leftJoin(projects, eq(auditLogs.projectId, projects.id))
@@ -81,6 +86,8 @@ export class AuditLogsRepository {
           eq(variations.featureFlagId, featureFlags.id),
         ),
       )
+      .leftJoin(segments, eq(auditLogs.entityId, segments.id))
+      .leftJoin(tags, eq(auditLogs.entityId, tags.id))
       .where(eq(auditLogs.id, id))
       .limit(1);
     return log ?? null;
@@ -200,6 +207,9 @@ export class AuditLogsRepository {
           actorImage: user.image,
           flagName: featureFlags.name,
           flagKey: featureFlags.key,
+          segmentName: segments.name,
+          segmentKey: segments.key,
+          tagName: tags.name,
         })
         .from(auditLogs)
         .leftJoin(projects, eq(auditLogs.projectId, projects.id))
@@ -215,6 +225,8 @@ export class AuditLogsRepository {
             eq(variations.featureFlagId, featureFlags.id),
           ),
         )
+        .leftJoin(segments, eq(auditLogs.entityId, segments.id))
+        .leftJoin(tags, eq(auditLogs.entityId, tags.id))
         .where(where)
         .orderBy(orderBy)
         .limit(limit)
@@ -235,6 +247,8 @@ export class AuditLogsRepository {
             eq(variations.featureFlagId, featureFlags.id),
           ),
         )
+        .leftJoin(segments, eq(auditLogs.entityId, segments.id))
+        .leftJoin(tags, eq(auditLogs.entityId, tags.id))
         .where(where),
     ]);
 
