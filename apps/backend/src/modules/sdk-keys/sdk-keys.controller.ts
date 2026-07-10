@@ -29,7 +29,7 @@ export class SdkKeysController {
   constructor(private readonly sdkKeysService: SdkKeysService) {}
 
   @Post()
-  @PlatformOrgRoles(['admin'])
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Create SDK key' })
   async create(
     @CurrentContext() ctx: OrgContext,
@@ -39,7 +39,7 @@ export class SdkKeysController {
   }
 
   @Get()
-  @PlatformOrgRoles(['admin'])
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'List SDK keys' })
   async findAll(@CurrentContext() ctx: OrgContext) {
     const sdkKeys = await this.sdkKeysService.findAllForEnv(
@@ -50,7 +50,7 @@ export class SdkKeysController {
   }
 
   @Patch(':keyId/toggle')
-  @PlatformOrgRoles(['admin'])
+  @PlatformOrgRoles(['admin', 'editor'])
   @ApiOperation({ summary: 'Toggle SDK key status' })
   async toggleActive(
     @CurrentContext() ctx: OrgContext,
@@ -65,7 +65,7 @@ export class SdkKeysController {
   }
 
   @Delete(':keyId')
-  @PlatformOrgRoles(['admin'])
+  @PlatformOrgRoles(['admin', 'editor'])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke SDK key' })
   async revoke(@CurrentContext() ctx: OrgContext) {

@@ -61,7 +61,7 @@ const ENTITY_TYPES = [
   { value: "environment", label: "Environment" },
   { value: "feature_flag", label: "Feature Flag" },
   { value: "sdk_key", label: "SDK Key" },
-  { value: "member", label: "Member" },
+  { value: "organization_member", label: "Member" },
   { value: "segment", label: "Segment" },
   { value: "tag", label: "Tag" },
 ];

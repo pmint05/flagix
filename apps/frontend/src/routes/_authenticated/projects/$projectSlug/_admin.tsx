@@ -18,7 +18,7 @@ function AdminLayout() {
 	useEffect(() => {
 		if (!isHydrated) return;
 
-		if (!role || role !== "admin") {
+		if (!role || role === "viewer") {
 			void navigate({
 				to: "/projects/$projectSlug/flags",
 				params: { projectSlug },
@@ -32,8 +32,8 @@ function AdminLayout() {
 		return null;
 	}
 
-	// Prevent rendering children if not admin to avoid flashing unauthorized content
-	if (!role || role !== "admin") {
+	// Prevent rendering children if viewer to avoid flashing unauthorized content
+	if (!role || role === "viewer") {
 		return null;
 	}
 

@@ -18,6 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAuthStore, useThemeStore, useContextStore } from "#/stores";
 import { authClient } from "#/lib/auth-client";
+import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { motion } from "motion/react";
 import { useIsMobile } from "#/hooks/useIsMobile";
@@ -195,6 +196,7 @@ export function UserMenu({ children }: UserMenuProps) {
 	const user = useAuthStore((s) => s.user);
 	const clearSession = useAuthStore((s) => s.clearSession);
 	const clearContext = useContextStore((s) => s.clearContext);
+	const queryClient = useQueryClient();
 	const { theme, setTheme } = useThemeStore();
 	const [mainOpen, setMainOpen] = useState(false);
 
@@ -204,6 +206,7 @@ export function UserMenu({ children }: UserMenuProps) {
 		} finally {
 			clearSession();
 			clearContext();
+			queryClient.clear();
 		}
 	};
 

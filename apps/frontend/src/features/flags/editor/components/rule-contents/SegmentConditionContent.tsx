@@ -435,6 +435,7 @@ interface SegmentConditionContentProps {
 	/** between-validation error message */
 	error?: string;
 	showRemoveButton?: boolean;
+	disabled?: boolean;
 }
 
 export function SegmentConditionContent({
@@ -445,6 +446,7 @@ export function SegmentConditionContent({
 	label,
 	error,
 	showRemoveButton = true,
+	disabled = false,
 }: SegmentConditionContentProps) {
 	const conditionType = condition.conditionType;
 

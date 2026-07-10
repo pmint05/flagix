@@ -12,6 +12,7 @@ export function CreateButton() {
 	const { isCollapsed } = useSidebarStore();
 	const { openCreateFlag, openCreateSegment, openCreateSDKKey } = useUIStore();
 	const canCreateFlag = useHasPermission("flag:create");
+	const canCreateSegment = useHasPermission("segment:create");
 	const canCreateSDKKey = useHasPermission("sdk-key:create");
 
 	const menuItems = [
@@ -27,6 +28,7 @@ export function CreateButton() {
 			label: "Segment",
 			icon: TargetIcon,
 			action: openCreateSegment,
+			disabled: !canCreateSegment,
 		},
 		{
 			key: "sdk-key",

@@ -15,6 +15,8 @@ import { DataTable } from "@/components/ui/data-table/DataTable";
 import { createColumnHelper } from "@tanstack/react-table";
 import { useDataTableUrlSync } from "@/hooks/useDataTableUrlSync";
 import { useUIStore } from "@/stores";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
+import { useHasPermission } from "@/hooks/usePermission";
 
 const columnHelper = createColumnHelper<any>();
 
@@ -42,6 +44,8 @@ function SegmentsIndex() {
 		name: string;
 	} | null>(null);
 	const { openCreateSegment } = useUIStore();
+	const canCreateSegment = useHasPermission("segment:create");
+	const canDeleteSegment = useHasPermission("segment:delete");
 
 	const filteredSegments = useMemo(() => {
 		return segments.filter(
@@ -102,13 +106,18 @@ function SegmentsIndex() {
 								<PencilSimpleIcon className="size-4" />
 							</Button>
 						</Link>
-						<Button
-							isIconOnly
-							variant="ghost"
-							size="sm"
-							onPress={() => setDeletingSegment(info.row.original)}>
-							<TrashIcon className="size-4" />
-						</Button>
+						<PermissionGuard
+							permission="segment:delete"
+							mode="hide"
+							fallback={null}>
+							<Button
+								isIconOnly
+								variant="ghost"
+								size="sm"
+								onPress={() => setDeletingSegment(info.row.original)}>
+								<TrashIcon className="size-4" />
+							</Button>
+						</PermissionGuard>
 					</div>
 				),
 			}),
@@ -126,10 +135,20 @@ function SegmentsIndex() {
 						flags.
 					</p>
 				</div>
-				<Button variant="primary" onPress={openCreateSegment}>
-					<PlusIcon className="size-4" weight="bold" />
-					Create Segment
-				</Button>
+				<PermissionGuard
+					permission="segment:create"
+					mode="disable"
+					fallback={
+						<Button variant="primary" isDisabled>
+							<PlusIcon className="size-4" weight="bold" />
+							Create Segment
+						</Button>
+					}>
+					<Button variant="primary" onPress={openCreateSegment}>
+						<PlusIcon className="size-4" weight="bold" />
+						Create Segment
+					</Button>
+				</PermissionGuard>
 			</div>
 
 			<div className="flex items-center gap-4">

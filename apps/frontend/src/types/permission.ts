@@ -9,7 +9,8 @@ export type Resource =
 	| "sdk-key"
 	| "audit-log"
 	| "organization"
-	| "member";
+	| "member"
+	| "segment";
 
 export type Permission = `${Resource}:${Action}`;
 
@@ -19,6 +20,7 @@ export const VIEWER_PERMISSIONS: Permission[] = [
 	"environment:view",
 	"organization:view",
 	"member:view",
+	"segment:view",
 ];
 
 export const EDITOR_PERMISSIONS: Permission[] = [
@@ -31,6 +33,11 @@ export const EDITOR_PERMISSIONS: Permission[] = [
 	"flag:toggle",
 	"environment:create",
 	"environment:edit",
+	"sdk-key:view",
+	"sdk-key:create",
+	"sdk-key:delete",
+	"segment:create",
+	"segment:edit",
 ];
 
 export const ADMIN_PERMISSIONS: Permission[] = [
@@ -47,6 +54,7 @@ export const ADMIN_PERMISSIONS: Permission[] = [
 	"member:create",
 	"member:edit",
 	"member:delete",
+	"segment:delete",
 ];
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {

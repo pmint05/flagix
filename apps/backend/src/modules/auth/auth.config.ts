@@ -2,7 +2,13 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer, openAPI } from 'better-auth/plugins';
 import { createDrizzleClient } from '@/db';
-import { organizations, organizationMembers } from '@/db/schema';
+import {
+  organizations,
+  organizationMembers,
+  projects,
+  environments,
+  auditLogs,
+} from '@/db/schema';
 import { slugify } from '@/common/utils/slug';
 
 const db = createDrizzleClient();
@@ -52,10 +58,88 @@ export const auth = betterAuth({
                 })
                 .returning();
 
-              await tx.insert(organizationMembers).values({
-                userId: user.id,
+              const [member] = await tx
+                .insert(organizationMembers)
+                .values({
+                  userId: user.id,
+                  organizationId: org.id,
+                  role: 'admin',
+                })
+                .returning();
+
+              await tx.insert(auditLogs).values({
                 organizationId: org.id,
-                role: 'admin',
+                actionType: 'ORG_CREATE',
+                entityType: 'organization',
+                entityId: org.id,
+                actorId: user.id,
+                actorType: 'user',
+                actorEmail: user.email,
+                changes: { before: null, after: org },
+                timestamp: new Date(),
+              });
+
+              await tx.insert(auditLogs).values({
+                organizationId: org.id,
+                actionType: 'MBR_INVITE',
+                entityType: 'organization_member',
+                entityId: member.id,
+                actorId: user.id,
+                actorType: 'user',
+                actorEmail: user.email,
+                changes: {
+                  before: null,
+                  after: { userId: user.id, role: 'admin' },
+                },
+                timestamp: new Date(),
+              });
+
+              const defaultProjectSlug = 'default';
+
+              const [project] = await tx
+                .insert(projects)
+                .values({
+                  organizationId: org.id,
+                  name: 'Default Project',
+                  slug: defaultProjectSlug,
+                })
+                .returning();
+
+              const [env] = await tx
+                .insert(environments)
+                .values({
+                  organizationId: org.id,
+                  projectId: project.id,
+                  name: 'Production',
+                  slug: 'production',
+                })
+                .returning();
+
+              await tx.insert(auditLogs).values({
+                organizationId: org.id,
+                projectId: project.id,
+                actionType: 'PROJECT_CREATE',
+                entityType: 'project',
+                entityId: project.id,
+                actorId: user.id,
+                actorType: 'user',
+                actorEmail: user.email,
+                changes: { before: null, after: project },
+                timestamp: new Date(),
+              });
+
+              await tx.insert(auditLogs).values({
+                organizationId: org.id,
+                projectId: project.id,
+                environmentId: env.id,
+                actionType: 'ENV_CREATE',
+                entityType: 'environment',
+                entityId: env.id,
+                actorId: user.id,
+                actorType: 'user',
+                actorEmail: user.email,
+                changes: { before: null, after: env },
+                timestamp: new Date(),
               });
             });
           } catch (error) {

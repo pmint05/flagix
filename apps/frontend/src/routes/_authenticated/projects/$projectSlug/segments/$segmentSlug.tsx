@@ -10,7 +10,8 @@ import {
 	TextField,
 	Label,
 	Skeleton,
-	toast
+	toast,
+	cn,
 } from "@heroui/react";
 import {
 	ArrowLeftIcon,
@@ -21,6 +22,8 @@ import {
 	SlidersIcon,
 } from "@phosphor-icons/react";
 import { useSegment, useUpdateSegment } from "@/features/flags/api";
+import { useHasPermission } from "@/hooks/usePermission";
+import { PermissionGuard } from "@/components/permission/PermissionGuard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
 	SegmentConditionContent,
@@ -94,6 +97,7 @@ function SegmentEditorPage() {
 
 	const { data: segment, isLoading, isError } = useSegment(segmentSlug);
 	const updateSegment = useUpdateSegment();
+	const canEditSegment = useHasPermission("segment:edit");
 
 	const [metadataModalOpen, setMetadataModalOpen] = useState(false);
 	const [conditionErrors, setConditionErrors] = useState<
@@ -328,27 +332,43 @@ function SegmentEditorPage() {
 				</div>
 
 				<div className="flex items-center gap-2 mt-4 md:mt-0">
-					<Button variant="outline" onPress={() => setMetadataModalOpen(true)}>
-						<PencilSimpleIcon className="size-4 mr-1.5" /> Edit Info
-					</Button>
-					<Button
-						variant="ghost"
-						onPress={handleReset}
-						isDisabled={!hasChanges || updateSegment.isPending}>
-						<ArrowCounterClockwiseIcon className="size-4 mr-1.5" /> Discard
-					</Button>
-					<ActionButton
-						variant="primary"
-						onPress={handleSaveConditions}
-						isDisabled={!hasChanges || updateSegment.isPending}
-						isPending={updateSegment.isPending}>
-						{updateSegment.isPending ? "Saving..." : "Save Rules"}
-					</ActionButton>
+					<PermissionGuard
+						permission="segment:edit"
+						mode="disable"
+						fallback={
+							<Button variant="outline" isDisabled>
+								<PencilSimpleIcon className="size-4 mr-1.5" /> Edit Info
+							</Button>
+						}>
+						<Button variant="outline" onPress={() => setMetadataModalOpen(true)}>
+							<PencilSimpleIcon className="size-4 mr-1.5" /> Edit Info
+						</Button>
+					</PermissionGuard>
+					{canEditSegment && (
+						<>
+							<Button
+								variant="ghost"
+								onPress={handleReset}
+								isDisabled={!hasChanges || updateSegment.isPending}>
+								<ArrowCounterClockwiseIcon className="size-4 mr-1.5" /> Discard
+							</Button>
+							<ActionButton
+								variant="primary"
+								onPress={handleSaveConditions}
+								isDisabled={!hasChanges || updateSegment.isPending}
+								isPending={updateSegment.isPending}>
+								{updateSegment.isPending ? "Saving..." : "Save Rules"}
+							</ActionButton>
+						</>
+					)}
 				</div>
 			</div>
 
 			{/* Main Editor Card */}
-			<div className="border border-divider rounded-3xl bg-surface p-6 space-y-4 shadow-sm">
+			<div className={cn(
+				"border border-divider rounded-3xl bg-surface p-6 space-y-4 shadow-sm",
+				!canEditSegment && "pointer-events-none opacity-60"
+			)}>
 				<div className="flex justify-between items-start pb-4 border-b border-divider gap-4">
 					<div>
 						<h3 className="font-semibold text-base text-foreground">
@@ -359,6 +379,7 @@ function SegmentEditorPage() {
 						</p>
 					</div>
 					{/* Add condition buttons */}
+					{canEditSegment && (
 					<div className="flex items-center gap-2 shrink-0">
 						<Button variant="outline" size="sm" onPress={() => handleAddCondition("custom")}>
 							<SlidersIcon className="size-3.5 mr-1.5" /> Custom
@@ -370,6 +391,7 @@ function SegmentEditorPage() {
 							<ShieldCheckIcon className="size-3.5 mr-1.5" /> Role
 						</Button>
 					</div>
+					)}
 				</div>
 
 				{conditionsValue.length === 0 ? (
@@ -395,6 +417,7 @@ function SegmentEditorPage() {
 										onChange={handleConditionChange}
 										onRemove={handleRemoveCondition}
 										error={conditionErrors[idx]}
+										showRemoveButton={canEditSegment}
 									/>
 								);
 							});
